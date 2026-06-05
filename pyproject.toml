@@ -1,0 +1,15 @@
+[project]
+name = "networked-thinking-skills"
+version = "0.1.0"
+description = "Agent Skills and scripts for Networked Thinking atomic notes"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Networked Thinking" }]
+dependencies = []
+
+[tool.networked-thinking]
+schema_version = "1.0.0"
+doctrine_version = "1.0.0"
+rubric_version = "1.0.0"
+prompt_version = "1.0.0"
