@@ -129,6 +129,22 @@ class MarkdownParseTest(unittest.TestCase):
 """
         self.assertEqual(extract_wikilinks(markdown), ["Real"])
 
+    def test_extract_wikilinks_ignores_same_line_list_backtick_fence(self):
+        markdown = """- ```markdown
+  [[Leaked Link]]
+  ```
+[[Real Link]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Real Link"])
+
+    def test_extract_wikilinks_ignores_same_line_list_tilde_fence(self):
+        markdown = """- ~~~markdown
+  [[Leaked Tilde Link]]
+  ~~~
+[[Real Link]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Real Link"])
+
     def test_extract_wikilinks_ignores_true_tab_indented_code(self):
         markdown = "\t[[Still not real]]\n[[Top Note]]\n"
         self.assertEqual(extract_wikilinks(markdown), ["Top Note"])

@@ -53,6 +53,11 @@ def _list_marker_content_indent(
     return len(line[:marker_end].expandtabs(4))
 
 
+def _list_item_text(line: str, content: str, list_marker: re.Match[str]) -> str:
+    leading_length = len(line) - len(content)
+    return line[leading_length + list_marker.end():]
+
+
 def _strip_indent_width(line: str, indent_width: int) -> str:
     index = 0
     width = 0
@@ -116,6 +121,19 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
                 in_fence = False
                 fence_content_indent = None
             continue
+
+        if list_marker is not None:
+            list_content_indent = _list_marker_content_indent(line, content, list_marker)
+            list_fence_line = _list_item_text(line, content, list_marker)
+            match = FENCE_START_RE.match(list_fence_line)
+            if match:
+                fence = match.group(1)
+                in_fence = True
+                fence_char = fence[0]
+                fence_length = len(fence)
+                fence_content_indent = list_content_indent
+                masked_lines.append(_line_break(line))
+                continue
 
         fence_line = line
         if active_content_indent is not None:
