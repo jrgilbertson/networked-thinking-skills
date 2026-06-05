@@ -65,7 +65,12 @@
       "format": "date-time"
     },
     "score": {
-      "$ref": "#/$defs/score"
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 100
     },
     "priority": {
       "enum": [
@@ -110,7 +115,7 @@
       "$ref": "model-judgment.schema.json"
     },
     "factual_risk": {
-      "$ref": "#/$defs/factual_risk"
+      "type": "boolean"
     },
     "factual_risk_reason": {
       "type": "string"
@@ -166,16 +171,6 @@
           "$ref": "#/$defs/score"
         }
       }
-    },
-    "factual_risk": {
-      "type": "string",
-      "enum": [
-        "none",
-        "low",
-        "medium",
-        "high",
-        "unknown"
-      ]
     },
     "finding": {
       "type": "object",

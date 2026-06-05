@@ -33,7 +33,7 @@
       }
     },
     "factual_risk": {
-      "$ref": "#/$defs/factual_risk"
+      "type": "boolean"
     },
     "factual_risk_reason": {
       "type": "string"
@@ -94,16 +94,6 @@
           "type": "string"
         }
       }
-    },
-    "factual_risk": {
-      "type": "string",
-      "enum": [
-        "none",
-        "low",
-        "medium",
-        "high",
-        "unknown"
-      ]
     },
     "finding": {
       "type": "object",
