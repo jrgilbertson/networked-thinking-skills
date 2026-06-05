@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.local/schemas/run-manifest.schema.json",
+  "title": "Atomic Note Audit Run Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "started_at",
+    "ended_at",
+    "config_snapshot",
+    "total_notes",
+    "row_status_counts",
+    "priority_counts",
+    "validation_status",
+    "outputs",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "config_snapshot": {
+      "$ref": "config.schema.json"
+    },
+    "total_notes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "row_status_counts": {
+      "$ref": "#/$defs/row_status_counts"
+    },
+    "priority_counts": {
+      "$ref": "#/$defs/priority_counts"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "failed",
+        "not_run"
+      ]
+    },
+    "outputs": {
+      "$ref": "#/$defs/outputs"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "audit_rows": {
+          "type": "string"
+        },
+        "model_judgments": {
+          "type": "string"
+        },
+        "remediation_plan": {
+          "type": "string"
+        },
+        "manifest": {
+          "type": "string"
+        }
+      }
+    },
+    "priority_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "properties": {
+        "P0": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "P1": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "P2": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "P3": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "row_status_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete",
+        "reused_cache",
+        "error",
+        "skipped"
+      ],
+      "properties": {
+        "complete": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reused_cache": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

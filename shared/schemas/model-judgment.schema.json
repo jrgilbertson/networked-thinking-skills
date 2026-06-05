@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.local/schemas/model-judgment.schema.json",
+  "title": "Atomic Note Model Judgment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "note_path",
+    "dimension_adjustments",
+    "findings",
+    "factual_risk",
+    "factual_risk_reason",
+    "fact_check_required",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dimension_adjustments": {
+      "$ref": "#/$defs/dimension_adjustments"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "factual_risk": {
+      "$ref": "#/$defs/factual_risk"
+    },
+    "factual_risk_reason": {
+      "type": "string"
+    },
+    "fact_check_required": {
+      "type": "boolean"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "$defs": {
+    "adjustment": {
+      "type": "integer",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "dimension_adjustments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "atomicity": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "dae_quality": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "clarity": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "connections": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "metadata_card_safety": {
+          "$ref": "#/$defs/adjustment"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "quote"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "quote": {
+          "type": "string"
+        }
+      }
+    },
+    "factual_risk": {
+      "type": "string",
+      "enum": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "priority",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "priority": {
+          "type": "string",
+          "enum": [
+            "P0",
+            "P1",
+            "P2",
+            "P3"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    }
+  }
+}
