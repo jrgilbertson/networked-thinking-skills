@@ -36,6 +36,11 @@ provider accounts, or send vault content through a repo-owned service. The
 agent supplies judgments; the shared scripts define the schema, validation,
 merge, and report surfaces.
 
+Privacy boundary: deterministic scans run locally. Model judgment may send note
+content or excerpts to the model provider used by the active agent. Confirm the
+user accepts that provider/tool trust boundary before running exhaustive model
+judgment on private vault content.
+
 Model output must be strict JSON and validated before it affects scoring.
 
 ## Remediation

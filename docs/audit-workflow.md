@@ -59,6 +59,11 @@ terminal agent in the vault, such as Claude Desktop, Claude Code, Codex CLI, or
 Codex Desktop. The audit skill does not own provider authentication, API keys, or
 a hosted inference service.
 
+Deterministic scans run locally. Model judgment may send note content or
+excerpts to the model provider used by the active agent. Confirm the user accepts
+that provider/tool trust boundary before running exhaustive model judgment on
+private vault content.
+
 The deterministic audit remains the source input. A model-judgment pass should
 emit strict JSON matching `shared/schemas/model-judgment.schema.json`; validate
 those judgments before they affect scores, priorities, or reports. In default
