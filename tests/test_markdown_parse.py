@@ -72,6 +72,11 @@ class MarkdownParseTest(unittest.TestCase):
         self.assertEqual(frontmatter, "title: X")
         self.assertEqual(body, "# Body\r\n")
 
+    def test_empty_frontmatter_returns_empty_string_and_body(self):
+        frontmatter, body = extract_frontmatter("---\n---\n# Body\n")
+        self.assertEqual(frontmatter, "")
+        self.assertEqual(body, "# Body\n")
+
     def test_no_frontmatter_returns_none_and_original_body(self):
         markdown = "# Example\n\nNo frontmatter here.\n"
         frontmatter, body = extract_frontmatter(markdown)
@@ -148,6 +153,24 @@ class MarkdownParseTest(unittest.TestCase):
 [[Real Link]]
 """
         self.assertEqual(extract_wikilinks(markdown), ["Real Link"])
+
+    def test_same_line_list_backtick_fence_preserves_later_list_continuation(self):
+        markdown = """- ```markdown
+  [[Hidden]]
+  ```
+    [[Continuation Note]]
+[[Top Note]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Continuation Note", "Top Note"])
+
+    def test_same_line_list_tilde_fence_preserves_later_list_continuation(self):
+        markdown = """- ~~~markdown
+  [[Hidden]]
+  ~~~
+    [[Continuation Note]]
+[[Top Note]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Continuation Note", "Top Note"])
 
     def test_standalone_indented_list_marker_backtick_fence_does_not_hide_structure(self):
         markdown = "    - ```markdown\n## Definition\n[[Real Note]]\n"

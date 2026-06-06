@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 
-FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.DOTALL)
+FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n(?:(.*?)\r?\n)?---[ \t]*(?:\r?\n|\Z)", re.DOTALL)
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+([^\r\n]+?)[ \t]*$", re.MULTILINE)
 FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
@@ -16,7 +16,7 @@ def extract_frontmatter(markdown: str) -> tuple[str | None, str]:
     match = FRONTMATTER_RE.match(markdown)
     if not match:
         return None, markdown
-    return match.group(1), markdown[match.end():]
+    return match.group(1) or "", markdown[match.end():]
 
 
 def _line_break(line: str) -> str:
@@ -56,6 +56,11 @@ def _list_marker_content_indent(
 def _list_item_text(line: str, content: str, list_marker: re.Match[str]) -> str:
     leading_length = len(line) - len(content)
     return line[leading_length + list_marker.end():]
+
+
+def _list_marker_prefix(line: str, content: str, list_marker: re.Match[str]) -> str:
+    leading_length = len(line) - len(content)
+    return line[:leading_length + list_marker.end()]
 
 
 def _strip_indent_width(line: str, indent_width: int) -> str:
@@ -134,7 +139,7 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
                 fence_char = fence[0]
                 fence_length = len(fence)
                 fence_content_indent = list_content_indent
-                masked_lines.append(_line_break(line))
+                masked_lines.append(_list_marker_prefix(line, content, list_marker) + _line_break(line))
                 continue
 
         fence_line = line
