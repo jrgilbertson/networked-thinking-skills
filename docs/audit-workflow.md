@@ -51,3 +51,16 @@ python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/ba
   negatives before trusting the queue.
 - Do not remediate directly from an audit row. Create or consume an explicit
   remediation plan, then follow [remediation.md](remediation.md).
+
+## Model Judgment
+
+Model judgment assumes the user is already running an authenticated desktop or
+terminal agent in the vault, such as Claude Desktop, Claude Code, Codex CLI, or
+Codex Desktop. The audit skill does not own provider authentication, API keys, or
+a hosted inference service.
+
+The deterministic audit remains the source input. A model-judgment pass should
+emit strict JSON matching `shared/schemas/model-judgment.schema.json`; validate
+those judgments before they affect scores, priorities, or reports. In default
+mode, review flagged or ambiguous notes plus a sample of apparently clean notes.
+In exhaustive mode, review every note.

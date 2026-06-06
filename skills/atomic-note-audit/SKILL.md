@@ -25,7 +25,16 @@ Use this skill to audit every Markdown file in a configured Atomic Notes folder,
 
 ## Model Judgment
 
-Use deterministic scan for every note. In default mode, model-judge flagged or ambiguous notes and a sample of apparently clean notes. In exhaustive mode, model-judge every note.
+Use deterministic scan for every note. In default mode, model-judge flagged or
+ambiguous notes and a sample of apparently clean notes. In exhaustive mode,
+model-judge every note.
+
+Model judgment is performed by the active desktop or terminal agent that the
+user is already using in the vault, such as Claude Desktop, Claude Code, Codex
+CLI, or Codex Desktop. Do not require this skill to collect API keys, configure
+provider accounts, or send vault content through a repo-owned service. The
+agent supplies judgments; the shared scripts define the schema, validation,
+merge, and report surfaces.
 
 Model output must be strict JSON and validated before it affects scoring.
 
