@@ -2,53 +2,16 @@ from __future__ import annotations
 
 from typing import Iterable, Mapping
 
-
-FINDING_LOSSES: dict[str, int] = {
-    "multi_note": 45,
-    "invalid_dae": 35,
-    "misfiled_reference": 35,
-    "not_atomic": 25,
-    "definition_too_long": 20,
-    "weak_definition": 18,
-    "malformed_anki": 18,
-    "weak_dae": 15,
-    "weak_analogy": 15,
-    "weak_example": 15,
-    "unclear": 15,
-    "title_body_mismatch": 15,
-    "missing_parent": 8,
-    "duplicate_overlap": 8,
-    "factual_risk": 8,
-}
-
-CODE_ALIASES: dict[str, str] = {
-    "multi_note_file": "multi_note",
-    "model_multi_note": "multi_note",
-    "missing_dae": "invalid_dae",
-    "model_invalid_dae": "invalid_dae",
-    "model_misfiled_reference": "misfiled_reference",
-    "model_not_atomic": "not_atomic",
-    "model_weak_definition": "weak_definition",
-    "model_weak_analogy": "weak_analogy",
-    "model_weak_example": "weak_example",
-    "model_unclear": "unclear",
-    "model_title_body_mismatch": "title_body_mismatch",
-    "model_duplicate_overlap": "duplicate_overlap",
-    "model_factual_risk": "factual_risk",
-}
+from shared.scripts.finding_codes import (
+    ALLOWED_FINDING_CODES,
+    DAE_COMPONENT_CODES,
+    DAE_COMPONENT_LOSS_CAP,
+    FINDING_LOSSES,
+)
 
 PRIORITY_ORDER: tuple[str, ...] = ("P0", "P1", "P2", "P3")
 NO_CHANGE_BUCKET = "no_change"
 BUCKET_ORDER: tuple[str, ...] = PRIORITY_ORDER + (NO_CHANGE_BUCKET,)
-DEFAULT_FINDING_LOSS = 8
-DAE_COMPONENT_CODES = {
-    "definition_too_long",
-    "weak_definition",
-    "weak_dae",
-    "weak_analogy",
-    "weak_example",
-}
-DAE_COMPONENT_LOSS_CAP = 35
 
 
 def canonicalize_findings(findings: Iterable[Mapping[str, object]]) -> set[str]:
@@ -57,7 +20,9 @@ def canonicalize_findings(findings: Iterable[Mapping[str, object]]) -> set[str]:
         raw_code = finding.get("code")
         if not isinstance(raw_code, str) or not raw_code:
             continue
-        codes.add(CODE_ALIASES.get(raw_code, raw_code))
+        if raw_code not in ALLOWED_FINDING_CODES:
+            raise ValueError(f"Unknown finding code: {raw_code}")
+        codes.add(raw_code)
 
     if "multi_note" in codes:
         codes.discard("not_atomic")
@@ -73,7 +38,7 @@ def compute_loss(findings: Iterable[Mapping[str, object]]) -> int:
         DAE_COMPONENT_LOSS_CAP,
     )
     non_dae_loss = sum(
-        FINDING_LOSSES.get(code, DEFAULT_FINDING_LOSS)
+        FINDING_LOSSES[code]
         for code in codes
         if code not in DAE_COMPONENT_CODES
     )

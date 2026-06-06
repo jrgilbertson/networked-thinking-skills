@@ -29,7 +29,7 @@ def render_base(jsonl_path: str) -> str:
         "P3 Polish": [row for row in rows if row.get("priority") == "P3"],
         "No Changes": [row for row in rows if row.get("priority") is None],
         "Factual Risk": [row for row in rows if _is_factual_risk(row)],
-        "Multi-Note Split Candidates": [row for row in rows if _has_finding(row, "multi_note_file")],
+        "Multi-Note Split Candidates": [row for row in rows if _has_finding(row, "multi_note")],
         "Missing Parent Candidates": [row for row in rows if _has_finding(row, "missing_parent")],
         "Duplicate Or Overlap Candidates": [
             row for row in rows if _has_finding(row, "duplicate_overlap")

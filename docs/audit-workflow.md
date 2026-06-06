@@ -70,7 +70,8 @@ that provider/tool trust boundary before running exhaustive model judgment on
 private vault content.
 
 The deterministic audit remains the source input. A model-judgment pass should
-emit strict JSON matching `shared/schemas/model-judgment.schema.json`; validate
-those judgments before they affect scores, buckets, or reports. In default
-mode, review flagged or ambiguous notes plus a sample of apparently clean notes.
-In exhaustive mode, review every note.
+use `shared/references/model-judgment-prompt.md` and emit strict JSON matching
+`shared/schemas/model-judgment.schema.json`; validate those judgments before
+they affect scores, buckets, or reports. In default mode, review flagged or
+ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
+review every note.

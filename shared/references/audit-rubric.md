@@ -1,5 +1,9 @@
 # Atomic Note Audit Rubric
 
+The scoring source of truth is `shared/scripts/finding_codes.py`. The
+model-judgment prompt is generated from that source by
+`python3 -m shared.scripts.model_prompt`.
+
 Final score is a 1-100 remediation urgency score. A perfect vault has an
 average score of 100. Compute each row score with a single loss budget:
 
@@ -7,33 +11,14 @@ average score of 100. Compute each row score with a single loss budget:
 score = clamp(100 - total_loss, 1, 100)
 ```
 
-Findings create loss once. Finding priority labels may explain findings for
-reviewers, but they do not feed the score. Score alone determines the
-remediation bucket.
+Findings create loss once. Score alone determines the remediation bucket.
+Finding-level priority labels are not part of the JSON contract.
 
-Finding losses:
-
-- Multi-note file: 45
-- Missing or invalid DAE: 35
-- Misfiled reference: 35
-- Not atomic: 25
-- Definition too long: 20
-- Weak definition: 18
-- Malformed Anki: 18
-- Weak DAE, analogy, or example: 15
-- Unclear note: 15
-- Title/body mismatch: 15
-- Missing parent: 8
-- Duplicate overlap: 8
-- Factual risk: 8
-- Unknown future finding code: 8
+Finding losses are defined by canonical code in `shared/scripts/finding_codes.py`.
+Unknown finding codes fail validation.
 
 Semantic de-duplication applies before scoring:
 
-- Deterministic and model factual-risk findings count once.
-- Deterministic and model duplicate-overlap findings count once.
-- Deterministic and model multi-note findings count once.
-- Missing DAE and invalid DAE count as one invalid-DAE loss.
 - If invalid DAE is present, weaker DAE component findings do not add extra
   loss.
 - If invalid DAE is absent, DAE component findings are capped at 35 total.

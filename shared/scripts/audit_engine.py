@@ -15,6 +15,7 @@ from shared.scripts.markdown_parse import (
     extract_frontmatter,
     extract_wikilinks,
 )
+from shared.scripts.finding_codes import FINDING_MESSAGES, FINDING_RECOMMENDATION_MODES
 from shared.scripts.scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_clean, compute_final_score
 
 
@@ -28,37 +29,13 @@ DIMENSION_NAMES = (
     "connections",
     "metadata_card_safety",
 )
-FINDING_MESSAGES = {
-    "missing_frontmatter": "Add YAML frontmatter with the note's metadata.",
-    "missing_dae": "Add complete Definition, Analogy, and Example sections.",
-    "definition_too_long": "Shorten the Definition to 10-50 rendered words.",
-    "missing_parent": "Link this note from a structure note.",
-    "malformed_anki": "Balance START and END markers for Anki card blocks.",
-    "multi_note_file": "Split bundled ideas into separate atomic notes.",
-    "misfiled_reference": "Move source-material notes out of Atomic Notes or rewrite them as DAE notes.",
-    "weak_dae": "Strengthen the DAE content with concrete, self-contained explanations.",
-    "factual_risk": "Mark empirical, current, attributed, or sensitive-domain claims for fact checking.",
-    "duplicate_overlap": "Review this note against related notes for possible overlap.",
-}
-RECOMMENDATION_MODES = {
-    "missing_frontmatter": "improve-in-place",
-    "missing_dae": "improve-in-place",
-    "definition_too_long": "improve-in-place",
-    "missing_parent": "link-parent",
-    "malformed_anki": "improve-in-place",
-    "multi_note_file": "split-multi-note",
-    "misfiled_reference": "rehome-non-DAE",
-    "weak_dae": "improve-in-place",
-    "factual_risk": "mark-factual-risk",
-    "duplicate_overlap": "duplicate-overlap-review",
-}
 DIMENSION_PENALTIES = {
     "missing_frontmatter": {"structure": 20, "metadata_card_safety": 40},
-    "missing_dae": {"structure": 35, "dae_quality": 60, "clarity": 20},
+    "invalid_dae": {"structure": 35, "dae_quality": 60, "clarity": 20},
     "definition_too_long": {"structure": 20, "dae_quality": 35, "clarity": 25},
     "missing_parent": {"connections": 60},
     "malformed_anki": {"metadata_card_safety": 50, "clarity": 10},
-    "multi_note_file": {"structure": 30, "atomicity": 70, "clarity": 20},
+    "multi_note": {"structure": 30, "atomicity": 70, "clarity": 20},
     "misfiled_reference": {"structure": 30, "atomicity": 40, "dae_quality": 50},
     "weak_dae": {"dae_quality": 25, "clarity": 15},
     "factual_risk": {"clarity": 20, "metadata_card_safety": 10},
@@ -209,37 +186,36 @@ def _findings_for_note(
     dae_analysis = analyze_dae(content)
     has_dae = dae_analysis.present
     anki_counts = count_anki_blocks(content)
-    finding_specs: list[tuple[str, str]] = []
+    finding_codes: list[str] = []
 
     if frontmatter is None:
-        finding_specs.append(("missing_frontmatter", "P1"))
+        finding_codes.append("missing_frontmatter")
     if not has_dae:
         if dae_analysis.definition_too_long:
-            finding_specs.append(("definition_too_long", "P1"))
+            finding_codes.append("definition_too_long")
         else:
-            finding_specs.append(("missing_dae", "P1"))
+            finding_codes.append("invalid_dae")
     if path.stem not in structure_targets:
-        finding_specs.append(("missing_parent", "P1"))
+        finding_codes.append("missing_parent")
     if anki_counts["START"] != anki_counts["END"]:
-        finding_specs.append(("malformed_anki", "P1"))
+        finding_codes.append("malformed_anki")
     if _looks_like_multi_note(content, anki_counts):
-        finding_specs.append(("multi_note_file", "P0"))
+        finding_codes.append("multi_note")
     if _looks_like_reference_note(frontmatter, body, has_dae):
-        finding_specs.append(("misfiled_reference", "P1"))
+        finding_codes.append("misfiled_reference")
     if _looks_like_weak_dae(body, has_dae, dae_analysis.definition_too_long):
-        finding_specs.append(("weak_dae", "P2"))
+        finding_codes.append("weak_dae")
     if _contains_factual_risk(body):
-        finding_specs.append(("factual_risk", "P2"))
+        finding_codes.append("factual_risk")
     if _looks_like_duplicate_candidate(path, body):
-        finding_specs.append(("duplicate_overlap", "P2"))
+        finding_codes.append("duplicate_overlap")
 
     return [
         {
-            "priority": priority,
             "code": code,
             "message": FINDING_MESSAGES[code],
         }
-        for code, priority in finding_specs
+        for code in finding_codes
     ]
 
 
@@ -438,7 +414,7 @@ def _dimensions_for_findings(findings: Iterable[dict[str, str]]) -> dict[str, in
 def _recommendations_for_findings(findings: Iterable[dict[str, str]]) -> list[dict[str, str]]:
     return [
         {
-            "mode": RECOMMENDATION_MODES[finding["code"]],
+            "mode": FINDING_RECOMMENDATION_MODES[finding["code"]],
             "message": finding["message"],
         }
         for finding in findings

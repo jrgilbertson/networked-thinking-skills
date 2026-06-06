@@ -29,8 +29,7 @@ VALID_JUDGMENT = {
     },
     "findings": [
         {
-            "priority": "P2",
-            "code": "weak_connection",
+            "code": "missing_parent",
             "message": "The note needs a clearer parent link.",
             "evidence": [
                 {
@@ -95,9 +94,9 @@ class ModelContractTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_model_judgment(judgment)
 
-    def test_invalid_finding_priority_fails(self):
+    def test_invalid_finding_code_fails(self):
         judgment = deepcopy(VALID_JUDGMENT)
-        judgment["findings"][0]["priority"] = "P4"
+        judgment["findings"][0]["code"] = "weak_connection"
         with self.assertRaises(ValidationError):
             validate_model_judgment(judgment)
 
@@ -111,6 +110,10 @@ class ModelContractTest(unittest.TestCase):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
 
         self.assertEqual(set(schema["properties"]["factual_risk_reason"]["type"]), {"string", "null"})
+
+        finding = schema["$defs"]["finding"]
+        self.assertEqual(finding["required"], ["code", "message"])
+        self.assertNotIn("priority", finding["properties"])
 
         evidence = schema["$defs"]["evidence"]
         self.assertEqual(evidence["required"], ["excerpt", "reason"])

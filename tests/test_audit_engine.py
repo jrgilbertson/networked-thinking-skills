@@ -35,7 +35,7 @@ class AuditEngineTest(unittest.TestCase):
 
         self.assertEqual(row["priority"], "P0")
         self.assertLessEqual(row["score"], 49)
-        self.assertIn("multi_note_file", {finding["code"] for finding in row["findings"]})
+        self.assertIn("multi_note", {finding["code"] for finding in row["findings"]})
 
     def test_clean_dae_note_is_clean(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
@@ -293,7 +293,7 @@ Sources:
         )
 
         codes = {finding["code"] for finding in row["findings"]}
-        self.assertNotIn("missing_dae", codes)
+        self.assertNotIn("invalid_dae", codes)
         self.assertNotIn("misfiled_reference", codes)
 
     def test_cloze_card_with_extra_dae_is_valid(self):
@@ -321,7 +321,7 @@ END
             stem="202601010202 CAP Theorem",
         )
 
-        self.assertNotIn("missing_dae", {finding["code"] for finding in row["findings"]})
+        self.assertNotIn("invalid_dae", {finding["code"] for finding in row["findings"]})
 
     def test_overlong_definition_gets_specific_finding(self):
         row = self.audit_single_note(
@@ -348,7 +348,7 @@ END
 
         codes = {finding["code"] for finding in row["findings"]}
         self.assertIn("definition_too_long", codes)
-        self.assertNotIn("missing_dae", codes)
+        self.assertNotIn("invalid_dae", codes)
 
     def test_code_blocks_do_not_create_multi_note_findings(self):
         row = self.audit_single_note(
@@ -378,8 +378,8 @@ END
         )
 
         codes = {finding["code"] for finding in row["findings"]}
-        self.assertIn("missing_dae", codes)
-        self.assertNotIn("multi_note_file", codes)
+        self.assertIn("invalid_dae", codes)
+        self.assertNotIn("multi_note", codes)
 
     def test_interview_template_is_misfiled_reference(self):
         row = self.audit_single_note(

@@ -1,8 +1,8 @@
 # Rubric Companion
 
 This is the human-readable companion for the audit rubric. The source of truth
-is [`shared/references/audit-rubric.md`](../shared/references/audit-rubric.md).
-Change that reference first when changing scoring doctrine.
+is [`shared/scripts/finding_codes.py`](../shared/scripts/finding_codes.py).
+Change that module first when changing scoring doctrine.
 
 ## Score
 
@@ -12,8 +12,9 @@ Scores use a single loss budget from finding codes:
 score = clamp(100 - total_loss, 1, 100)
 ```
 
-Finding priority labels can help explain a finding, but they do not feed the
-score. The loss table and de-duplication rules live in the source rubric.
+Finding codes must come from the controlled vocabulary. Unknown codes fail
+validation. The loss table and de-duplication rules live in the source module
+and the generated model prompt.
 
 ## Bucket
 

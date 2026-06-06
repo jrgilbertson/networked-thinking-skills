@@ -28,7 +28,7 @@ Use SemVer for package and contract versions. Treat these as separate contracts:
 - Package version: release and install compatibility.
 - Schema version: JSON input and output shape.
 - Doctrine version: Networked Thinking note rules.
-- Rubric version: scoring dimensions, weights, priorities, and clean-note rules.
+- Rubric version: finding-code loss table, bucket bands, and clean-note rules.
 - Prompt version: model-judgment instructions and expected response contract.
 
 Do not reuse one version bump to imply all contracts changed. Bump only the

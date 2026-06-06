@@ -15,6 +15,7 @@ SKILL_REFERENCES = {
     "atomic-note-audit": [
         "../../shared/references/doctrine.md",
         "../../shared/references/audit-rubric.md",
+        "../../shared/references/model-judgment-prompt.md",
         "../../shared/references/remediation-context.md",
         "../../shared/references/install-matrix.md",
     ],
@@ -85,7 +86,13 @@ class SkillIntegrityTest(unittest.TestCase):
                     self.assertFalse(all(path.exists() for path in resolved_paths))
 
     def test_shared_references_exist(self):
-        for name in ["doctrine.md", "audit-rubric.md", "remediation-context.md", "install-matrix.md"]:
+        for name in [
+            "doctrine.md",
+            "audit-rubric.md",
+            "model-judgment-prompt.md",
+            "remediation-context.md",
+            "install-matrix.md",
+        ]:
             with self.subTest(reference=name):
                 self.assertTrue((ROOT / "shared/references" / name).exists())
 

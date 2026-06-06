@@ -11,6 +11,7 @@ Use this skill to audit every Markdown file in a configured Atomic Notes folder,
 
 - `../../shared/references/doctrine.md`
 - `../../shared/references/audit-rubric.md`
+- `../../shared/references/model-judgment-prompt.md`
 - `../../shared/references/remediation-context.md`
 - `../../shared/references/install-matrix.md`
 
@@ -46,6 +47,9 @@ content or excerpts to the model provider used by the active agent. Confirm the
 user accepts that provider/tool trust boundary before running exhaustive model
 judgment on private vault content.
 
+Use `../../shared/references/model-judgment-prompt.md` verbatim when asking an
+LLM for model judgment. The prompt is generated from the scoring vocabulary
+source of truth and must stay aligned with `shared/scripts/finding_codes.py`.
 Model output must be strict JSON and validated before it affects scoring.
 
 ## Remediation

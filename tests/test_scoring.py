@@ -14,51 +14,58 @@ class ScoringTest(unittest.TestCase):
         score = compute_final_score([])
         self.assertEqual(score, 100)
 
-    def test_score_uses_finding_loss_not_priority_label(self):
-        findings = [{"priority": "P0", "code": "missing_parent"}]
-        self.assertEqual(compute_final_score(findings), 92)
-
     def test_invalid_dae_suppresses_dae_component_losses(self):
         findings = [
-            {"priority": "P1", "code": "missing_dae"},
-            {"priority": "P2", "code": "weak_dae"},
-            {"priority": "P2", "code": "model_weak_analogy"},
+            {"code": "invalid_dae"},
+            {"code": "weak_dae"},
+            {"code": "weak_analogy"},
         ]
         self.assertEqual(compute_loss(findings), 35)
         self.assertEqual(compute_final_score(findings), 65)
 
     def test_dae_component_losses_are_capped(self):
         findings = [
-            {"priority": "P1", "code": "definition_too_long"},
-            {"priority": "P2", "code": "model_weak_definition"},
-            {"priority": "P2", "code": "model_weak_analogy"},
-            {"priority": "P2", "code": "model_weak_example"},
+            {"code": "definition_too_long"},
+            {"code": "weak_definition"},
+            {"code": "weak_analogy"},
+            {"code": "weak_example"},
         ]
         self.assertEqual(compute_loss(findings), 35)
         self.assertEqual(compute_final_score(findings), 65)
 
-    def test_factual_risk_aliases_count_once(self):
+    def test_duplicate_codes_count_once(self):
         findings = [
-            {"priority": "P2", "code": "factual_risk"},
-            {"priority": "P2", "code": "model_factual_risk"},
+            {"code": "factual_risk"},
+            {"code": "factual_risk"},
         ]
         self.assertEqual(canonicalize_findings(findings), {"factual_risk"})
         self.assertEqual(compute_final_score(findings), 92)
 
     def test_multi_note_suppresses_generic_not_atomic(self):
         findings = [
-            {"priority": "P0", "code": "multi_note_file"},
-            {"priority": "P0", "code": "model_not_atomic"},
+            {"code": "multi_note"},
+            {"code": "not_atomic"},
         ]
         self.assertEqual(canonicalize_findings(findings), {"multi_note"})
         self.assertEqual(compute_final_score(findings), 55)
 
-    def test_unknown_finding_code_gets_default_loss(self):
-        findings = [{"priority": "P3", "code": "future_quality_signal"}]
-        self.assertEqual(compute_final_score(findings), 92)
+    def test_unknown_finding_code_fails(self):
+        findings = [{"code": "future_quality_signal"}]
+        with self.assertRaises(ValueError):
+            compute_final_score(findings)
 
     def test_score_never_drops_below_one(self):
-        findings = [{"priority": "P0", "code": f"unknown_{index}"} for index in range(20)]
+        findings = [
+            {"code": code}
+            for code in [
+                "multi_note",
+                "invalid_dae",
+                "misfiled_reference",
+                "not_atomic",
+                "malformed_anki",
+                "unclear",
+            ]
+        ]
         self.assertEqual(compute_final_score(findings), 1)
 
     def test_priority_is_derived_from_score_bands(self):

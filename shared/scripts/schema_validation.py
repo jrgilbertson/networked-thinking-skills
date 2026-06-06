@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from shared.scripts.finding_codes import ALLOWED_FINDING_CODES, FINDING_RECOMMENDATION_MODES
+
 
 class ValidationError(Exception):
     pass
@@ -49,9 +51,9 @@ RUN_MANIFEST_REQUIRED = {
 
 ROW_STATUSES = {"complete", "reused_cache", "error", "skipped"}
 ROW_STATUS_COUNT_KEYS = ("complete", "reused_cache", "error", "skipped")
-FINDING_PRIORITY_KEYS = ("P0", "P1", "P2", "P3")
-PRIORITIES = {*FINDING_PRIORITY_KEYS, None}
-PRIORITY_COUNT_KEYS = (*FINDING_PRIORITY_KEYS, "no_change")
+PRIORITY_KEYS = ("P0", "P1", "P2", "P3")
+PRIORITIES = {*PRIORITY_KEYS, None}
+PRIORITY_COUNT_KEYS = (*PRIORITY_KEYS, "no_change")
 CACHE_STATUSES = {"none", "miss", "hit", "partial"}
 VALIDATION_STATUSES = {"passed", "failed", "not_run"}
 OUTPUT_KEYS = {"audit_rows", "model_judgments", "remediation_plan", "manifest"}
@@ -63,14 +65,7 @@ DIMENSION_KEYS = (
     "connections",
     "metadata_card_safety",
 )
-RECOMMENDATION_MODES = {
-    "improve-in-place",
-    "split-multi-note",
-    "rehome-non-DAE",
-    "link-parent",
-    "mark-factual-risk",
-    "duplicate-overlap-review",
-}
+RECOMMENDATION_MODES = set(FINDING_RECOMMENDATION_MODES.values())
 
 
 @dataclass(frozen=True)
@@ -226,6 +221,12 @@ def _validate_non_empty_string(value: Any, label: str) -> None:
         raise ValidationError(f"{label} must be a non-empty string")
 
 
+def _validate_finding_code(value: Any, label: str) -> None:
+    _validate_non_empty_string(value, label)
+    if value not in ALLOWED_FINDING_CODES:
+        raise ValidationError(f"Invalid {label}: {value}")
+
+
 def _validate_dimensions(dimensions: Any) -> None:
     if not isinstance(dimensions, dict):
         raise ValidationError("dimensions must be an object")
@@ -242,11 +243,9 @@ def _validate_findings(findings: Any) -> None:
     for index, finding in enumerate(findings):
         if not isinstance(finding, dict):
             raise ValidationError(f"findings[{index}] must be an object")
-        _require_keys(finding, {"priority", "code", "message"})
-        _reject_extra_keys(finding, {"priority", "code", "message"}, f"findings[{index}]")
-        if finding["priority"] not in FINDING_PRIORITY_KEYS:
-            raise ValidationError(f"Invalid findings[{index}].priority: {finding['priority']}")
-        _validate_non_empty_string(finding["code"], f"findings[{index}].code")
+        _require_keys(finding, {"code", "message"})
+        _reject_extra_keys(finding, {"code", "message"}, f"findings[{index}]")
+        _validate_finding_code(finding["code"], f"findings[{index}].code")
         _validate_non_empty_string(finding["message"], f"findings[{index}].message")
 
 

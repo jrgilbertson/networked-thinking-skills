@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
+from shared.scripts.finding_codes import ALLOWED_FINDING_CODES
 from shared.scripts.schema_validation import (
     ValidationError,
     validate_audit_row,
@@ -182,6 +183,12 @@ class SchemaValidationTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_audit_row(row, default_scan=True)
 
+    def test_unknown_finding_code_fails(self):
+        row = dict(VALID_ROW)
+        row["findings"] = [{"code": "weak_connection", "message": "Not an allowed code."}]
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
     def test_out_of_range_score_fails(self):
         row = dict(VALID_ROW)
         row["score"] = 101
@@ -206,6 +213,14 @@ class SchemaValidationTest(unittest.TestCase):
     def test_model_judgment_schema_defines_factual_risk_as_boolean(self):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["properties"]["factual_risk"]["type"], "boolean")
+
+    def test_schema_finding_code_enums_match_source_of_truth(self):
+        audit_schema = json.loads(AUDIT_ROW_SCHEMA_PATH.read_text(encoding="utf-8"))
+        model_schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
+        expected = list(ALLOWED_FINDING_CODES)
+
+        self.assertEqual(audit_schema["$defs"]["finding"]["properties"]["code"]["enum"], expected)
+        self.assertEqual(model_schema["$defs"]["finding"]["properties"]["code"]["enum"], expected)
 
     def test_valid_run_manifest_passes(self):
         validate_run_manifest(dict(VALID_MANIFEST))
