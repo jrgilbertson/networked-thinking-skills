@@ -1,9 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://networked-thinking.local/schemas/remediation-plan.schema.json",
-  "title": "Atomic Note Remediation Plan",
+  "$id": "https://networked-thinking.dev/schemas/remediation-plan.schema.json",
   "type": "object",
-  "additionalProperties": false,
   "required": [
     "plan_version",
     "audit_run_id",
@@ -33,79 +31,9 @@
     "operations": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/operation"
+        "type": "object"
       }
     }
   },
-  "$defs": {
-    "operation": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "operation_id",
-        "operation_type",
-        "note_path",
-        "priority",
-        "reason"
-      ],
-      "properties": {
-        "operation_id": {
-          "type": "string",
-          "minLength": 1
-        },
-        "operation_type": {
-          "type": "string",
-          "enum": [
-            "edit",
-            "split",
-            "relink",
-            "delete"
-          ]
-        },
-        "note_path": {
-          "type": "string",
-          "minLength": 1
-        },
-        "target_path": {
-          "type": "string"
-        },
-        "priority": {
-          "type": "string",
-          "enum": [
-            "P0",
-            "P1",
-            "P2",
-            "P3"
-          ]
-        },
-        "reason": {
-          "type": "string",
-          "minLength": 1
-        },
-        "edits": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/edit"
-          }
-        }
-      }
-    },
-    "edit": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "section",
-        "replacement"
-      ],
-      "properties": {
-        "section": {
-          "type": "string",
-          "minLength": 1
-        },
-        "replacement": {
-          "type": "string"
-        }
-      }
-    }
-  }
+  "additionalProperties": false
 }
