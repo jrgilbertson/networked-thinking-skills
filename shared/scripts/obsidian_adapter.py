@@ -21,12 +21,15 @@ class ObsidianAdapter:
         return shutil.which(self.binary) is not None
 
     def run(self, args: list[str]) -> CommandResult:
-        completed = subprocess.run(
-            [self.binary, *args],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            completed = subprocess.run(
+                [self.binary, *args],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        except OSError as exc:
+            return CommandResult(ok=False, stdout="", stderr=str(exc), returncode=126)
         return CommandResult(
             ok=completed.returncode == 0,
             stdout=completed.stdout,

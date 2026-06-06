@@ -89,6 +89,31 @@ class ObsidianPreflightTest(unittest.TestCase):
         self.assertEqual(return_code, 3)
         self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=missing")
 
+    def test_require_cli_launch_oserror_returns_4(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skills_root = Path(tmp)
+            _create_required_skills(skills_root)
+            stdout = io.StringIO()
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value="/tmp/obsidian"):
+                with patch(
+                    "shared.scripts.obsidian_adapter.subprocess.run",
+                    side_effect=OSError("cannot execute"),
+                ):
+                    with contextlib.redirect_stdout(stdout):
+                        return_code = main(
+                            [
+                                "--skills-root",
+                                str(skills_root),
+                                "--require-cli",
+                                "--obsidian-binary",
+                                "obsidian",
+                            ]
+                        )
+
+        self.assertEqual(return_code, 4)
+        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
+
     def test_require_cli_help_nonzero_returns_4(self):
         class FakeObsidianAdapter:
             def __init__(self, binary: str = "obsidian") -> None:
