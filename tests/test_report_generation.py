@@ -47,6 +47,8 @@ class ReportGenerationTest(unittest.TestCase):
             "## Remediation Next Steps",
         ]:
             self.assertIn(heading, report)
+        self.assertIn("| Note | Score | Clean | Findings | Recommendations |", report)
+        self.assertIn("|---|---:|:---:|---|---|", report)
 
     def test_report_renders_recommendation_objects_without_dict_repr(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
@@ -59,15 +61,17 @@ class ReportGenerationTest(unittest.TestCase):
     def test_report_lists_clean_and_factual_risk_notes(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
-        self.assertIn("## Clean Notes\n\n- [[202601010101 Clean DAE note]]", report)
-        self.assertIn("- [[202601010107 Optional Anki note]]", report)
-        self.assertIn("## Factual-Risk Notes\n\n- [[202601010106 Factual risk note]]", report)
+        self.assertIn("## Clean Notes\n\n| Note | Score | Clean | Findings | Recommendations |", report)
+        self.assertIn("| [[202601010101 Clean DAE note]] | 100 | yes | none | none |", report)
+        self.assertIn("| [[202601010107 Optional Anki note]] | 100 | yes | none | none |", report)
+        self.assertIn("| [[202601010106 Factual risk note]] | 69 | no |", report)
         self.assertIn("mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.", report)
 
     def test_report_includes_duplicate_overlap_candidate(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
-        self.assertIn("## Duplicate Or Overlap Candidates\n\n- [[202601010109 Duplicate candidate note]]", report)
+        self.assertIn("## Duplicate Or Overlap Candidates\n\n| Note | Score | Clean | Findings | Recommendations |", report)
+        self.assertIn("| [[202601010109 Duplicate candidate note]] | 89 | no |", report)
         self.assertIn("duplicate_overlap: Review this note against related notes for possible overlap.", report)
         self.assertIn("duplicate-overlap-review: Review this note against related notes for possible overlap.", report)
 

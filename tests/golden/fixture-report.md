@@ -10,37 +10,51 @@
 
 ## P0 Critical Remediation
 
-- [[202601010103 Multi note bundle]] | score 37 | clean no | findings: missing_dae: Add complete Definition, Analogy, and Example sections.; missing_parent: Link this note from a structure note.; multi_note_file: Split bundled ideas into separate atomic notes.; weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | recommendations: improve-in-place: Add complete Definition, Analogy, and Example sections.; link-parent: Link this note from a structure note.; split-multi-note: Split bundled ideas into separate atomic notes.; improve-in-place: Strengthen the DAE content with concrete, self-contained explanations.
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010103 Multi note bundle]] | 37 | no | missing_dae: Add complete Definition, Analogy, and Example sections.<br>missing_parent: Link this note from a structure note.<br>multi_note_file: Split bundled ideas into separate atomic notes.<br>weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | improve-in-place: Add complete Definition, Analogy, and Example sections.<br>link-parent: Link this note from a structure note.<br>split-multi-note: Split bundled ideas into separate atomic notes.<br>improve-in-place: Strengthen the DAE content with concrete, self-contained explanations. |
 
 ## P1 High-Impact Remediation
 
-- [[202601010102 Weak DAE note]] | score 62 | clean no | findings: missing_dae: Add complete Definition, Analogy, and Example sections.; missing_parent: Link this note from a structure note.; weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | recommendations: improve-in-place: Add complete Definition, Analogy, and Example sections.; link-parent: Link this note from a structure note.; improve-in-place: Strengthen the DAE content with concrete, self-contained explanations.
-- [[202601010104 Misfiled reference note]] | score 44 | clean no | findings: missing_dae: Add complete Definition, Analogy, and Example sections.; missing_parent: Link this note from a structure note.; misfiled_reference: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.; weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | recommendations: improve-in-place: Add complete Definition, Analogy, and Example sections.; link-parent: Link this note from a structure note.; rehome-non-DAE: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.; improve-in-place: Strengthen the DAE content with concrete, self-contained explanations.
-- [[202601010105 Missing parent note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note. | recommendations: link-parent: Link this note from a structure note.
-- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.
-- [[202601010108 Malformed Anki note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; malformed_anki: Balance START and END markers for Anki card blocks. | recommendations: link-parent: Link this note from a structure note.; improve-in-place: Balance START and END markers for Anki card blocks.
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010102 Weak DAE note]] | 62 | no | missing_dae: Add complete Definition, Analogy, and Example sections.<br>missing_parent: Link this note from a structure note.<br>weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | improve-in-place: Add complete Definition, Analogy, and Example sections.<br>link-parent: Link this note from a structure note.<br>improve-in-place: Strengthen the DAE content with concrete, self-contained explanations. |
+| [[202601010104 Misfiled reference note]] | 44 | no | missing_dae: Add complete Definition, Analogy, and Example sections.<br>missing_parent: Link this note from a structure note.<br>misfiled_reference: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.<br>weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | improve-in-place: Add complete Definition, Analogy, and Example sections.<br>link-parent: Link this note from a structure note.<br>rehome-non-DAE: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.<br>improve-in-place: Strengthen the DAE content with concrete, self-contained explanations. |
+| [[202601010105 Missing parent note]] | 69 | no | missing_parent: Link this note from a structure note. | link-parent: Link this note from a structure note. |
+| [[202601010106 Factual risk note]] | 69 | no | missing_parent: Link this note from a structure note.<br>factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | link-parent: Link this note from a structure note.<br>mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. |
+| [[202601010108 Malformed Anki note]] | 69 | no | missing_parent: Link this note from a structure note.<br>malformed_anki: Balance START and END markers for Anki card blocks. | link-parent: Link this note from a structure note.<br>improve-in-place: Balance START and END markers for Anki card blocks. |
 
 ## P2 Meaningful Improvements
 
-- [[202601010109 Duplicate candidate note]] | score 89 | clean no | findings: duplicate_overlap: Review this note against related notes for possible overlap. | recommendations: duplicate-overlap-review: Review this note against related notes for possible overlap.
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010109 Duplicate candidate note]] | 89 | no | duplicate_overlap: Review this note against related notes for possible overlap. | duplicate-overlap-review: Review this note against related notes for possible overlap. |
 
 ## P3 Polish And Clean Notes
 
-- [[202601010101 Clean DAE note]] | score 100 | clean yes | findings: none | recommendations: none
-- [[202601010107 Optional Anki note]] | score 100 | clean yes | findings: none | recommendations: none
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010101 Clean DAE note]] | 100 | yes | none | none |
+| [[202601010107 Optional Anki note]] | 100 | yes | none | none |
 
 ## Clean Notes
 
-- [[202601010101 Clean DAE note]] | score 100 | clean yes | findings: none | recommendations: none
-- [[202601010107 Optional Anki note]] | score 100 | clean yes | findings: none | recommendations: none
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010101 Clean DAE note]] | 100 | yes | none | none |
+| [[202601010107 Optional Anki note]] | 100 | yes | none | none |
 
 ## Factual-Risk Notes
 
-- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010106 Factual risk note]] | 69 | no | missing_parent: Link this note from a structure note.<br>factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | link-parent: Link this note from a structure note.<br>mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. |
 
 ## Duplicate Or Overlap Candidates
 
-- [[202601010109 Duplicate candidate note]] | score 89 | clean no | findings: duplicate_overlap: Review this note against related notes for possible overlap. | recommendations: duplicate-overlap-review: Review this note against related notes for possible overlap.
+| Note | Score | Clean | Findings | Recommendations |
+|---|---:|:---:|---|---|
+| [[202601010109 Duplicate candidate note]] | 89 | no | duplicate_overlap: Review this note against related notes for possible overlap. | duplicate-overlap-review: Review this note against related notes for possible overlap. |
 
 ## Remediation Next Steps
 

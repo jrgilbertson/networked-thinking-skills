@@ -85,19 +85,27 @@ def _section(title: str, rows: list[dict[str, object]]) -> list[str]:
     if not rows:
         lines.append("- None")
         return lines
-    lines.extend(_note_line(row) for row in rows)
+    lines.extend(
+        [
+            "| Note | Score | Clean | Findings | Recommendations |",
+            "|---|---:|:---:|---|---|",
+        ]
+    )
+    lines.extend(_note_table_row(row) for row in rows)
     return lines
 
 
-def _note_line(row: dict[str, object]) -> str:
+def _note_table_row(row: dict[str, object]) -> str:
     note_link = str(row.get("note_link") or row.get("note_path") or "Unknown note")
     score = row.get("score")
     score_text = str(score) if isinstance(score, int) else "n/a"
     clean_text = "yes" if row.get("clean") is True else "no"
     return (
-        f"- {note_link} | score {score_text} | clean {clean_text} | "
-        f"findings: {_format_findings(row.get('findings'))} | "
-        f"recommendations: {_format_recommendations(row.get('recommendations'))}"
+        f"| {_escape_table_cell(note_link)} "
+        f"| {_escape_table_cell(score_text)} "
+        f"| {_escape_table_cell(clean_text)} "
+        f"| {_escape_table_cell(_format_findings(row.get('findings')))} "
+        f"| {_escape_table_cell(_format_recommendations(row.get('recommendations')))} |"
     )
 
 
@@ -112,7 +120,7 @@ def _format_findings(findings: object) -> str:
             rendered.append(f"{code}: {message}" if message else code)
         else:
             rendered.append(str(finding))
-    return "; ".join(rendered)
+    return "<br>".join(rendered)
 
 
 def _format_recommendations(recommendations: object) -> str:
@@ -126,7 +134,11 @@ def _format_recommendations(recommendations: object) -> str:
             rendered.append(f"{mode}: {message}" if message else mode)
         else:
             rendered.append(str(recommendation))
-    return "; ".join(rendered)
+    return "<br>".join(rendered)
+
+
+def _escape_table_cell(value: str) -> str:
+    return value.replace("\n", "<br>").replace("|", r"\|")
 
 
 def _priority_counts(
