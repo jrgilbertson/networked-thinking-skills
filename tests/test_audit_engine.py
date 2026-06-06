@@ -105,6 +105,150 @@ class AuditEngineTest(unittest.TestCase):
                 self.assertIsInstance(recommendation, dict)
                 self.assertEqual(set(recommendation), {"mode", "message"})
 
+    def test_basic_card_dae_with_sources_is_valid(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - stateless protocol
+---
+
+# Stateless Protocol
+
+TARGET DECK: General
+
+START
+Basic
+What is a stateless protocol?
+
+Back: A stateless protocol treats each transaction independently and does not retain session information from previous interactions.
+
+A stateless protocol is like a vending machine: each purchase starts fresh without memory of previous purchases.
+
+For example, HTTP processes each browser request without remembering which pages that browser previously requested.
+<!--ID: 1-->
+END
+
+Sources:
+
+- Synthetic source.
+""",
+            stem="202601010201 Stateless Protocol",
+        )
+
+        codes = {finding["code"] for finding in row["findings"]}
+        self.assertNotIn("missing_dae", codes)
+        self.assertNotIn("misfiled_reference", codes)
+
+    def test_cloze_card_with_extra_dae_is_valid(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - CAP theorem
+---
+
+# CAP Theorem
+
+START
+Cloze
+The CAP theorem states that a distributed data system can only guarantee two out of three properties simultaneously:
+
+1. {{c1::Consistency}}: Nodes see the same data.
+2. {{c2::Availability}}: Requests receive responses.
+3. {{c3::Partition tolerance}}: The system continues through network failures.
+
+Extra: This can be compared to note-takers in separate rooms: they can keep identical notes or keep writing while separated, but not both.
+
+For example, during a network partition, Cassandra may stay available with temporary inconsistency while MongoDB may reject some requests to preserve consistency.
+END
+""",
+            stem="202601010202 CAP Theorem",
+        )
+
+        self.assertNotIn("missing_dae", {finding["code"] for finding in row["findings"]})
+
+    def test_overlong_definition_gets_specific_finding(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - replication
+---
+
+# Replication
+
+START
+Basic
+What is replication?
+
+Back: Replication is the process of maintaining identical copies of data across multiple servers or storage devices, with synchronization mechanisms ensuring changes propagate to all replicas. This technique serves multiple purposes including fault tolerance, improved read performance, reduced latency by placing data closer to users, disaster recovery, regional availability, and operational resilience during hardware failures or network outages.
+
+Replication is like a library maintaining identical books at several branches: each branch can serve readers while updates spread.
+
+For example, Netflix stores popular shows in multiple regions so Seattle and New York viewers can stream from nearby replicas.
+END
+""",
+            stem="202601010203 Replication",
+        )
+
+        codes = {finding["code"] for finding in row["findings"]}
+        self.assertIn("definition_too_long", codes)
+        self.assertNotIn("missing_dae", codes)
+
+    def test_code_blocks_do_not_create_multi_note_findings(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - list extension
+---
+
+# Extend Method
+
+TARGET DECK: General
+
+START
+Basic
+What does list.extend do?
+
+Back: The `.extend()` method mutates one list by appending every element from another iterable.
+
+```python
+# This comment is not a Markdown heading.
+items = [1]
+items.extend([2, 3])
+```
+END
+""",
+            stem="202601010204 Extend Method",
+        )
+
+        codes = {finding["code"] for finding in row["findings"]}
+        self.assertIn("missing_dae", codes)
+        self.assertNotIn("multi_note_file", codes)
+
+    def test_interview_template_is_misfiled_reference(self):
+        row = self.audit_single_note(
+            """---
+aliases: []
+---
+
+# Tell Me About a Time Your Team Was Falling Behind a Deadline
+
+This template will help you add structure and clarity to your answer.
+
+## Brainstorm
+
+- Success
+- Failure
+
+## STAR Method
+
+Use situation, task, action, and result.
+""",
+            stem="202601010205 Interview Template",
+            parent=False,
+        )
+
+        self.assertIn("misfiled_reference", {finding["code"] for finding in row["findings"]})
+
     def test_cli_writes_manifest_json(self):
         with tempfile.TemporaryDirectory() as tmp:
             jsonl_path = Path(tmp) / "audit.jsonl"
@@ -188,6 +332,19 @@ class AuditEngineTest(unittest.TestCase):
             capture_output=True,
             text=True,
         )
+
+    def audit_single_note(self, content: str, *, stem: str, parent: bool = True) -> dict[str, object]:
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            atomic_folder = vault / "Atomic Notes"
+            structure_folder = vault / "Structure Notes"
+            atomic_folder.mkdir()
+            structure_folder.mkdir()
+            (atomic_folder / f"{stem}.md").write_text(content, encoding="utf-8")
+            if parent:
+                (structure_folder / "Atomic Note Quality.md").write_text(f"- [[{stem}]]\n", encoding="utf-8")
+            rows, _ = audit_vault(vault, run_id="single-note-test")
+        return rows[0]
 
 
 if __name__ == "__main__":

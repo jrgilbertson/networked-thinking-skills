@@ -26,8 +26,8 @@ container.
 
 ## Example
 
-A note about "good atomic note quality" names the quality, shows a useful
-contrast, and links to [[Atomic Note Quality]] for review context.
+For example, a note about "good atomic note quality" names the quality, shows a
+useful contrast, and links to [[Atomic Note Quality]] for review context.
 
 ## Links
 
@@ -112,8 +112,8 @@ It is like a labeled folder left on a desk instead of filed in a cabinet.
 
 ## Example
 
-This note defines a review concern and gives a concrete example, but it omits
-any structure-note parent link.
+For example, this note defines a review concern and gives a concrete case, but
+it omits any structure-note parent link.
 
 ## Sources
 
@@ -129,7 +129,7 @@ tags:
 
 ## Definition
 
-All memory techniques always work for every learner.
+All memory techniques always work for every learner in every learning context.
 
 ## Analogy
 
@@ -137,8 +137,8 @@ This is like claiming one pair of shoes fits every person in every race.
 
 ## Example
 
-A learner who improves with spaced repetition proves that every learner will
-improve with any memory technique.
+For example, a learner who improves with spaced repetition proves that every
+learner will improve with any memory technique.
 
 ## Links
 
@@ -167,6 +167,9 @@ central claim instead of repeating the heading.
 It is like a smoke alarm for memory: useful when it checks the right risk.
 
 ## Example
+
+For example, an optional Anki card can ask which claim the note is testing
+without exposing the answer inside the prompt.
 
 START
 Basic
@@ -199,6 +202,9 @@ A malformed Anki note contains a card boundary that never closes.
 It is like opening a quotation mark and forgetting to close it.
 
 ## Example
+
+For example, this note opens an Anki card block and never writes the matching
+END marker.
 
 START
 Basic
@@ -233,8 +239,8 @@ It is like checking a single ingredient before adding it to a recipe.
 
 ## Example
 
-This overlaps with the quality criteria collected in [[Atomic Note Quality]] and
-may duplicate the clean DAE example.
+For example, this overlaps with the quality criteria collected in
+[[Atomic Note Quality]] and may duplicate the clean DAE example.
 
 ## Links
 

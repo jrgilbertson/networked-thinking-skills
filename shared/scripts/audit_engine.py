@@ -8,10 +8,12 @@ from typing import Iterable
 
 from shared.scripts.config import resolve_config
 from shared.scripts.markdown_parse import (
+    analyze_dae,
+    count_rendered_words,
     count_anki_blocks,
+    extract_structural_heading_lines,
     extract_frontmatter,
     extract_wikilinks,
-    has_dae_sections,
 )
 from shared.scripts.scoring import compute_clean, compute_final_score, highest_priority
 
@@ -29,6 +31,7 @@ DIMENSION_NAMES = (
 FINDING_MESSAGES = {
     "missing_frontmatter": "Add YAML frontmatter with the note's metadata.",
     "missing_dae": "Add complete Definition, Analogy, and Example sections.",
+    "definition_too_long": "Shorten the Definition to 10-50 rendered words.",
     "missing_parent": "Link this note from a structure note.",
     "malformed_anki": "Balance START and END markers for Anki card blocks.",
     "multi_note_file": "Split bundled ideas into separate atomic notes.",
@@ -40,6 +43,7 @@ FINDING_MESSAGES = {
 RECOMMENDATION_MODES = {
     "missing_frontmatter": "improve-in-place",
     "missing_dae": "improve-in-place",
+    "definition_too_long": "improve-in-place",
     "missing_parent": "link-parent",
     "malformed_anki": "improve-in-place",
     "multi_note_file": "split-multi-note",
@@ -51,6 +55,7 @@ RECOMMENDATION_MODES = {
 DIMENSION_PENALTIES = {
     "missing_frontmatter": {"structure": 20, "metadata_card_safety": 40},
     "missing_dae": {"structure": 35, "dae_quality": 60, "clarity": 20},
+    "definition_too_long": {"structure": 20, "dae_quality": 35, "clarity": 25},
     "missing_parent": {"connections": 60},
     "malformed_anki": {"metadata_card_safety": 50, "clarity": 10},
     "multi_note_file": {"structure": 30, "atomicity": 70, "clarity": 20},
@@ -64,7 +69,6 @@ UNIVERSAL_CLAIM_RE = re.compile(
     re.IGNORECASE,
 )
 HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
-WORD_RE = re.compile(r"\b[\w'-]+\b")
 
 
 def audit_vault(
@@ -154,23 +158,27 @@ def _findings_for_note(
     structure_targets: set[str],
 ) -> list[dict[str, str]]:
     frontmatter, body = extract_frontmatter(content)
-    has_dae = has_dae_sections(content)
+    dae_analysis = analyze_dae(content)
+    has_dae = dae_analysis.present
     anki_counts = count_anki_blocks(content)
     finding_specs: list[tuple[str, str]] = []
 
     if frontmatter is None:
         finding_specs.append(("missing_frontmatter", "P1"))
     if not has_dae:
-        finding_specs.append(("missing_dae", "P1"))
+        if dae_analysis.definition_too_long:
+            finding_specs.append(("definition_too_long", "P1"))
+        else:
+            finding_specs.append(("missing_dae", "P1"))
     if path.stem not in structure_targets:
         finding_specs.append(("missing_parent", "P1"))
     if anki_counts["START"] != anki_counts["END"]:
         finding_specs.append(("malformed_anki", "P1"))
-    if _looks_like_multi_note(body, anki_counts):
+    if _looks_like_multi_note(content, anki_counts):
         finding_specs.append(("multi_note_file", "P0"))
     if _looks_like_reference_note(frontmatter, body, has_dae):
         finding_specs.append(("misfiled_reference", "P1"))
-    if _looks_like_weak_dae(body, has_dae):
+    if _looks_like_weak_dae(body, has_dae, dae_analysis.definition_too_long):
         finding_specs.append(("weak_dae", "P2"))
     if _contains_factual_risk(body):
         finding_specs.append(("factual_risk", "P2"))
@@ -208,14 +216,14 @@ def _normalize_wikilink_target(target: str) -> str:
     return PurePosixPath(target).stem
 
 
-def _looks_like_multi_note(body: str, anki_counts: dict[str, int]) -> bool:
+def _looks_like_multi_note(markdown: str, anki_counts: dict[str, int]) -> bool:
     complete_blocks = min(anki_counts["START"], anki_counts["END"])
     if complete_blocks > 1:
         return True
     top_level_headings = [
         heading
-        for hashes, heading in HEADING_RE.findall(body)
-        if hashes == "#" and heading.strip()
+        for _, level, heading in extract_structural_heading_lines(markdown)
+        if level == 1 and heading.strip()
     ]
     return len(top_level_headings) > 1
 
@@ -224,10 +232,24 @@ def _looks_like_reference_note(frontmatter: str | None, body: str, has_dae: bool
     if has_dae:
         return False
     text = f"{frontmatter or ''}\n{body}".casefold()
-    return "highlight:" in text or "source:" in text or "reference" in text
+    headings = {
+        heading.casefold()
+        for _, _, heading in extract_structural_heading_lines(body)
+    }
+    has_highlights = "highlight:" in text or "highlights" in headings
+    has_source_frontmatter = bool(re.search(r"(?m)^source:[ \t]*\S", frontmatter or ""))
+    is_interview_template = (
+        {"brainstorm", "star method"}.issubset(headings)
+        or "this template will help you" in text
+        or re.search(r"(?m)^# [^\n]*(tell me about a time|how do you approach)", body, re.IGNORECASE)
+        is not None
+    )
+    return has_highlights or has_source_frontmatter or is_interview_template
 
 
-def _looks_like_weak_dae(body: str, has_dae: bool) -> bool:
+def _looks_like_weak_dae(body: str, has_dae: bool, definition_too_long: bool) -> bool:
+    if definition_too_long:
+        return False
     if not has_dae:
         return _word_count(body) < 80
     section_counts = _dae_section_word_counts(body)
@@ -265,7 +287,7 @@ def _dae_section_word_counts(body: str) -> dict[str, int]:
 
 
 def _word_count(text: str) -> int:
-    return len(WORD_RE.findall(text))
+    return count_rendered_words(text)
 
 
 def _dimensions_for_findings(findings: Iterable[dict[str, str]]) -> dict[str, int]:

@@ -18,6 +18,9 @@ It is like a smoke alarm for memory: useful when it checks the right risk.
 
 ## Example
 
+For example, an optional Anki card can ask which claim the note is testing
+without exposing the answer inside the prompt.
+
 START
 Basic
 What should an optional Anki card test?

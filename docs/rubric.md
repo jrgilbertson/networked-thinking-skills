@@ -29,6 +29,10 @@ A clean note has no P0-P2 findings, scores at least 90, has no pending model
 audit flag, and has no pending fact-check-required flag. P3 findings can still
 exist on a clean note.
 
+An overlong Definition is a P1 DAE doctrine failure reported as
+`definition_too_long`. This means the note should be shortened in place, not
+automatically split or rehomed.
+
 ## How To Read Results
 
 - Use priority to decide work order.

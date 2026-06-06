@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from pathlib import PurePosixPath
 import re
 
 
@@ -10,6 +12,23 @@ FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1)[^\r\n])*?\1")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+[.)])[ \t]+")
+WORD_RE = re.compile(r"\b[\w'-]+\b")
+CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
+TIMESTAMP_PREFIX_RE = re.compile(r"^\d{12}\s+")
+BACK_LINE_RE = re.compile(r"^[ \t]*Back:[ \t]*(.*)$", re.IGNORECASE)
+EXTRA_LINE_RE = re.compile(r"^[ \t]*Extra:[ \t]*(.*)$", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class DaeAnalysis:
+    present: bool
+    shape: str | None = None
+    definition_word_count: int | None = None
+    definition_too_short: bool = False
+    definition_too_long: bool = False
+    has_definition: bool = False
+    has_analogy: bool = False
+    has_example: bool = False
 
 
 def extract_frontmatter(markdown: str) -> tuple[str | None, str]:
@@ -297,7 +316,25 @@ def extract_headings(markdown: str) -> list[str]:
 
 def has_dae_sections(markdown: str) -> bool:
     headings = {heading.casefold() for heading in extract_headings(markdown)}
-    return {"definition", "analogy", "example"}.issubset(headings)
+    if {"definition", "analogy", "example"}.issubset(headings):
+        return True
+    return any(
+        analysis.has_definition and analysis.has_analogy and analysis.has_example
+        for analysis in (_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
+    )
+
+
+def analyze_dae(markdown: str) -> DaeAnalysis:
+    analyses = [_analyze_heading_dae(markdown)]
+    analyses.extend(_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
+    return max(analyses, key=_analysis_rank)
+
+
+def count_rendered_words(markdown: str) -> int:
+    text = _render_wikilinks_for_word_count(markdown)
+    text = CLOZE_RE.sub(lambda match: match.group(1), text)
+    text = HTML_COMMENT_RE.sub(" ", text)
+    return len(WORD_RE.findall(text))
 
 
 def count_anki_blocks(markdown: str) -> dict[str, int]:
@@ -306,3 +343,216 @@ def count_anki_blocks(markdown: str) -> dict[str, int]:
         if line in counts:
             counts[line] += 1
     return counts
+
+
+def _analysis_rank(analysis: DaeAnalysis) -> tuple[int, int, int, int]:
+    return (
+        int(analysis.present),
+        int(analysis.definition_too_long),
+        int(analysis.has_analogy) + int(analysis.has_example),
+        analysis.definition_word_count or 0,
+    )
+
+
+def _analyze_heading_dae(markdown: str) -> DaeAnalysis:
+    sections = _dae_heading_sections(markdown)
+    if not {"definition", "analogy", "example"}.issubset(sections):
+        return DaeAnalysis(present=False, shape="headings")
+    return _build_dae_analysis(
+        "headings",
+        definition=sections["definition"],
+        analogy_paragraphs=_prose_paragraphs(sections["analogy"]),
+        example_paragraphs=_prose_paragraphs(sections["example"]),
+    )
+
+
+def _analyze_anki_card_dae(card_text: str) -> DaeAnalysis:
+    card_type, body = _split_card_type(card_text)
+    if card_type == "basic":
+        return _analyze_basic_card_dae(body)
+    if card_type == "cloze":
+        return _analyze_cloze_card_dae(body)
+    return DaeAnalysis(present=False, shape=card_type or "anki")
+
+
+def _analyze_basic_card_dae(card_body: str) -> DaeAnalysis:
+    back_text = _extract_back_text(card_body)
+    if back_text is None:
+        return DaeAnalysis(present=False, shape="Basic")
+    paragraphs = _prose_paragraphs(back_text)
+    if not paragraphs:
+        return DaeAnalysis(present=False, shape="Basic")
+    return _build_dae_analysis(
+        "Basic",
+        definition=paragraphs[0],
+        analogy_paragraphs=paragraphs[1:],
+        example_paragraphs=paragraphs[1:],
+    )
+
+
+def _analyze_cloze_card_dae(card_body: str) -> DaeAnalysis:
+    before_extra, extra = _split_extra_text(card_body)
+    if extra is None:
+        return DaeAnalysis(present=False, shape="Cloze")
+    definition_paragraphs = _prose_paragraphs(before_extra)
+    if not definition_paragraphs:
+        return DaeAnalysis(present=False, shape="Cloze")
+    extra_paragraphs = _prose_paragraphs(extra)
+    return _build_dae_analysis(
+        "Cloze",
+        definition=definition_paragraphs[0],
+        analogy_paragraphs=extra_paragraphs,
+        example_paragraphs=extra_paragraphs,
+    )
+
+
+def _build_dae_analysis(
+    shape: str,
+    *,
+    definition: str,
+    analogy_paragraphs: list[str],
+    example_paragraphs: list[str],
+) -> DaeAnalysis:
+    definition_word_count = count_rendered_words(definition)
+    has_definition = definition_word_count > 0
+    has_analogy = any(_looks_like_analogy(paragraph) for paragraph in analogy_paragraphs)
+    has_example = any(_starts_with_example(paragraph) for paragraph in example_paragraphs)
+    definition_too_short = has_definition and definition_word_count < 10
+    definition_too_long = definition_word_count > 50
+    return DaeAnalysis(
+        present=(
+            has_definition
+            and not definition_too_short
+            and not definition_too_long
+            and has_analogy
+            and has_example
+        ),
+        shape=shape,
+        definition_word_count=definition_word_count if has_definition else None,
+        definition_too_short=definition_too_short,
+        definition_too_long=definition_too_long,
+        has_definition=has_definition,
+        has_analogy=has_analogy,
+        has_example=has_example,
+    )
+
+
+def _dae_heading_sections(markdown: str) -> dict[str, str]:
+    _, body = extract_frontmatter(markdown)
+    body_lines = body.splitlines()
+    heading_lines = [
+        (line_number, level, heading.casefold())
+        for line_number, level, heading in extract_structural_heading_lines(markdown)
+    ]
+    sections: dict[str, str] = {}
+    for index, (line_number, level, heading) in enumerate(heading_lines):
+        if heading not in {"definition", "analogy", "example"}:
+            continue
+        end_line = len(body_lines)
+        for next_line, next_level, _ in heading_lines[index + 1:]:
+            if next_level <= level:
+                end_line = next_line
+                break
+        sections[heading] = "\n".join(body_lines[line_number + 1:end_line]).strip()
+    return sections
+
+
+def _extract_anki_card_texts(markdown: str) -> list[str]:
+    _, body = extract_frontmatter(markdown)
+    body_lines = body.splitlines()
+    structural_lines = _structural_markdown(markdown).splitlines()
+    cards: list[str] = []
+    start_line: int | None = None
+
+    for index, line in enumerate(structural_lines):
+        if line == "START":
+            start_line = index
+            continue
+        if line == "END" and start_line is not None:
+            cards.append("\n".join(body_lines[start_line + 1:index]).strip())
+            start_line = None
+
+    return cards
+
+
+def _split_card_type(card_text: str) -> tuple[str | None, str]:
+    lines = card_text.splitlines()
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped:
+            return stripped.casefold(), "\n".join(lines[index + 1:])
+    return None, ""
+
+
+def _extract_back_text(card_body: str) -> str | None:
+    lines = card_body.splitlines()
+    for index, line in enumerate(lines):
+        match = BACK_LINE_RE.match(line)
+        if match:
+            return "\n".join([match.group(1), *lines[index + 1:]]).strip()
+    return None
+
+
+def _split_extra_text(card_body: str) -> tuple[str, str | None]:
+    lines = card_body.splitlines()
+    for index, line in enumerate(lines):
+        match = EXTRA_LINE_RE.match(line)
+        if match:
+            return (
+                "\n".join(lines[:index]).strip(),
+                "\n".join([match.group(1), *lines[index + 1:]]).strip(),
+            )
+    return card_body.strip(), None
+
+
+def _prose_paragraphs(markdown: str) -> list[str]:
+    markdown = _mask_fenced_code_blocks(markdown)
+    markdown = _mask_indented_code_blocks(markdown)
+    markdown = _mask_html_comments(markdown)
+    paragraphs = []
+    for paragraph in re.split(r"(?:\r?\n){2,}", markdown):
+        stripped = paragraph.strip()
+        if not stripped or _is_display_math_paragraph(stripped):
+            continue
+        if count_rendered_words(stripped) == 0:
+            continue
+        paragraphs.append(stripped)
+    return paragraphs
+
+
+def _is_display_math_paragraph(paragraph: str) -> bool:
+    stripped = paragraph.strip()
+    return stripped.startswith("$$") and stripped.endswith("$$")
+
+
+def _looks_like_analogy(paragraph: str) -> bool:
+    visible = _render_wikilinks_for_word_count(paragraph).casefold()
+    return bool(
+        re.search(r"\b(is|are|was|were) like\b", visible)
+        or re.search(r"\blike (a|an|the)\b", visible)
+        or "think of " in visible
+        or "consider " in visible
+        or "can be compared to" in visible
+    )
+
+
+def _starts_with_example(paragraph: str) -> bool:
+    return re.match(r"^[ \t]*(?:[-*+][ \t]+)?For example,(?:\s|$)", paragraph, re.IGNORECASE) is not None
+
+
+def _render_wikilinks_for_word_count(markdown: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        if match.group(1):
+            return ""
+        link = match.group(2)
+        if "|" in link:
+            visible = link.split("|", 1)[1]
+        else:
+            visible = link.split("#", 1)[0].strip()
+            if visible.endswith(".md"):
+                visible = visible[:-3]
+            visible = PurePosixPath(visible).name
+            visible = TIMESTAMP_PREFIX_RE.sub("", visible)
+        return visible.strip()
+
+    return WIKILINK_RE.sub(replace, markdown)

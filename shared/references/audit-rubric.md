@@ -17,3 +17,7 @@ Priority means remediation urgency:
 - P3: polish.
 
 A clean note has no P0-P2 findings, score at least 90, no pending model-audit flag, and no pending fact-check-required flag. P3 findings are allowed.
+
+DAE doctrine failures include missing DAE content and overlong Definitions. A
+Definition longer than 50 rendered words receives `definition_too_long` so it can
+be shortened without misclassifying the note as a multi-note or reference note.
