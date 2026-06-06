@@ -274,6 +274,21 @@ END
         self.assertEqual(count_anki_blocks(markdown), {"START": 0, "END": 0})
         self.assertFalse(has_dae_sections(markdown))
 
+    def test_html_comment_opener_inside_fenced_code_does_not_hide_later_structure(self):
+        markdown = """```markdown
+<!--
+```
+## Definition
+## Analogy
+## Example
+[[Outside Fence]]
+-->
+[[After Closer]]
+"""
+        self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
+        self.assertTrue(has_dae_sections(markdown))
+        self.assertEqual(extract_wikilinks(markdown), ["Outside Fence", "After Closer"])
+
     def test_tab_indented_fence_marker_does_not_hide_later_structure(self):
         markdown = "\t```\n## Definition\n[[Real Note]]\n"
         self.assertEqual(extract_headings(markdown), ["Definition"])
@@ -340,6 +355,10 @@ Example text.
     def test_extract_wikilinks_ignores_long_inline_code_with_shorter_backticks(self):
         markdown = "Ignore ``[[Hidden]] ` literal`` keep [[Real]].\n"
         self.assertEqual(extract_wikilinks(markdown), ["Real"])
+
+    def test_html_comment_opener_inside_inline_code_does_not_hide_later_links(self):
+        markdown = "`<!--` [[Outside Inline]] --> [[After Closer]]\n"
+        self.assertEqual(extract_wikilinks(markdown), ["Outside Inline", "After Closer"])
 
     def test_stray_inline_code_ticks_do_not_mask_note_structure_across_blocks(self):
         markdown = """`stray

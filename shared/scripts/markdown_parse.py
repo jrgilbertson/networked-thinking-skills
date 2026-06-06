@@ -222,10 +222,10 @@ def _mask_inline_code_spans(markdown: str) -> str:
 
 def _structural_markdown(markdown: str) -> str:
     _, body = extract_frontmatter(markdown)
-    without_html_comments = _mask_html_comments(body)
-    without_fenced_code = _mask_fenced_code_blocks(without_html_comments)
+    without_fenced_code = _mask_fenced_code_blocks(body)
     without_indented_code = _mask_indented_code_blocks(without_fenced_code)
-    return _mask_inline_code_spans(without_indented_code)
+    without_inline_code = _mask_inline_code_spans(without_indented_code)
+    return _mask_html_comments(without_inline_code)
 
 
 def extract_wikilinks(markdown: str) -> list[str]:
