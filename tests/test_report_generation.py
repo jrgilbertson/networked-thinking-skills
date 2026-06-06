@@ -157,6 +157,50 @@ class ReportGenerationTest(unittest.TestCase):
             self.assertIn(str(invalid_manifest), result.stderr)
             self.assertIn("Missing required keys", result.stderr)
 
+    def test_generate_report_rejects_mismatched_manifest_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mismatched_manifest_data = load_fixture_manifest()
+            mismatched_manifest_data["run_id"] = "other-run"
+            mismatched_manifest_data["total_notes"] = 10
+            mismatched_manifest_data["row_status_counts"] = {
+                "complete": 10,
+                "reused_cache": 0,
+                "error": 0,
+                "skipped": 0,
+            }
+            mismatched_manifest_data["priority_counts"] = {
+                "P0": 0,
+                "P1": 10,
+                "P2": 0,
+                "P3": 0,
+            }
+            mismatched_manifest = Path(tmp) / "manifest.json"
+            mismatched_manifest.write_text(
+                json.dumps(mismatched_manifest_data),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "report.md"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.generate_report",
+                    "--jsonl",
+                    str(AUDIT_JSONL),
+                    "--manifest",
+                    str(mismatched_manifest),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            self.assertIn("manifest run_id does not match audit rows", result.stderr)
+
     def test_generate_report_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "direct-report.md"

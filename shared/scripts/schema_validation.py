@@ -46,7 +46,9 @@ RUN_MANIFEST_REQUIRED = {
 }
 
 ROW_STATUSES = {"complete", "reused_cache", "error", "skipped"}
+ROW_STATUS_COUNT_KEYS = ("complete", "reused_cache", "error", "skipped")
 PRIORITIES = {"P0", "P1", "P2", "P3", None}
+PRIORITY_COUNT_KEYS = ("P0", "P1", "P2", "P3")
 CACHE_STATUSES = {"none", "miss", "hit", "partial"}
 VALIDATION_STATUSES = {"passed", "failed", "not_run"}
 OUTPUT_KEYS = {"audit_rows", "model_judgments", "remediation_plan", "manifest"}
@@ -112,12 +114,12 @@ def validate_run_manifest(manifest: dict[str, Any]) -> None:
 
     _validate_count_mapping(
         manifest["row_status_counts"],
-        required_keys=set(ROW_STATUSES),
+        required_keys=set(ROW_STATUS_COUNT_KEYS),
         label="row_status_counts",
     )
     _validate_count_mapping(
         manifest["priority_counts"],
-        required_keys={"P0", "P1", "P2", "P3"},
+        required_keys=set(PRIORITY_COUNT_KEYS),
         label="priority_counts",
     )
 
@@ -135,6 +137,24 @@ def validate_run_manifest(manifest: dict[str, Any]) -> None:
     errors = manifest["errors"]
     if not isinstance(errors, list) or not all(isinstance(error, str) for error in errors):
         raise ValidationError("errors must be an array of strings")
+
+
+def validate_audit_run_pair(rows: list[dict[str, Any]], manifest: dict[str, Any]) -> None:
+    expected_run_id = manifest["run_id"]
+    row_run_ids = {row.get("run_id") for row in rows}
+    if row_run_ids != {expected_run_id}:
+        raise ValidationError("manifest run_id does not match audit rows")
+
+    if manifest["total_notes"] != len(rows):
+        raise ValidationError("manifest total_notes does not match audit row count")
+
+    row_status_counts = _count_row_field(rows, "row_status", ROW_STATUS_COUNT_KEYS)
+    if manifest["row_status_counts"] != row_status_counts:
+        raise ValidationError("manifest row_status_counts do not match audit rows")
+
+    priority_counts = _count_row_field(rows, "priority", PRIORITY_COUNT_KEYS)
+    if manifest["priority_counts"] != priority_counts:
+        raise ValidationError("manifest priority_counts do not match audit rows")
 
 
 def _reject_extra_keys(data: dict[str, Any], allowed_keys: set[str], label: str) -> None:
@@ -155,3 +175,17 @@ def _validate_count_mapping(data: Any, *, required_keys: set[str], label: str) -
 
 def _is_non_negative_int(value: Any) -> bool:
     return type(value) is int and value >= 0
+
+
+def _count_row_field(
+    rows: list[dict[str, Any]],
+    field: str,
+    keys: tuple[str, ...],
+) -> dict[str, int]:
+    counts = {key: 0 for key in keys}
+    for row in rows:
+        value = row.get(field)
+        if value not in counts:
+            raise ValidationError(f"audit row {field} cannot be counted: {value}")
+        counts[value] += 1
+    return counts

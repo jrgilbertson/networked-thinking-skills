@@ -9,7 +9,11 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from shared.scripts.reporting import render_markdown_report
-from shared.scripts.schema_validation import ValidationError, validate_run_manifest
+from shared.scripts.schema_validation import (
+    ValidationError,
+    validate_audit_run_pair,
+    validate_run_manifest,
+)
 from shared.scripts.validate_jsonl import validate_jsonl_file
 
 
@@ -19,6 +23,7 @@ def main(argv: list[str] | None = None) -> int:
         validate_jsonl_file(args.jsonl, default_scan=True)
         rows = _read_jsonl(args.jsonl)
         manifest = _read_manifest(args.manifest)
+        validate_audit_run_pair(rows, manifest)
         report = render_markdown_report(rows, manifest)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report, encoding="utf-8")

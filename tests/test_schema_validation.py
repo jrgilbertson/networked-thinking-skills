@@ -7,7 +7,12 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from shared.scripts.schema_validation import ValidationError, validate_audit_row, validate_run_manifest
+from shared.scripts.schema_validation import (
+    ValidationError,
+    validate_audit_row,
+    validate_audit_run_pair,
+    validate_run_manifest,
+)
 from shared.scripts.validate_jsonl import main, validate_jsonl_file
 
 
@@ -190,6 +195,43 @@ class SchemaValidationTest(unittest.TestCase):
     def test_run_manifest_schema_requires_priority_counts_keys(self):
         schema = json.loads(RUN_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["$defs"]["priority_counts"]["required"], ["P0", "P1", "P2", "P3"])
+
+    def test_valid_audit_run_pair_passes(self):
+        validate_audit_run_pair([dict(VALID_ROW)], dict(VALID_MANIFEST))
+
+    def test_audit_run_pair_rejects_mismatched_run_id(self):
+        row = dict(VALID_ROW)
+        row["run_id"] = "other-run"
+        with self.assertRaises(ValidationError):
+            validate_audit_run_pair([row], dict(VALID_MANIFEST))
+
+    def test_audit_run_pair_rejects_total_notes_mismatch(self):
+        manifest = dict(VALID_MANIFEST)
+        manifest["total_notes"] = 2
+        with self.assertRaises(ValidationError):
+            validate_audit_run_pair([dict(VALID_ROW)], manifest)
+
+    def test_audit_run_pair_rejects_row_status_counts_mismatch(self):
+        manifest = dict(VALID_MANIFEST)
+        manifest["row_status_counts"] = {
+            "complete": 0,
+            "reused_cache": 1,
+            "error": 0,
+            "skipped": 0,
+        }
+        with self.assertRaises(ValidationError):
+            validate_audit_run_pair([dict(VALID_ROW)], manifest)
+
+    def test_audit_run_pair_rejects_priority_counts_mismatch(self):
+        manifest = dict(VALID_MANIFEST)
+        manifest["priority_counts"] = {
+            "P0": 0,
+            "P1": 1,
+            "P2": 0,
+            "P3": 0,
+        }
+        with self.assertRaises(ValidationError):
+            validate_audit_run_pair([dict(VALID_ROW)], manifest)
 
     def test_jsonl_file_validation_counts_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
