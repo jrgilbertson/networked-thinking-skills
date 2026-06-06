@@ -29,7 +29,6 @@ VALID_ROW = {
     "note_link": "[[202601010101 Example]]",
     "content_hash": "abc123",
     "modified_time": "2026-06-05T12:00:00Z",
-    "created_time": None,
     "score": 95,
     "priority": "P3",
     "clean": True,
@@ -47,7 +46,6 @@ VALID_ROW = {
     "model_judgment": None,
     "cache_status": "none",
     "factual_risk": False,
-    "factual_risk_reason": None,
     "fact_check_required": False,
     "config_snapshot": {},
     "doctrine_version": "1.0.0",
@@ -96,6 +94,24 @@ class SchemaValidationTest(unittest.TestCase):
     def test_missing_model_judgment_fails(self):
         row = dict(VALID_ROW)
         del row["model_judgment"]
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_extra_audit_row_key_fails(self):
+        row = dict(VALID_ROW)
+        row["extra"] = 1
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_created_time_none_fails(self):
+        row = dict(VALID_ROW)
+        row["created_time"] = None
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_factual_risk_reason_must_be_string_when_present(self):
+        row = dict(VALID_ROW)
+        row["factual_risk_reason"] = 123
         with self.assertRaises(ValidationError):
             validate_audit_row(row, default_scan=True)
 

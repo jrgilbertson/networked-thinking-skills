@@ -32,6 +32,7 @@ AUDIT_ROW_REQUIRED = {
     "rubric_version",
     "prompt_version",
 }
+AUDIT_ROW_ALLOWED = AUDIT_ROW_REQUIRED | {"created_time", "factual_risk_reason"}
 RUN_MANIFEST_REQUIRED = {
     "schema_version",
     "run_id",
@@ -86,6 +87,7 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
     if not isinstance(row, dict):
         raise ValidationError("row must be an object")
     _require_keys(row, AUDIT_ROW_REQUIRED)
+    _reject_extra_keys(row, AUDIT_ROW_ALLOWED, "row")
     for key in (
         "schema_version",
         "run_id",
@@ -132,6 +134,10 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
         or not note_target
     ):
         raise ValidationError("note_link must be an Obsidian wikilink")
+    if "created_time" in row:
+        _validate_non_empty_string(row["created_time"], "created_time")
+    if "factual_risk_reason" in row:
+        _validate_non_empty_string(row["factual_risk_reason"], "factual_risk_reason")
 
 
 def validate_run_manifest(manifest: dict[str, Any]) -> None:
