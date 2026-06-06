@@ -124,7 +124,7 @@ It is like labeling a tool by the job it usually performs: the label depends on 
 
 ## Example
 
-For example, MongoDB in its default configuration is a CP system, while Apache Cassandra is an AP system.
+For example, ExampleDB in its default configuration is a CP system, while ArchiveStore is an AP system.
 """,
             stem="202601010208 CAP Product Example",
         )
@@ -315,7 +315,7 @@ The CAP theorem states that a distributed data system can only guarantee two out
 
 Extra: This can be compared to note-takers in separate rooms: they can keep identical notes or keep writing while separated, but not both.
 
-For example, during a network partition, Cassandra may stay available with temporary inconsistency while MongoDB may reject some requests to preserve consistency.
+For example, during a network partition, one database may stay available with temporary inconsistency while another may reject some requests to preserve consistency.
 END
 """,
             stem="202601010202 CAP Theorem",
@@ -340,7 +340,7 @@ Back: Replication is the process of maintaining identical copies of data across 
 
 Replication is like a library maintaining identical books at several branches: each branch can serve readers while updates spread.
 
-For example, Netflix stores popular shows in multiple regions so Seattle and New York viewers can stream from nearby replicas.
+For example, a streaming service stores popular shows in multiple regions so viewers in different cities can stream from nearby replicas.
 END
 """,
             stem="202601010203 Replication",

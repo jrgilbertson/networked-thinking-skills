@@ -77,7 +77,7 @@ FACTUAL_RISK_CURRENT_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_SENSITIVE_RE = re.compile(
-    r"\b(law|legal|regulation|regulatory|gdpr|hipaa|tax|medical|medicine|health|disease|diagnosis|treatment|brain|hormone|testosterone|physiological|cardiovascular|financial|finance|revenue|profit|security|vulnerability|breach|encryption|privacy)\b",
+    r"\b(law|legal|regulation|regulatory|gdpr|hipaa|tax|medical|medicine|health|disease|diagnosis|treatment|brain|hormone|physiological|cardiovascular|financial|finance|revenue|profit|security|vulnerability|breach|encryption|privacy)\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
