@@ -42,7 +42,7 @@ VALID_ROW = {
         "connections": 90,
         "metadata_card_safety": 100
     },
-    "findings": [{"priority": "P3", "code": "minor_alias"}],
+    "findings": [{"priority": "P3", "code": "minor_alias", "message": "Minor alias issue."}],
     "recommendations": [{"mode": "improve-in-place", "message": "Tighten one alias."}],
     "model_judgment": None,
     "cache_status": "none",
@@ -123,6 +123,12 @@ class SchemaValidationTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_audit_row(row, default_scan=True)
 
+    def test_non_string_note_path_fails(self):
+        row = dict(VALID_ROW)
+        row["note_path"] = 123
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
     def test_string_factual_risk_fails(self):
         row = dict(VALID_ROW)
         row["factual_risk"] = "medium"
@@ -150,6 +156,12 @@ class SchemaValidationTest(unittest.TestCase):
     def test_invalid_cache_status_fails(self):
         row = dict(VALID_ROW)
         row["cache_status"] = "warm"
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_recommendations_must_be_list_of_objects(self):
+        row = dict(VALID_ROW)
+        row["recommendations"] = {"mode": "improve-in-place", "message": "Tighten one alias."}
         with self.assertRaises(ValidationError):
             validate_audit_row(row, default_scan=True)
 
@@ -198,6 +210,25 @@ class SchemaValidationTest(unittest.TestCase):
 
     def test_valid_audit_run_pair_passes(self):
         validate_audit_run_pair([dict(VALID_ROW)], dict(VALID_MANIFEST))
+
+    def test_empty_audit_run_pair_passes_with_zero_counts(self):
+        manifest = dict(VALID_MANIFEST)
+        manifest["run_id"] = "empty-run"
+        manifest["total_notes"] = 0
+        manifest["row_status_counts"] = {
+            "complete": 0,
+            "reused_cache": 0,
+            "error": 0,
+            "skipped": 0,
+        }
+        manifest["priority_counts"] = {
+            "P0": 0,
+            "P1": 0,
+            "P2": 0,
+            "P3": 0,
+        }
+
+        validate_audit_run_pair([], manifest)
 
     def test_audit_run_pair_rejects_mismatched_run_id(self):
         row = dict(VALID_ROW)

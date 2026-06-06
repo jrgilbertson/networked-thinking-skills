@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,30 @@ class BaseGenerationTest(unittest.TestCase):
         self.assertIn('file.path == "Atomic Notes/202601010103 Multi note bundle.md"', base)
         self.assertIn('file.path == "Atomic Notes/202601010105 Missing parent note.md"', base)
         self.assertIn('file.path == "Atomic Notes/202601010109 Duplicate candidate note.md"', base)
+
+    def test_render_base_escapes_quoted_note_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jsonl_path = Path(tmp) / "audit.jsonl"
+            note_path = 'Atomic Notes/Quoted "Idea" note.md'
+            jsonl_path.write_text(
+                json.dumps(
+                    {
+                        "note_path": note_path,
+                        "priority": "P3",
+                        "clean": False,
+                        "factual_risk": False,
+                        "fact_check_required": False,
+                        "findings": [],
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            base = render_base(str(jsonl_path))
+
+        self.assertIn(f"file.path == {json.dumps(note_path)}", base)
+        self.assertNotIn('file.path == "Atomic Notes/Quoted "Idea" note.md"', base)
 
     def test_rendered_fixture_matches_golden_base(self):
         base = render_base("tests/golden/fixture-audit.jsonl")

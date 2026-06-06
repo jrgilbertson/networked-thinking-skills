@@ -79,7 +79,7 @@ def _path_filters(rows: list[dict[str, object]]) -> list[str]:
     note_paths = [str(row["note_path"]) for row in rows if isinstance(row.get("note_path"), str)]
     if not note_paths:
         return ['file.path == "__no_matching_audit_rows__"']
-    return [f'file.path == "{note_path}"' for note_path in note_paths]
+    return [f"file.path == {json.dumps(note_path)}" for note_path in note_paths]
 
 
 def _read_jsonl(path: Path) -> list[dict[str, object]]:
