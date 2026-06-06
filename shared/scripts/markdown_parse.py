@@ -7,9 +7,9 @@ FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", 
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+([^\r\n]+?)[ \t]*$", re.MULTILINE)
 FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
-INLINE_CODE_RE = re.compile(r"(`+)(.+?)\1", re.DOTALL)
+INLINE_CODE_RE = re.compile(r"(`+)([^`\r\n]*?)\1")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
-LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+\.)[ \t]+")
+LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+[.)])[ \t]+")
 
 
 def extract_frontmatter(markdown: str) -> tuple[str | None, str]:

@@ -112,6 +112,10 @@ class MarkdownParseTest(unittest.TestCase):
         markdown = "- L1\n\t- L2\n\t\t- [[Deep Note]]\n[[Top Note]]\n"
         self.assertEqual(extract_wikilinks(markdown), ["Deep Note", "Top Note"])
 
+    def test_extract_wikilinks_preserves_parenthesized_ordered_list_context(self):
+        markdown = "1) Parent\n    - [[Nested Note]]\n[[Top Note]]\n"
+        self.assertEqual(extract_wikilinks(markdown), ["Nested Note", "Top Note"])
+
     def test_extract_wikilinks_ignores_list_contained_indented_code(self):
         markdown = "- item\n      [[Not real code]]\n[[Real]]\n"
         self.assertEqual(extract_wikilinks(markdown), ["Real"])
@@ -314,6 +318,26 @@ Example text.
     def test_extract_wikilinks_ignores_inline_code_spans(self):
         markdown = "Ignore `[[Literal Example]]` but keep [[Real Note]].\n"
         self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
+    def test_stray_inline_code_ticks_do_not_mask_note_structure_across_blocks(self):
+        markdown = """`stray
+
+## Definition
+Definition.
+
+## Analogy
+Analogy.
+
+## Example
+Example.
+
+[[Parent Note]]
+
+`other
+"""
+        self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
+        self.assertEqual(extract_wikilinks(markdown), ["Parent Note"])
+        self.assertTrue(has_dae_sections(markdown))
 
 
 if __name__ == "__main__":
