@@ -251,7 +251,7 @@ For example, GDPR requires every company to delete user data within 30 days.
             set(manifest["row_status_counts"]),
             {"complete", "reused_cache", "error", "skipped"},
         )
-        self.assertEqual(set(manifest["priority_counts"]), {"P0", "P1", "P2", "P3"})
+        self.assertEqual(set(manifest["priority_counts"]), {"P0", "P1", "P2", "P3", "no_change"})
         self.assertEqual(manifest["validation_status"], "not_run")
 
     def test_recommendations_are_objects(self):

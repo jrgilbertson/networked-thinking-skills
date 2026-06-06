@@ -29,8 +29,8 @@ VALID_ROW = {
     "note_link": "[[202601010101 Example]]",
     "content_hash": "abc123",
     "modified_time": "2026-06-05T12:00:00Z",
-    "score": 95,
-    "priority": "P3",
+    "score": 100,
+    "priority": None,
     "clean": True,
     "pending_model": False,
     "dimensions": {
@@ -41,8 +41,8 @@ VALID_ROW = {
         "connections": 90,
         "metadata_card_safety": 100
     },
-    "findings": [{"priority": "P3", "code": "minor_alias", "message": "Minor alias issue."}],
-    "recommendations": [{"mode": "improve-in-place", "message": "Tighten one alias."}],
+    "findings": [],
+    "recommendations": [],
     "model_judgment": None,
     "cache_status": "none",
     "factual_risk": False,
@@ -70,7 +70,8 @@ VALID_MANIFEST = {
         "P0": 0,
         "P1": 0,
         "P2": 0,
-        "P3": 1,
+        "P3": 0,
+        "no_change": 1,
     },
     "validation_status": "not_run",
     "outputs": {
@@ -200,6 +201,7 @@ class SchemaValidationTest(unittest.TestCase):
         schema = json.loads(AUDIT_ROW_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertIn("integer", schema["properties"]["score"]["type"])
         self.assertIn("null", schema["properties"]["score"]["type"])
+        self.assertEqual(schema["properties"]["score"]["minimum"], 1)
 
     def test_model_judgment_schema_defines_factual_risk_as_boolean(self):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
@@ -222,7 +224,10 @@ class SchemaValidationTest(unittest.TestCase):
 
     def test_run_manifest_schema_requires_priority_counts_keys(self):
         schema = json.loads(RUN_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
-        self.assertEqual(schema["$defs"]["priority_counts"]["required"], ["P0", "P1", "P2", "P3"])
+        self.assertEqual(
+            schema["$defs"]["priority_counts"]["required"],
+            ["P0", "P1", "P2", "P3", "no_change"],
+        )
 
     def test_valid_audit_run_pair_passes(self):
         validate_audit_run_pair([dict(VALID_ROW)], dict(VALID_MANIFEST))
@@ -242,6 +247,7 @@ class SchemaValidationTest(unittest.TestCase):
             "P1": 0,
             "P2": 0,
             "P3": 0,
+            "no_change": 0,
         }
 
         validate_audit_run_pair([], manifest)
@@ -276,6 +282,7 @@ class SchemaValidationTest(unittest.TestCase):
             "P1": 1,
             "P2": 0,
             "P3": 0,
+            "no_change": 0,
         }
         with self.assertRaises(ValidationError):
             validate_audit_run_pair([dict(VALID_ROW)], manifest)

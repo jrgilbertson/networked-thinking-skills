@@ -4,11 +4,20 @@ from typing import Iterable
 
 
 PRIORITY_ORDER = ("P0", "P1", "P2", "P3")
+NO_CHANGE_BUCKET = "no_change"
+BUCKET_ORDER = PRIORITY_ORDER + (NO_CHANGE_BUCKET,)
 PRIORITY_SECTION_TITLES = {
     "P0": "P0 Critical Remediation",
     "P1": "P1 High-Impact Remediation",
     "P2": "P2 Meaningful Improvements",
-    "P3": "P3 Polish And Clean Notes",
+    "P3": "P3 Polish",
+}
+BUCKET_LABELS = {
+    "P0": "P0",
+    "P1": "P1",
+    "P2": "P2",
+    "P3": "P3",
+    NO_CHANGE_BUCKET: "No changes",
 }
 
 
@@ -18,7 +27,7 @@ def render_markdown_report(
 ) -> str:
     sorted_rows = sorted(list(rows), key=_row_sort_key)
     total_notes = _int_or_default(manifest.get("total_notes"), len(sorted_rows))
-    clean_notes = sum(1 for row in sorted_rows if row.get("clean") is True)
+    no_change_notes = sum(1 for row in sorted_rows if _bucket_key(row) == NO_CHANGE_BUCKET)
     average_score = _average_score(sorted_rows)
     priority_counts = _priority_counts(sorted_rows, manifest)
     reviewed_models = sum(1 for row in sorted_rows if row.get("model_judgment") is not None)
@@ -32,9 +41,11 @@ def render_markdown_report(
         f"- Run ID: {manifest.get('run_id', 'unknown')}",
         f"- Total notes: {total_notes}",
         f"- Average score: {average_score}",
-        f"- Clean notes: {clean_notes} / {total_notes} ({_percentage(clean_notes, total_notes)})",
-        "- Priority counts: "
-        + ", ".join(f"{priority} {priority_counts[priority]}" for priority in PRIORITY_ORDER),
+        f"- No-change notes: {no_change_notes} / {total_notes} ({_percentage(no_change_notes, total_notes)})",
+        "- Bucket counts: "
+        + ", ".join(
+            f"{BUCKET_LABELS[bucket]} {priority_counts[bucket]}" for bucket in BUCKET_ORDER
+        ),
         _model_judgment_summary(reviewed_models, pending_models, total_notes),
     ]
 
@@ -45,12 +56,12 @@ def render_markdown_report(
                 [
                     row
                     for row in sorted_rows
-                    if _normalized_priority(row.get("priority")) == priority
+                    if _bucket_key(row) == priority
                 ],
             )
         )
 
-    lines.extend(_section("Clean Notes", [row for row in sorted_rows if row.get("clean") is True]))
+    lines.extend(_section("No Changes", [row for row in sorted_rows if _bucket_key(row) == NO_CHANGE_BUCKET]))
     lines.extend(_section("Factual-Risk Notes", [row for row in sorted_rows if _is_factual_risk(row)]))
     lines.extend(
         _section(
@@ -66,7 +77,8 @@ def render_markdown_report(
             f"- Resolve P0 critical remediation first: {_note_count(priority_counts['P0'])}.",
             f"- Work P1 high-impact remediation next: {_note_count(priority_counts['P1'])}.",
             f"- Review P2 improvements after blockers are clear: {_note_count(priority_counts['P2'])}.",
-            f"- Keep P3 polish and clean-note review as low-risk cleanup: {_note_count(priority_counts['P3'])}.",
+            f"- Keep P3 polish as low-risk cleanup: {_note_count(priority_counts['P3'])}.",
+            f"- Leave no-change notes alone unless a later audit finds new issues: {_note_count(priority_counts[NO_CHANGE_BUCKET])}.",
             f"- Fact-check factual-risk notes before relying on them: "
             f"{_note_count(sum(1 for row in sorted_rows if _is_factual_risk(row)))}.",
             f"- Review duplicate or overlap candidates before rewriting related notes: "
@@ -147,30 +159,33 @@ def _priority_counts(
     rows: list[dict[str, object]],
     manifest: dict[str, object],
 ) -> dict[str, int]:
-    counts = {priority: 0 for priority in PRIORITY_ORDER}
+    counts = {priority: 0 for priority in BUCKET_ORDER}
     manifest_counts = manifest.get("priority_counts")
     if isinstance(manifest_counts, dict):
-        for priority in PRIORITY_ORDER:
+        for priority in BUCKET_ORDER:
             counts[priority] = _int_or_default(manifest_counts.get(priority), 0)
         return counts
     for row in rows:
-        counts[_normalized_priority(row.get("priority"))] += 1
+        counts[_bucket_key(row)] += 1
     return counts
 
 
 def _row_sort_key(row: dict[str, object]) -> tuple[int, int, str]:
-    priority = _normalized_priority(row.get("priority"))
+    priority = _bucket_key(row)
     score = row.get("score")
     score_sort = score if isinstance(score, int) else 101
     return (
-        PRIORITY_ORDER.index(priority),
+        BUCKET_ORDER.index(priority),
         score_sort,
         str(row.get("note_path") or row.get("note_link") or ""),
     )
 
 
-def _normalized_priority(priority: object) -> str:
-    text = str(priority) if priority is not None else "P3"
+def _bucket_key(row: dict[str, object]) -> str:
+    priority = row.get("priority")
+    if priority is None:
+        return NO_CHANGE_BUCKET
+    text = str(priority)
     return text if text in PRIORITY_ORDER else "P3"
 
 

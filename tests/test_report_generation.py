@@ -33,16 +33,16 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn("# Atomic Note Audit", report)
         self.assertIn("- Run ID: fixture-run", report)
         self.assertIn("- Total notes: 9", report)
-        self.assertIn("- Average score: 54.4 / 100", report)
-        self.assertIn("- Clean notes: 2 / 9 (22.2%)", report)
-        self.assertIn("- Priority counts: P0 3, P1 3, P2 1, P3 2", report)
+        self.assertIn("- Average score: 70.3 / 100", report)
+        self.assertIn("- No-change notes: 2 / 9 (22.2%)", report)
+        self.assertIn("- Bucket counts: P0 2, P1 1, P2 2, P3 2, No changes 2", report)
         self.assertIn("- Model judgment: not run; deterministic audit complete", report)
         for heading in [
             "## P0 Critical Remediation",
             "## P1 High-Impact Remediation",
             "## P2 Meaningful Improvements",
-            "## P3 Polish And Clean Notes",
-            "## Clean Notes",
+            "## P3 Polish",
+            "## No Changes",
             "## Factual-Risk Notes",
             "## Duplicate Or Overlap Candidates",
             "## Remediation Next Steps",
@@ -59,20 +59,20 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertNotIn("{'mode'", report)
         self.assertNotIn('"mode":', report)
 
-    def test_report_lists_clean_and_factual_risk_notes(self):
+    def test_report_lists_no_change_and_factual_risk_notes(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
-        self.assertIn("## Clean Notes\n\n| Note | Score | Clean | Findings | Recommendations |", report)
+        self.assertIn("## No Changes\n\n| Note | Score | Clean | Findings | Recommendations |", report)
         self.assertIn("| [[202601010101 Clean DAE note]] | 100 | yes | none | none |", report)
         self.assertIn("| [[202601010107 Optional Anki note]] | 100 | yes | none | none |", report)
-        self.assertIn("| [[202601010106 Factual risk note]] | 57 | no |", report)
+        self.assertIn("| [[202601010106 Factual risk note]] | 84 | no |", report)
         self.assertIn("mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.", report)
 
     def test_report_includes_duplicate_overlap_candidate(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
         self.assertIn("## Duplicate Or Overlap Candidates\n\n| Note | Score | Clean | Findings | Recommendations |", report)
-        self.assertIn("| [[202601010109 Duplicate candidate note]] | 80 | no |", report)
+        self.assertIn("| [[202601010109 Duplicate candidate note]] | 92 | no |", report)
         self.assertIn("duplicate_overlap: Review this note against related notes for possible overlap.", report)
         self.assertIn("duplicate-overlap-review: Review this note against related notes for possible overlap.", report)
 
@@ -178,6 +178,7 @@ class ReportGenerationTest(unittest.TestCase):
                 "P1": 10,
                 "P2": 0,
                 "P3": 0,
+                "no_change": 0,
             }
             mismatched_manifest = Path(tmp) / "manifest.json"
             mismatched_manifest.write_text(

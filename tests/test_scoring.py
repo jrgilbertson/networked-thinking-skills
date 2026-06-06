@@ -1,86 +1,86 @@
 import unittest
 
 from shared.scripts.scoring import (
-    DIMENSION_WEIGHTS,
+    bucket_for_score,
+    canonicalize_findings,
     compute_clean,
     compute_final_score,
-    highest_priority,
-    priority_for_score,
+    compute_loss,
 )
 
 
-BASE_DIMENSIONS = {
-    "structure": 100,
-    "atomicity": 100,
-    "dae_quality": 100,
-    "clarity": 100,
-    "connections": 100,
-    "metadata_card_safety": 100,
-}
-
-
 class ScoringTest(unittest.TestCase):
-    def test_weights_sum_to_one(self):
-        self.assertEqual(sum(DIMENSION_WEIGHTS.values()), 1.0)
-
     def test_clean_note_scores_100(self):
-        score = compute_final_score(BASE_DIMENSIONS, [])
+        score = compute_final_score([])
         self.assertEqual(score, 100)
 
-    def test_p1_finding_lands_perfect_note_at_p1_boundary(self):
-        findings = [{"priority": "P1", "code": "missing_parent"}]
-        self.assertEqual(compute_final_score(BASE_DIMENSIONS, findings), 69)
+    def test_score_uses_finding_loss_not_priority_label(self):
+        findings = [{"priority": "P0", "code": "missing_parent"}]
+        self.assertEqual(compute_final_score(findings), 92)
 
-    def test_p0_finding_lands_perfect_note_at_p0_boundary(self):
-        findings = [{"priority": "P0"}]
-        self.assertEqual(compute_final_score(BASE_DIMENSIONS, findings), 49)
-
-    def test_p2_finding_lands_perfect_note_at_p2_boundary(self):
-        findings = [{"priority": "P2"}]
-        self.assertEqual(compute_final_score(BASE_DIMENSIONS, findings), 89)
-
-    def test_additional_findings_lower_score_without_hard_caps(self):
+    def test_invalid_dae_suppresses_dae_component_losses(self):
         findings = [
-            {"priority": "P1"},
-            {"priority": "P2"},
-            {"priority": "P3"},
+            {"priority": "P1", "code": "missing_dae"},
+            {"priority": "P2", "code": "weak_dae"},
+            {"priority": "P2", "code": "model_weak_analogy"},
         ]
-        self.assertEqual(compute_final_score(BASE_DIMENSIONS, findings), 65)
+        self.assertEqual(compute_loss(findings), 35)
+        self.assertEqual(compute_final_score(findings), 65)
+
+    def test_dae_component_losses_are_capped(self):
+        findings = [
+            {"priority": "P1", "code": "definition_too_long"},
+            {"priority": "P2", "code": "model_weak_definition"},
+            {"priority": "P2", "code": "model_weak_analogy"},
+            {"priority": "P2", "code": "model_weak_example"},
+        ]
+        self.assertEqual(compute_loss(findings), 35)
+        self.assertEqual(compute_final_score(findings), 65)
+
+    def test_factual_risk_aliases_count_once(self):
+        findings = [
+            {"priority": "P2", "code": "factual_risk"},
+            {"priority": "P2", "code": "model_factual_risk"},
+        ]
+        self.assertEqual(canonicalize_findings(findings), {"factual_risk"})
+        self.assertEqual(compute_final_score(findings), 92)
+
+    def test_multi_note_suppresses_generic_not_atomic(self):
+        findings = [
+            {"priority": "P0", "code": "multi_note_file"},
+            {"priority": "P0", "code": "model_not_atomic"},
+        ]
+        self.assertEqual(canonicalize_findings(findings), {"multi_note"})
+        self.assertEqual(compute_final_score(findings), 55)
+
+    def test_unknown_finding_code_gets_default_loss(self):
+        findings = [{"priority": "P3", "code": "future_quality_signal"}]
+        self.assertEqual(compute_final_score(findings), 92)
 
     def test_score_never_drops_below_one(self):
-        findings = [{"priority": "P0"} for _ in range(20)]
-        self.assertEqual(
-            compute_final_score({key: 0 for key in BASE_DIMENSIONS}, findings),
-            1,
-        )
+        findings = [{"priority": "P0", "code": f"unknown_{index}"} for index in range(20)]
+        self.assertEqual(compute_final_score(findings), 1)
 
     def test_priority_is_derived_from_score_bands(self):
-        self.assertEqual(priority_for_score(1), "P0")
-        self.assertEqual(priority_for_score(49), "P0")
-        self.assertEqual(priority_for_score(50), "P1")
-        self.assertEqual(priority_for_score(69), "P1")
-        self.assertEqual(priority_for_score(70), "P2")
-        self.assertEqual(priority_for_score(89), "P2")
-        self.assertEqual(priority_for_score(90), "P3")
-        self.assertEqual(priority_for_score(100), "P3")
+        self.assertEqual(bucket_for_score(1), "P0")
+        self.assertEqual(bucket_for_score(49), "P0")
+        self.assertEqual(bucket_for_score(50), "P1")
+        self.assertEqual(bucket_for_score(69), "P1")
+        self.assertEqual(bucket_for_score(70), "P2")
+        self.assertEqual(bucket_for_score(84), "P2")
+        self.assertEqual(bucket_for_score(85), "P3")
+        self.assertEqual(bucket_for_score(99), "P3")
+        self.assertIsNone(bucket_for_score(100))
 
-    def test_highest_priority_uses_urgency_order(self):
-        findings = [{"priority": "P3"}, {"priority": "P1"}, {"priority": "P2"}]
-        self.assertEqual(highest_priority(findings), "P1")
-
-    def test_clean_allows_p3_only(self):
-        findings = [{"priority": "P3"}]
-        self.assertTrue(compute_clean(92, findings, pending_model=False, fact_check_required=False))
-
-    def test_clean_rejects_p2(self):
-        findings = [{"priority": "P2"}]
-        self.assertFalse(compute_clean(90, findings, pending_model=False, fact_check_required=False))
+    def test_clean_requires_score_100(self):
+        self.assertFalse(compute_clean(99, pending_model=False, fact_check_required=False))
+        self.assertTrue(compute_clean(100, pending_model=False, fact_check_required=False))
 
     def test_clean_rejects_pending_model(self):
-        self.assertFalse(compute_clean(100, [], pending_model=True, fact_check_required=False))
+        self.assertFalse(compute_clean(100, pending_model=True, fact_check_required=False))
 
     def test_clean_rejects_fact_check_required(self):
-        self.assertFalse(compute_clean(100, [], pending_model=False, fact_check_required=True))
+        self.assertFalse(compute_clean(100, pending_model=False, fact_check_required=True))
 
 
 if __name__ == "__main__":

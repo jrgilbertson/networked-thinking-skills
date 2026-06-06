@@ -25,7 +25,7 @@ class BaseGenerationTest(unittest.TestCase):
             "P1 High Impact",
             "P2 Improvements",
             "P3 Polish",
-            "Clean Notes",
+            "No Changes",
             "Factual Risk",
             "Multi-Note Split Candidates",
             "Missing Parent Candidates",

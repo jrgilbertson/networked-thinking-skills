@@ -50,9 +50,9 @@ python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/ba
   before running a full baseline.
 - Treat the generated JSONL and manifest as the machine-readable audit record.
   Treat the Markdown report and Base file as review surfaces.
-- Review P0 findings first, then P1. Priority is remediation urgency, not a
-  score band.
-- Sample clean notes and P3 notes during the first baseline to catch false
+- Review the lowest-scoring P0 notes first, then P1. The score determines the
+  remediation bucket.
+- Sample no-change notes and P3 notes during the first baseline to catch false
   negatives before trusting the queue.
 - Do not remediate directly from an audit row. Create or consume an explicit
   remediation plan, then follow [remediation.md](remediation.md).
@@ -71,6 +71,6 @@ private vault content.
 
 The deterministic audit remains the source input. A model-judgment pass should
 emit strict JSON matching `shared/schemas/model-judgment.schema.json`; validate
-those judgments before they affect scores, priorities, or reports. In default
+those judgments before they affect scores, buckets, or reports. In default
 mode, review flagged or ambiguous notes plus a sample of apparently clean notes.
 In exhaustive mode, review every note.

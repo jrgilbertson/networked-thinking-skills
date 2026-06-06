@@ -15,7 +15,7 @@ from shared.scripts.markdown_parse import (
     extract_frontmatter,
     extract_wikilinks,
 )
-from shared.scripts.scoring import compute_clean, compute_final_score, priority_for_score
+from shared.scripts.scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_clean, compute_final_score
 
 
 VERSION = "1.0.0"
@@ -165,7 +165,7 @@ def _audit_note(
     findings = _findings_for_note(path, content, structure_targets)
     dimensions = _dimensions_for_findings(findings)
     fact_check_required = any(finding["code"] == "factual_risk" for finding in findings)
-    score = compute_final_score(dimensions, findings)
+    score = compute_final_score(findings)
 
     row: dict[str, object] = {
         "schema_version": VERSION,
@@ -176,10 +176,9 @@ def _audit_note(
         "content_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
         "modified_time": modified_time,
         "score": score,
-        "priority": priority_for_score(score),
+        "priority": bucket_for_score(score),
         "clean": compute_clean(
             score,
-            findings,
             pending_model=False,
             fact_check_required=fact_check_required,
         ),
@@ -455,10 +454,11 @@ def _build_manifest(
     ended_at: str,
 ) -> dict[str, object]:
     row_status_counts = {"complete": 0, "reused_cache": 0, "error": 0, "skipped": 0}
-    priority_counts = {"P0": 0, "P1": 0, "P2": 0, "P3": 0}
+    priority_counts = {"P0": 0, "P1": 0, "P2": 0, "P3": 0, NO_CHANGE_BUCKET: 0}
     for row in rows:
         row_status_counts[str(row["row_status"])] += 1
-        priority_counts[str(row["priority"])] += 1
+        priority = row["priority"] if row["priority"] is not None else NO_CHANGE_BUCKET
+        priority_counts[str(priority)] += 1
     return {
         "schema_version": VERSION,
         "run_id": run_id,

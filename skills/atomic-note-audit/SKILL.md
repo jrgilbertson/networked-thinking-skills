@@ -21,7 +21,7 @@ Use this skill to audit every Markdown file in a configured Atomic Notes folder,
 3. Validate JSONL with `shared/scripts/validate_jsonl.py`.
 4. Generate Markdown report with `shared/scripts/generate_report.py`.
 5. Generate Obsidian Base with `shared/scripts/generate_base.py` when requested.
-6. Summarize KPIs and P0-P3 queues.
+6. Summarize KPIs and P0-P3/no-change queues.
 
 When writing audit artifacts inside an Obsidian vault, create one run folder
 under the configured audit output folder using the vault timestamp style

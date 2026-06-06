@@ -4,7 +4,7 @@ import hashlib
 import json
 from typing import Any
 
-from shared.scripts.schema_validation import DIMENSION_KEYS, PRIORITY_COUNT_KEYS, ValidationError
+from shared.scripts.schema_validation import DIMENSION_KEYS, FINDING_PRIORITY_KEYS, ValidationError
 
 
 MODEL_JUDGMENT_REQUIRED = {
@@ -100,7 +100,7 @@ def _validate_findings(findings: Any) -> None:
             raise ValidationError(f"{label} must be an object")
         _require_keys(finding, FINDING_REQUIRED, label)
         _reject_extra_keys(finding, FINDING_ALLOWED, label)
-        if finding["priority"] not in PRIORITY_COUNT_KEYS:
+        if finding["priority"] not in FINDING_PRIORITY_KEYS:
             raise ValidationError(f"Invalid {label}.priority: {finding['priority']}")
         _validate_non_empty_string(finding["code"], f"{label}.code")
         _validate_non_empty_string(finding["message"], f"{label}.message")

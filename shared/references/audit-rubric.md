@@ -1,35 +1,55 @@
 # Atomic Note Audit Rubric
 
-Scores use six weighted dimensions:
-
-- Structure: 15
-- Atomicity: 25
-- DAE Quality: 25
-- Clarity: 15
-- Connections: 10
-- Metadata & Optional Card Safety: 10
-
 Final score is a 1-100 remediation urgency score. A perfect vault has an
-average score of 100. Compute each row score by starting with the weighted
-dimension score, subtracting the worst finding severity penalty, subtracting 2
-points for each additional finding up to 12 extra points, and clamping to
-1-100.
+average score of 100. Compute each row score with a single loss budget:
 
-Finding severity penalties:
+```text
+score = clamp(100 - total_loss, 1, 100)
+```
 
-- P0 finding: 51
-- P1 finding: 31
-- P2 finding: 11
-- P3 finding: 3
+Findings create loss once. Finding priority labels may explain findings for
+reviewers, but they do not feed the score. Score alone determines the
+remediation bucket.
+
+Finding losses:
+
+- Multi-note file: 45
+- Missing or invalid DAE: 35
+- Misfiled reference: 35
+- Not atomic: 25
+- Definition too long: 20
+- Weak definition: 18
+- Malformed Anki: 18
+- Weak DAE, analogy, or example: 15
+- Unclear note: 15
+- Title/body mismatch: 15
+- Missing parent: 8
+- Duplicate overlap: 8
+- Factual risk: 8
+- Unknown future finding code: 8
+
+Semantic de-duplication applies before scoring:
+
+- Deterministic and model factual-risk findings count once.
+- Deterministic and model duplicate-overlap findings count once.
+- Deterministic and model multi-note findings count once.
+- Missing DAE and invalid DAE count as one invalid-DAE loss.
+- If invalid DAE is present, weaker DAE component findings do not add extra
+  loss.
+- If invalid DAE is absent, DAE component findings are capped at 35 total.
+- If multi-note is present, a generic not-atomic finding does not add extra
+  loss.
 
 Priority is assigned from the final score:
 
-- P0: 1-49, critical structural hazards.
-- P1: 50-69, high-impact doctrine failure.
-- P2: 70-89, meaningful improvement.
-- P3: 90-100, polish or clean.
+- P0: 1-49, critical remediation.
+- P1: 50-69, high-impact remediation.
+- P2: 70-84, meaningful improvement.
+- P3: 85-99, polish.
+- No changes: 100.
 
-A clean note has no P0-P2 findings, score at least 90, no pending model-audit flag, and no pending fact-check-required flag. P3 findings are allowed.
+A clean note has score 100, no pending model-audit flag, and no pending
+fact-check-required flag.
 
 DAE doctrine failures include missing DAE content and overlong Definitions. A
 Definition longer than 50 rendered words receives `definition_too_long` so it can
