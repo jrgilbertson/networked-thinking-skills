@@ -140,6 +140,14 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
                 fence_length = len(fence)
                 fence_content_indent = list_content_indent
                 masked_lines.append(_list_marker_prefix(line, content, list_marker) + _line_break(line))
+                list_contexts = _update_list_contexts(
+                    list_contexts,
+                    line,
+                    indent_width,
+                    content,
+                    list_marker,
+                    False,
+                )
                 continue
 
         fence_line = line

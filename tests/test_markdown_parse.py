@@ -172,6 +172,28 @@ class MarkdownParseTest(unittest.TestCase):
 """
         self.assertEqual(extract_wikilinks(markdown), ["Continuation Note", "Top Note"])
 
+    def test_same_line_list_backtick_fence_hides_later_continuation_fence(self):
+        markdown = """- ```markdown
+  [[Hidden 1]]
+  ```
+    ```markdown
+    [[Hidden 2]]
+    ```
+[[Real]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Real"])
+
+    def test_same_line_list_tilde_fence_hides_later_continuation_fence(self):
+        markdown = """- ~~~markdown
+  [[Hidden 1]]
+  ~~~
+    ~~~markdown
+    [[Hidden 2]]
+    ~~~
+[[Real]]
+"""
+        self.assertEqual(extract_wikilinks(markdown), ["Real"])
+
     def test_standalone_indented_list_marker_backtick_fence_does_not_hide_structure(self):
         markdown = "    - ```markdown\n## Definition\n[[Real Note]]\n"
         self.assertEqual(extract_headings(markdown), ["Definition"])
