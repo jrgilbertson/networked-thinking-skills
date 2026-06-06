@@ -28,12 +28,17 @@ Expected command signals:
 Write outputs outside the vault unless the user explicitly wants generated files
 inside the vault.
 
+When writing audit artifacts inside an Obsidian vault, create one run folder
+under the configured audit output folder using the vault timestamp style
+`YYYYMMDDHHMM`, for example a folder named `202606061035 Model Judgment`. Do
+not use dashed date folder names such as `2026-06-06 103558`.
+
 Real-vault audit artifacts can expose private note paths, titles, links,
 findings, and recommendations. Keep them outside this repo by default, do not
 commit them, and do not paste or publish them without explicit approval.
 
 ```bash
-python3 -m shared.scripts.audit_notes --vault /path/to/vault --run-id baseline-YYYYMMDD --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json
+python3 -m shared.scripts.audit_notes --vault /path/to/vault --run-id baseline-YYYYMMDDHHMM --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json
 python3 -m shared.scripts.validate_jsonl /tmp/networked-thinking-audit/baseline.jsonl
 python3 -m shared.scripts.generate_report --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --output /tmp/networked-thinking-audit/baseline-report.md
 python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/baseline.jsonl --output /tmp/networked-thinking-audit/baseline.base

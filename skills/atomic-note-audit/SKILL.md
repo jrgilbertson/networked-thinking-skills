@@ -23,6 +23,11 @@ Use this skill to audit every Markdown file in a configured Atomic Notes folder,
 5. Generate Obsidian Base with `shared/scripts/generate_base.py` when requested.
 6. Summarize KPIs and P0-P3 queues.
 
+When writing audit artifacts inside an Obsidian vault, create one run folder
+under the configured audit output folder using the vault timestamp style
+`YYYYMMDDHHMM`, for example `202606061035 Model Judgment`. Do not use dashed
+date folder names such as `2026-06-06 103558`.
+
 ## Model Judgment
 
 Use deterministic scan for every note. In default mode, model-judge flagged or
