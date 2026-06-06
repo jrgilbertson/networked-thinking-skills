@@ -12,13 +12,16 @@ DIMENSION_WEIGHTS: dict[str, float] = {
     "metadata_card_safety": 0.10,
 }
 
-PRIORITY_CAPS: dict[str, int] = {
-    "P0": 49,
-    "P1": 69,
-    "P2": 89,
+PRIORITY_SEVERITY_PENALTIES: dict[str, int] = {
+    "P0": 51,
+    "P1": 31,
+    "P2": 11,
+    "P3": 3,
 }
 
 PRIORITY_ORDER: tuple[str, ...] = ("P0", "P1", "P2", "P3")
+ADDITIONAL_FINDING_PENALTY = 2
+MAX_ADDITIONAL_FINDING_PENALTY = 12
 
 
 def compute_weighted_score(dimensions: Mapping[str, int | float]) -> int:
@@ -45,10 +48,22 @@ def highest_priority(findings: Iterable[Mapping[str, object]]) -> str | None:
 
 def compute_final_score(dimensions: Mapping[str, int | float], findings: list[Mapping[str, object]]) -> int:
     weighted = compute_weighted_score(dimensions)
-    priority = highest_priority(findings)
-    if priority in PRIORITY_CAPS:
-        return min(weighted, PRIORITY_CAPS[priority])
-    return weighted
+    priority_penalty = _highest_priority_penalty(findings)
+    additional_penalty = min(
+        max(0, len(findings) - 1) * ADDITIONAL_FINDING_PENALTY,
+        MAX_ADDITIONAL_FINDING_PENALTY,
+    )
+    return max(1, min(100, weighted - priority_penalty - additional_penalty))
+
+
+def priority_for_score(score: int) -> str:
+    if score < 50:
+        return "P0"
+    if score < 70:
+        return "P1"
+    if score < 90:
+        return "P2"
+    return "P3"
 
 
 def compute_clean(
@@ -62,3 +77,10 @@ def compute_clean(
         return False
     priority = highest_priority(findings)
     return priority in (None, "P3")
+
+
+def _highest_priority_penalty(findings: Iterable[Mapping[str, object]]) -> int:
+    priority = highest_priority(findings)
+    if priority is None:
+        return 0
+    return PRIORITY_SEVERITY_PENALTIES[priority]

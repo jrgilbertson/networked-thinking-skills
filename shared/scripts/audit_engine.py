@@ -15,7 +15,7 @@ from shared.scripts.markdown_parse import (
     extract_frontmatter,
     extract_wikilinks,
 )
-from shared.scripts.scoring import compute_clean, compute_final_score, highest_priority
+from shared.scripts.scoring import compute_clean, compute_final_score, priority_for_score
 
 
 VERSION = "1.0.0"
@@ -176,7 +176,7 @@ def _audit_note(
         "content_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
         "modified_time": modified_time,
         "score": score,
-        "priority": highest_priority(findings) or "P3",
+        "priority": priority_for_score(score),
         "clean": compute_clean(
             score,
             findings,

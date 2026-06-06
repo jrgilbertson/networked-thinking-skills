@@ -9,12 +9,25 @@ Scores use six weighted dimensions:
 - Connections: 10
 - Metadata & Optional Card Safety: 10
 
-Priority means remediation urgency:
+Final score is a 1-100 remediation urgency score. A perfect vault has an
+average score of 100. Compute each row score by starting with the weighted
+dimension score, subtracting the worst finding severity penalty, subtracting 2
+points for each additional finding up to 12 extra points, and clamping to
+1-100.
 
-- P0: critical structural hazards.
-- P1: high-impact doctrine failure.
-- P2: meaningful improvement.
-- P3: polish.
+Finding severity penalties:
+
+- P0 finding: 51
+- P1 finding: 31
+- P2 finding: 11
+- P3 finding: 3
+
+Priority is assigned from the final score:
+
+- P0: 1-49, critical structural hazards.
+- P1: 50-69, high-impact doctrine failure.
+- P2: 70-89, meaningful improvement.
+- P3: 90-100, polish or clean.
 
 A clean note has no P0-P2 findings, score at least 90, no pending model-audit flag, and no pending fact-check-required flag. P3 findings are allowed.
 

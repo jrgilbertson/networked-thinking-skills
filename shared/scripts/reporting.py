@@ -19,6 +19,7 @@ def render_markdown_report(
     sorted_rows = sorted(list(rows), key=_row_sort_key)
     total_notes = _int_or_default(manifest.get("total_notes"), len(sorted_rows))
     clean_notes = sum(1 for row in sorted_rows if row.get("clean") is True)
+    average_score = _average_score(sorted_rows)
     priority_counts = _priority_counts(sorted_rows, manifest)
     reviewed_models = sum(1 for row in sorted_rows if row.get("model_judgment") is not None)
     pending_models = sum(1 for row in sorted_rows if row.get("pending_model") is True)
@@ -30,6 +31,7 @@ def render_markdown_report(
         "",
         f"- Run ID: {manifest.get('run_id', 'unknown')}",
         f"- Total notes: {total_notes}",
+        f"- Average score: {average_score}",
         f"- Clean notes: {clean_notes} / {total_notes} ({_percentage(clean_notes, total_notes)})",
         "- Priority counts: "
         + ", ".join(f"{priority} {priority_counts[priority]}" for priority in PRIORITY_ORDER),
@@ -156,9 +158,15 @@ def _priority_counts(
     return counts
 
 
-def _row_sort_key(row: dict[str, object]) -> tuple[int, str]:
+def _row_sort_key(row: dict[str, object]) -> tuple[int, int, str]:
     priority = _normalized_priority(row.get("priority"))
-    return (PRIORITY_ORDER.index(priority), str(row.get("note_path") or row.get("note_link") or ""))
+    score = row.get("score")
+    score_sort = score if isinstance(score, int) else 101
+    return (
+        PRIORITY_ORDER.index(priority),
+        score_sort,
+        str(row.get("note_path") or row.get("note_link") or ""),
+    )
 
 
 def _normalized_priority(priority: object) -> str:
@@ -189,6 +197,13 @@ def _percentage(numerator: int, denominator: int) -> str:
     if denominator == 0:
         return "0.0%"
     return f"{(numerator / denominator) * 100:.1f}%"
+
+
+def _average_score(rows: list[dict[str, object]]) -> str:
+    scores = [row["score"] for row in rows if isinstance(row.get("score"), int)]
+    if not scores:
+        return "n/a"
+    return f"{sum(scores) / len(scores):.1f} / 100"
 
 
 def _note_count(count: int) -> str:

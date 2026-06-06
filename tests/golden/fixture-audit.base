@@ -27,8 +27,10 @@ views:
   - type: table
     name: "P0 Critical"
     filters:
-      and:
+      or:
+        - 'file.path == "Atomic Notes/202601010102 Weak DAE note.md"'
         - 'file.path == "Atomic Notes/202601010103 Multi note bundle.md"'
+        - 'file.path == "Atomic Notes/202601010104 Misfiled reference note.md"'
     order:
       - file.name
       - file.path
@@ -37,8 +39,6 @@ views:
     name: "P1 High Impact"
     filters:
       or:
-        - 'file.path == "Atomic Notes/202601010102 Weak DAE note.md"'
-        - 'file.path == "Atomic Notes/202601010104 Misfiled reference note.md"'
         - 'file.path == "Atomic Notes/202601010105 Missing parent note.md"'
         - 'file.path == "Atomic Notes/202601010106 Factual risk note.md"'
         - 'file.path == "Atomic Notes/202601010108 Malformed Anki note.md"'

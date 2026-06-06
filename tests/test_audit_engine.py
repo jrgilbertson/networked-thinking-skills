@@ -29,7 +29,7 @@ class AuditEngineTest(unittest.TestCase):
             self.assertFalse(row["pending_model"])
             self.assertIsNone(row["model_judgment"])
 
-    def test_multi_note_bundle_is_p0_and_capped(self):
+    def test_multi_note_bundle_scores_into_p0(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
         row = rows_by_stem(rows)["202601010103 Multi note bundle"]
 

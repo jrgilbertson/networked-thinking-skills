@@ -33,8 +33,9 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn("# Atomic Note Audit", report)
         self.assertIn("- Run ID: fixture-run", report)
         self.assertIn("- Total notes: 9", report)
+        self.assertIn("- Average score: 54.4 / 100", report)
         self.assertIn("- Clean notes: 2 / 9 (22.2%)", report)
-        self.assertIn("- Priority counts: P0 1, P1 5, P2 1, P3 2", report)
+        self.assertIn("- Priority counts: P0 3, P1 3, P2 1, P3 2", report)
         self.assertIn("- Model judgment: not run; deterministic audit complete", report)
         for heading in [
             "## P0 Critical Remediation",
@@ -64,14 +65,14 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn("## Clean Notes\n\n| Note | Score | Clean | Findings | Recommendations |", report)
         self.assertIn("| [[202601010101 Clean DAE note]] | 100 | yes | none | none |", report)
         self.assertIn("| [[202601010107 Optional Anki note]] | 100 | yes | none | none |", report)
-        self.assertIn("| [[202601010106 Factual risk note]] | 69 | no |", report)
+        self.assertIn("| [[202601010106 Factual risk note]] | 57 | no |", report)
         self.assertIn("mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.", report)
 
     def test_report_includes_duplicate_overlap_candidate(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
         self.assertIn("## Duplicate Or Overlap Candidates\n\n| Note | Score | Clean | Findings | Recommendations |", report)
-        self.assertIn("| [[202601010109 Duplicate candidate note]] | 89 | no |", report)
+        self.assertIn("| [[202601010109 Duplicate candidate note]] | 80 | no |", report)
         self.assertIn("duplicate_overlap: Review this note against related notes for possible overlap.", report)
         self.assertIn("duplicate-overlap-review: Review this note against related notes for possible overlap.", report)
 
