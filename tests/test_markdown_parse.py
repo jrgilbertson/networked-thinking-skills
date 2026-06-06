@@ -239,6 +239,11 @@ class MarkdownParseTest(unittest.TestCase):
     def test_extract_headings_strips_optional_closing_hashes(self):
         self.assertEqual(extract_headings("## Definition ##\n"), ["Definition"])
 
+    def test_extract_headings_supports_crlf_line_endings(self):
+        markdown = "## Definition\r\n## Analogy\r\n## Example\r\n"
+        self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
+        self.assertTrue(has_dae_sections(markdown))
+
     def test_has_dae_sections_is_case_insensitive(self):
         markdown = "## definition\n\n## ANALOGY\n\n## Example\n"
         self.assertTrue(has_dae_sections(markdown))
