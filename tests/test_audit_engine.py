@@ -27,6 +27,7 @@ class AuditEngineTest(unittest.TestCase):
             validate_audit_row(row, default_scan=True)
             self.assertEqual(row["row_status"], "complete")
             self.assertFalse(row["pending_model"])
+            self.assertIsNone(row["model_judgment"])
 
     def test_multi_note_bundle_is_p0_and_capped(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")

@@ -37,7 +37,7 @@ VALID_ROW = {
         "metadata_card_safety": 100
     },
     "findings": [{"priority": "P3", "code": "minor_alias"}],
-    "recommendations": ["Tighten one alias."],
+    "recommendations": [{"mode": "improve-in-place", "message": "Tighten one alias."}],
     "model_judgment": None,
     "cache_status": "none",
     "factual_risk": False,
@@ -57,6 +57,12 @@ class SchemaValidationTest(unittest.TestCase):
     def test_missing_required_key_fails(self):
         row = dict(VALID_ROW)
         del row["note_link"]
+        with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_missing_model_judgment_fails(self):
+        row = dict(VALID_ROW)
+        del row["model_judgment"]
         with self.assertRaises(ValidationError):
             validate_audit_row(row, default_scan=True)
 

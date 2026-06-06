@@ -119,6 +119,7 @@ def _audit_note(
         "dimensions": dimensions,
         "findings": findings,
         "recommendations": _recommendations_for_findings(findings),
+        "model_judgment": None,
         "cache_status": "none",
         "factual_risk": fact_check_required,
         "fact_check_required": fact_check_required,

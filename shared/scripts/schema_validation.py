@@ -23,6 +23,7 @@ AUDIT_ROW_REQUIRED = {
     "dimensions",
     "findings",
     "recommendations",
+    "model_judgment",
     "cache_status",
     "factual_risk",
     "fact_check_required",
@@ -64,6 +65,8 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
         raise ValidationError("score must be an integer from 0 to 100 or null")
     if not isinstance(row["pending_model"], bool):
         raise ValidationError("pending_model must be a boolean")
+    if row["model_judgment"] is not None and not isinstance(row["model_judgment"], dict):
+        raise ValidationError("model_judgment must be null or an object")
     if not isinstance(row["factual_risk"], bool):
         raise ValidationError("factual_risk must be a boolean")
     note_link = row["note_link"]

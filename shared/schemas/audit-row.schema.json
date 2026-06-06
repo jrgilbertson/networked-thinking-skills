@@ -19,6 +19,7 @@
     "dimensions",
     "findings",
     "recommendations",
+    "model_judgment",
     "cache_status",
     "factual_risk",
     "fact_check_required",
@@ -112,7 +113,14 @@
       ]
     },
     "model_judgment": {
-      "$ref": "model-judgment.schema.json"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "model-judgment.schema.json"
+        }
+      ]
     },
     "factual_risk": {
       "type": "boolean"

@@ -14,6 +14,12 @@ class AuditRowSchemaTest(unittest.TestCase):
         self.assertEqual(schema["properties"]["pending_model"], {"type": "boolean"})
         self.assertNotIn("pending_model", schema["properties"]["row_status"]["enum"])
 
+    def test_model_judgment_is_required_and_nullable(self):
+        schema = json.loads(SCHEMA_PATH.read_text())
+
+        self.assertIn("model_judgment", schema["required"])
+        self.assertIn({"type": "null"}, schema["properties"]["model_judgment"]["oneOf"])
+
 
 if __name__ == "__main__":
     unittest.main()
