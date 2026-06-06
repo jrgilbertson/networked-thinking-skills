@@ -34,6 +34,8 @@ def render_model_judgment_prompt() -> str:
         "",
         "Finding codes are the scoring source. Use only the exact codes below.",
         "Do not invent codes. Do not prefix codes with `model_`. Unknown codes fail validation.",
+        "Return the final findings for the note, not a diff against a deterministic scan.",
+        "Do not preserve an issue unless it truly applies to the note content you reviewed.",
         "",
         "| code | loss | use when |",
         "|---|---:|---|",
@@ -92,7 +94,7 @@ def render_model_judgment_prompt() -> str:
 
 
 def main() -> int:
-    print(render_model_judgment_prompt())
+    print(render_model_judgment_prompt(), end="")
     return 0
 
 

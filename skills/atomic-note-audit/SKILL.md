@@ -58,6 +58,24 @@ To prepare one note for judgment without prompt drift, run:
 python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
 
+Collect model responses as JSONL, one strict
+`shared/schemas/model-judgment.schema.json` object per line. Then apply them to
+the deterministic audit rows before generating the model-judgment report or
+Base:
+
+```bash
+python3 -m shared.scripts.apply_model_judgments --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
+```
+
+By default, the apply step hard-fails unless every audit row has exactly one
+matching model judgment. Use `--allow-missing` only for a deliberate sampling
+pass; unmatched rows stay `pending_model: true`.
+
+For reviewed rows, model findings replace deterministic semantic findings. The
+apply step keeps only deterministic audit checks a single-note model cannot
+reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`, and
+`duplicate_overlap`.
+
 ## Remediation
 
 Do not mutate notes from audit findings alone. Generate or consume an explicit remediation plan. Require official Obsidian skills and preflight before vault mutations. Require approval before destructive operations.

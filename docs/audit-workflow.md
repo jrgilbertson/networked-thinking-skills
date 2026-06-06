@@ -19,6 +19,7 @@ python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/fi
 Expected command signals:
 
 - `audit_notes` prints `rows=<count>`.
+- `apply_model_judgments` prints `rows=<count> model_judgments=<count>`.
 - `validate_jsonl` prints `valid_rows=<count>`.
 - `generate_report` prints the Markdown report path.
 - `generate_base` prints the Base file path.
@@ -82,3 +83,23 @@ vault-relative path:
 ```bash
 python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
+
+After model judgments have been collected into JSONL, apply them to the
+deterministic audit rows before generating review artifacts:
+
+```bash
+python3 -m shared.scripts.apply_model_judgments --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
+python3 -m shared.scripts.validate_jsonl /tmp/networked-thinking-audit/model-applied.jsonl
+python3 -m shared.scripts.generate_report --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --manifest /tmp/networked-thinking-audit/model-applied-manifest.json --output /tmp/networked-thinking-audit/model-applied-report.md
+python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output /tmp/networked-thinking-audit/model-applied.base
+```
+
+`apply_model_judgments` requires one judgment per audit row by default. Use
+`--allow-missing` only for an intentional partial/sampling pass; unmatched rows
+remain `pending_model: true` so model judgment coverage and clean-note KPIs stay
+honest.
+
+For reviewed rows, model findings are the final semantic quality judgment. The
+apply step retains only deterministic audit findings the single-note model
+cannot reliably infer: `missing_frontmatter`, `missing_parent`,
+`malformed_anki`, and `duplicate_overlap`.
