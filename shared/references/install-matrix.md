@@ -13,3 +13,10 @@ Supported surfaces:
 - Hermes
 - OpenClaw
 - Manual Git clone or copy
+
+## Raw Skill Installs
+
+Codex raw skills, Claude Code raw skills, and manual copy installs must preserve the package layout expected by skill-relative reference paths:
+
+- Copy `skills/<skill>` into `<runtime-home>/skills/<skill>`.
+- Copy `shared/references` into `<runtime-home>/shared/references`.
