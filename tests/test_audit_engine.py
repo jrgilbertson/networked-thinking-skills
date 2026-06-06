@@ -52,6 +52,163 @@ class AuditEngineTest(unittest.TestCase):
         self.assertTrue(row["fact_check_required"])
         self.assertIn("factual_risk", {finding["code"] for finding in row["findings"]})
 
+    def test_formal_math_definition_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - zero exponent rule
+---
+
+# Zero Exponent Rule
+
+START
+Basic
+What is the zero exponent rule?
+
+Back: The zero exponent rule states that any nonzero base raised to the power of zero is equal to one.
+
+The zero exponent rule is like resetting a scale to neutral: no matter the starting nonzero base, the exponent zero returns the multiplicative identity.
+
+For example, $5^0 = 1$, 7^0 = 1, and (-3)^0 = 1.
+END
+""",
+            stem="202601010206 Zero Exponent Rule",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", {finding["code"] for finding in row["findings"]})
+
+    def test_formal_system_definition_does_not_trigger_factual_risk_from_quantifiers(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - CAP theorem
+---
+
+# CAP Theorem
+
+START
+Cloze
+The CAP theorem states that a distributed data system can only guarantee two out of three properties simultaneously:
+
+1. {{c1::Consistency}}: All nodes see the same data.
+2. {{c2::Availability}}: Every request receives a response.
+3. {{c3::Partition tolerance}}: The system continues through network failures.
+
+Extra: This can be compared to note-takers in separate rooms: they can keep identical notes or keep writing while separated, but not both.
+
+For example, during a network partition, a distributed database must choose whether to keep serving requests with possible inconsistency or reject some requests to preserve consistency.
+END
+""",
+            stem="202601010207 CAP Theorem Formal",
+        )
+
+        self.assertFalse(row["factual_risk"])
+
+    def test_named_product_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - CAP product example
+---
+
+# CAP Product Example
+
+## Definition
+
+A product-specific CAP classification maps a database product to a CAP tradeoff claim.
+
+## Analogy
+
+It is like labeling a tool by the job it usually performs: the label depends on the real tool's behavior.
+
+## Example
+
+For example, MongoDB in its default configuration is a CP system, while Apache Cassandra is an AP system.
+""",
+            stem="202601010208 CAP Product Example",
+        )
+
+        self.assertTrue(row["factual_risk"])
+
+    def test_study_word_in_definition_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - dependent variable
+---
+
+# Dependent Variable
+
+## Definition
+
+A dependent variable is the factor in an experiment or study that is being tested and measured.
+
+## Analogy
+
+It is like a scoreboard in a game: it records the result affected by what players do.
+
+## Example
+
+For example, in a clinical trial, the dependent variable could be the patient's symptom score after receiving a treatment.
+""",
+            stem="202601010211 Dependent Variable",
+        )
+
+        self.assertFalse(row["factual_risk"])
+
+    def test_quantified_research_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - spaced repetition effect
+---
+
+# Spaced Repetition Effect
+
+## Definition
+
+Spaced repetition is a study schedule that reviews material after increasing intervals.
+
+## Analogy
+
+It is like watering a plant before the soil dries out: each timed return sustains the system.
+
+## Example
+
+For example, research found that spaced repetition improved retention by 40% after 30 days.
+""",
+            stem="202601010209 Spaced Repetition Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+
+    def test_legal_universal_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - gdpr deletion rule
+---
+
+# GDPR Deletion Rule
+
+## Definition
+
+A legal deletion rule specifies when an organization must erase stored personal data.
+
+## Analogy
+
+It is like a document-retention schedule: the rule controls when records must leave the archive.
+
+## Example
+
+For example, GDPR requires every company to delete user data within 30 days.
+""",
+            stem="202601010210 GDPR Deletion Rule",
+        )
+
+        self.assertTrue(row["factual_risk"])
+
     def test_cli_jsonl_validates_and_prints_valid_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
             jsonl_path = Path(tmp) / "audit.jsonl"

@@ -33,6 +33,13 @@ An overlong Definition is a P1 DAE doctrine failure reported as
 `definition_too_long`. This means the note should be shortened in place, not
 automatically split or rehomed.
 
+`factual_risk` is for sentence-level claims that need verification before
+reliance: empirical numbers, current/versioned claims, source-attributed claims,
+sensitive-domain claims with a check-worthy predicate, causal claims, or named
+product configuration/classification/lifecycle claims. Formal math, logic,
+acronym, stable definition quantifiers, and generic examples do not count by
+themselves.
+
 ## How To Read Results
 
 - Use priority to decide work order.

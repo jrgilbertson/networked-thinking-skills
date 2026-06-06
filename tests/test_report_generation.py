@@ -62,7 +62,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn("## Clean Notes\n\n- [[202601010101 Clean DAE note]]", report)
         self.assertIn("- [[202601010107 Optional Anki note]]", report)
         self.assertIn("## Factual-Risk Notes\n\n- [[202601010106 Factual risk note]]", report)
-        self.assertIn("mark-factual-risk: Mark the universal claim for fact checking before treating it as reliable.", report)
+        self.assertIn("mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.", report)
 
     def test_report_includes_duplicate_overlap_candidate(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())

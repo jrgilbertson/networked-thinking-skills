@@ -17,7 +17,7 @@
 - [[202601010102 Weak DAE note]] | score 62 | clean no | findings: missing_dae: Add complete Definition, Analogy, and Example sections.; missing_parent: Link this note from a structure note.; weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | recommendations: improve-in-place: Add complete Definition, Analogy, and Example sections.; link-parent: Link this note from a structure note.; improve-in-place: Strengthen the DAE content with concrete, self-contained explanations.
 - [[202601010104 Misfiled reference note]] | score 44 | clean no | findings: missing_dae: Add complete Definition, Analogy, and Example sections.; missing_parent: Link this note from a structure note.; misfiled_reference: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.; weak_dae: Strengthen the DAE content with concrete, self-contained explanations. | recommendations: improve-in-place: Add complete Definition, Analogy, and Example sections.; link-parent: Link this note from a structure note.; rehome-non-DAE: Move source-material notes out of Atomic Notes or rewrite them as DAE notes.; improve-in-place: Strengthen the DAE content with concrete, self-contained explanations.
 - [[202601010105 Missing parent note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note. | recommendations: link-parent: Link this note from a structure note.
-- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark the universal claim for fact checking before treating it as reliable. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark the universal claim for fact checking before treating it as reliable.
+- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.
 - [[202601010108 Malformed Anki note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; malformed_anki: Balance START and END markers for Anki card blocks. | recommendations: link-parent: Link this note from a structure note.; improve-in-place: Balance START and END markers for Anki card blocks.
 
 ## P2 Meaningful Improvements
@@ -36,7 +36,7 @@
 
 ## Factual-Risk Notes
 
-- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark the universal claim for fact checking before treating it as reliable. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark the universal claim for fact checking before treating it as reliable.
+- [[202601010106 Factual risk note]] | score 69 | clean no | findings: missing_parent: Link this note from a structure note.; factual_risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking. | recommendations: link-parent: Link this note from a structure note.; mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.
 
 ## Duplicate Or Overlap Candidates
 

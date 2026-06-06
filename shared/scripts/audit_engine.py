@@ -37,7 +37,7 @@ FINDING_MESSAGES = {
     "multi_note_file": "Split bundled ideas into separate atomic notes.",
     "misfiled_reference": "Move source-material notes out of Atomic Notes or rewrite them as DAE notes.",
     "weak_dae": "Strengthen the DAE content with concrete, self-contained explanations.",
-    "factual_risk": "Mark the universal claim for fact checking before treating it as reliable.",
+    "factual_risk": "Mark empirical, current, attributed, or sensitive-domain claims for fact checking.",
     "duplicate_overlap": "Review this note against related notes for possible overlap.",
 }
 RECOMMENDATION_MODES = {
@@ -64,10 +64,59 @@ DIMENSION_PENALTIES = {
     "factual_risk": {"clarity": 20, "metadata_card_safety": 10},
     "duplicate_overlap": {"atomicity": 25, "clarity": 10, "connections": 10},
 }
-UNIVERSAL_CLAIM_RE = re.compile(
-    r"\b(all|always|every|everyone)\b",
+FACTUAL_RISK_ABSOLUTE_RE = re.compile(
+    r"\b(all|always|every|everyone|never|none|only)\b",
     re.IGNORECASE,
 )
+FACTUAL_RISK_NUMBER_RE = re.compile(
+    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d|\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_CURRENT_RE = re.compile(
+    r"\b(as of|currently|latest|now|recently|since \d{4}|deprecated|supported|released|introduced|launched)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_SENSITIVE_RE = re.compile(
+    r"\b(law|legal|regulation|regulatory|gdpr|hipaa|tax|medical|medicine|health|disease|diagnosis|treatment|brain|hormone|testosterone|physiological|cardiovascular|financial|finance|revenue|profit|security|vulnerability|breach|encryption|privacy)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
+    r"\b(according to|found|finds|showed|shows|says|said|proves)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_CAUSAL_RE = re.compile(
+    r"\b(causes?|leads? to|results? in|reduces?|increases?|decreases?|improves?|boosts?|lowers?|raises?|prevents?|predicts?|correlates?|indicates?|suggests?|is associated with|more .* than|less .* than|better .* than|worse .* than)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_EMPIRICAL_PREDICATE_RE = re.compile(
+    r"\b(requires?|supports?|guarantees?|configures?|classif(?:y|ies|ied)|released|introduced|deprecated|launched|acquired|improved|increased|decreased|reduced|found|reported|defaults? to)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_PRODUCT_CLASS_RE = re.compile(
+    r"\b(?:AP|CP|CA)\s+system\b|\bdefault configuration\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_HUMAN_GENERALIZATION_RE = re.compile(
+    r"\b(people|learners|employees|customers|users|humans|children|adults|patients|students)\b",
+    re.IGNORECASE,
+)
+FORMAL_DEFINITION_RE = re.compile(
+    r"\b(is|are|means|refers to|is defined as|stands for|denotes|states that|can be written as|assigns|represents)\b",
+    re.IGNORECASE,
+)
+FORMAL_MARKER_RE = re.compile(
+    r"(?:\\\(|\\\[|\$|=|∀|∃|\b(?:theorem|lemma|proof|axiom|rule|property|let|given|nonzero|integer|integers|rational|irrational|polynomial|function|subset|set|vector|matrix|equation|fraction|denominator|numerator|slope|triangle|rectangle|exponent|power|base|variable|coefficient|ratio|codomain|domain)\b)",
+    re.IGNORECASE,
+)
+SOURCE_SECTION_RE = re.compile(
+    r"(?ims)^(?:#{1,6}[ \t]+)?sources?:?[ \t]*\r?\n.*\Z"
+)
+FENCED_BLOCK_RE = re.compile(r"(?ms)^[ \t]{0,3}(`{3,}|~{3,}).*?^[ \t]{0,3}\1[ \t]*$")
+DISPLAY_MATH_RE = re.compile(r"(?ms)^\$\$.*?^\$\$")
+INLINE_MATH_RE = re.compile(r"\$[^$\r\n]+\$")
+HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+URL_RE = re.compile(r"https?://\S+")
+WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
 
 
@@ -148,7 +197,7 @@ def _audit_note(
         "prompt_version": VERSION,
     }
     if fact_check_required:
-        row["factual_risk_reason"] = "Contains broad universal language that needs verification."
+        row["factual_risk_reason"] = "Contains empirical, current, attributed, or sensitive-domain claims that need verification."
     return row
 
 
@@ -259,8 +308,97 @@ def _looks_like_weak_dae(body: str, has_dae: bool, definition_too_long: bool) ->
 
 
 def _contains_factual_risk(body: str) -> bool:
-    matches = UNIVERSAL_CLAIM_RE.findall(body)
-    return len(matches) >= 2
+    for sentence in _factual_risk_sentences(body):
+        if sentence.endswith("?"):
+            continue
+        if _is_formal_definition_sentence(sentence) and not _has_hard_empirical_trigger(sentence):
+            continue
+        score = _factual_risk_sentence_score(sentence)
+        if score >= 3:
+            return True
+    return False
+
+
+def _factual_risk_sentence_score(sentence: str) -> int:
+    score = 0
+    absolute_count = len(FACTUAL_RISK_ABSOLUTE_RE.findall(sentence))
+    if absolute_count:
+        score += min(absolute_count, 2)
+    if FACTUAL_RISK_NUMBER_RE.search(sentence):
+        score += 3
+    if FACTUAL_RISK_CURRENT_RE.search(sentence):
+        score += 3
+    if FACTUAL_RISK_SENSITIVE_RE.search(sentence):
+        score += 1
+    if FACTUAL_RISK_ATTRIBUTION_RE.search(sentence):
+        score += 2
+    if FACTUAL_RISK_CAUSAL_RE.search(sentence):
+        score += 2
+    if FACTUAL_RISK_HUMAN_GENERALIZATION_RE.search(sentence) and absolute_count:
+        score += 2
+    if _has_named_entity_claim(sentence):
+        score += 3
+    return score
+
+
+def _has_hard_empirical_trigger(sentence: str) -> bool:
+    return bool(
+        FACTUAL_RISK_CURRENT_RE.search(sentence)
+        or FACTUAL_RISK_SENSITIVE_RE.search(sentence)
+        or FACTUAL_RISK_ATTRIBUTION_RE.search(sentence)
+        or _has_named_entity_claim(sentence)
+    )
+
+
+def _has_named_entity_claim(sentence: str) -> bool:
+    return bool(
+        _contains_named_entity(sentence)
+        and (
+            FACTUAL_RISK_EMPIRICAL_PREDICATE_RE.search(sentence)
+            or FACTUAL_RISK_PRODUCT_CLASS_RE.search(sentence)
+        )
+    )
+
+
+def _contains_named_entity(sentence: str) -> bool:
+    without_sentence_start = re.sub(r"^\W*[A-Z][a-z]+(?:'s)?\b", "", sentence)
+    return bool(
+        re.search(r"\b[A-Z][A-Za-z0-9]+(?:[.\-][A-Za-z0-9]+)*(?:\s+[A-Z][A-Za-z0-9]+(?:[.\-][A-Za-z0-9]+)*)+\b", without_sentence_start)
+        or re.search(r"\b[A-Z][a-z]+[A-Z][A-Za-z0-9]*\b", without_sentence_start)
+    )
+
+
+def _is_formal_definition_sentence(sentence: str) -> bool:
+    return bool(FORMAL_DEFINITION_RE.search(sentence) and FORMAL_MARKER_RE.search(sentence))
+
+
+def _factual_risk_sentences(body: str) -> list[str]:
+    text = SOURCE_SECTION_RE.sub("", body)
+    text = FENCED_BLOCK_RE.sub(" ", text)
+    text = DISPLAY_MATH_RE.sub(" ", text)
+    text = INLINE_MATH_RE.sub(" ", text)
+    text = HTML_COMMENT_RE.sub(" ", text)
+    text = URL_RE.sub(" ", text)
+    text = _render_wikilinks_for_factual_risk(text)
+    text = re.sub(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}", r"\1", text)
+    text = re.sub(r"(?m)^[ \t]{0,3}#{1,6}[ \t]+.*$", " ", text)
+    text = re.sub(r"(?m)^\s*(?:TARGET DECK:.*|START|END|Basic|Cloze)\s*$", " ", text)
+    return [
+        sentence.strip(" \t\r\n-*")
+        for sentence in re.split(r"(?<=[.!?])\s+|(?:\r?\n){2,}|^\s*[-*+]\s+", text, flags=re.MULTILINE)
+        if sentence.strip(" \t\r\n-*")
+    ]
+
+
+def _render_wikilinks_for_factual_risk(text: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        if match.group(1):
+            return ""
+        link = match.group(2)
+        visible = link.split("|", 1)[1] if "|" in link else link.split("#", 1)[0]
+        return visible.strip()
+
+    return WIKILINK_RE.sub(replace, text)
 
 
 def _looks_like_duplicate_candidate(path: Path, body: str) -> bool:
