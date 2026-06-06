@@ -6,11 +6,11 @@
     "schema_version": "1.0.0",
     "structure_notes_folder": "Structure Notes"
   },
-  "ended_at": "2026-06-06T00:54:39Z",
+  "ended_at": "2000-01-01T00:00:00Z",
   "errors": [],
   "outputs": {
-    "audit_rows": "tests/golden/fixture-audit.jsonl",
-    "manifest": "tests/golden/fixture-manifest.json"
+    "audit_rows": "fixture-audit.jsonl",
+    "manifest": "fixture-manifest.json"
   },
   "priority_counts": {
     "P0": 1,
@@ -26,7 +26,7 @@
   },
   "run_id": "fixture-run",
   "schema_version": "1.0.0",
-  "started_at": "2026-06-06T00:54:39Z",
+  "started_at": "2000-01-01T00:00:00Z",
   "total_notes": 9,
   "validation_status": "not_run"
 }

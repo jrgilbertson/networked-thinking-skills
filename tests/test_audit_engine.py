@@ -135,6 +135,60 @@ class AuditEngineTest(unittest.TestCase):
             self.assertEqual(manifest["outputs"]["audit_rows"], str(jsonl_path))
             self.assertEqual(manifest["outputs"]["manifest"], str(manifest_path))
 
+    def test_deterministic_fixture_cli_output_is_reproducible_across_paths(self):
+        with tempfile.TemporaryDirectory() as first_tmp, tempfile.TemporaryDirectory() as second_tmp:
+            first_jsonl = Path(first_tmp) / "audit.jsonl"
+            first_manifest = Path(first_tmp) / "manifest.json"
+            second_jsonl = Path(second_tmp) / "audit.jsonl"
+            second_manifest = Path(second_tmp) / "manifest.json"
+
+            first_result = self.run_audit_cli(
+                first_jsonl,
+                first_manifest,
+                extra_args=["--deterministic-fixture-output"],
+            )
+            second_result = self.run_audit_cli(
+                second_jsonl,
+                second_manifest,
+                extra_args=["--deterministic-fixture-output"],
+            )
+            self.assertEqual(first_result.returncode, 0, first_result.stderr)
+            self.assertEqual(second_result.returncode, 0, second_result.stderr)
+
+            self.assertEqual(first_jsonl.read_bytes(), second_jsonl.read_bytes())
+            self.assertEqual(first_manifest.read_bytes(), second_manifest.read_bytes())
+
+            manifest = json.loads(first_manifest.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["outputs"]["audit_rows"], "audit.jsonl")
+            self.assertEqual(manifest["outputs"]["manifest"], "manifest.json")
+
+    def run_audit_cli(
+        self,
+        jsonl_path: Path,
+        manifest_path: Path,
+        *,
+        extra_args: list[str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "shared.scripts.audit_notes",
+                "--vault",
+                str(FIXTURE_VAULT),
+                "--run-id",
+                "test-run",
+                "--jsonl",
+                str(jsonl_path),
+                "--manifest",
+                str(manifest_path),
+                *(extra_args or []),
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

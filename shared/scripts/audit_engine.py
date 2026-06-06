@@ -17,6 +17,7 @@ from shared.scripts.scoring import compute_clean, compute_final_score, highest_p
 
 
 VERSION = "1.0.0"
+DETERMINISTIC_FIXTURE_TIMESTAMP = "2000-01-01T00:00:00Z"
 DIMENSION_NAMES = (
     "structure",
     "atomicity",
@@ -66,20 +67,33 @@ HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTI
 WORD_RE = re.compile(r"\b[\w'-]+\b")
 
 
-def audit_vault(vault_root: Path, *, run_id: str) -> tuple[list[dict[str, object]], dict[str, object]]:
+def audit_vault(
+    vault_root: Path,
+    *,
+    run_id: str,
+    deterministic_fixture_output: bool = False,
+) -> tuple[list[dict[str, object]], dict[str, object]]:
     vault_root = Path(vault_root)
     config = resolve_config(vault_root)
-    started_at = _utc_now()
+    fixture_timestamp = DETERMINISTIC_FIXTURE_TIMESTAMP if deterministic_fixture_output else None
+    started_at = fixture_timestamp or _utc_now()
 
     atomic_folder = vault_root / str(config["atomic_notes_folder"])
     structure_targets = _load_structure_targets(vault_root / str(config["structure_notes_folder"]))
     note_paths = sorted(atomic_folder.rglob("*.md"), key=lambda path: _relative_posix(path, vault_root))
 
     rows = [
-        _audit_note(path, vault_root=vault_root, run_id=run_id, config=config, structure_targets=structure_targets)
+        _audit_note(
+            path,
+            vault_root=vault_root,
+            run_id=run_id,
+            config=config,
+            structure_targets=structure_targets,
+            modified_time=fixture_timestamp or _timestamp_from_path(path),
+        )
         for path in note_paths
     ]
-    ended_at = _utc_now()
+    ended_at = fixture_timestamp or _utc_now()
     manifest = _build_manifest(rows, run_id=run_id, config=config, started_at=started_at, ended_at=ended_at)
     return rows, manifest
 
@@ -91,6 +105,7 @@ def _audit_note(
     run_id: str,
     config: dict[str, object],
     structure_targets: set[str],
+    modified_time: str,
 ) -> dict[str, object]:
     content = path.read_text(encoding="utf-8")
     relative_path = _relative_posix(path, vault_root)
@@ -106,7 +121,7 @@ def _audit_note(
         "note_path": relative_path,
         "note_link": f"[[{path.stem}]]",
         "content_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
-        "modified_time": _timestamp_from_path(path),
+        "modified_time": modified_time,
         "score": score,
         "priority": highest_priority(findings) or "P3",
         "clean": compute_clean(

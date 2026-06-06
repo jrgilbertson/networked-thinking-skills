@@ -13,11 +13,12 @@ from shared.scripts.audit_engine import audit_vault
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
-    rows, manifest = audit_vault(args.vault, run_id=args.run_id)
-    manifest["outputs"] = {
-        "audit_rows": str(args.jsonl),
-        "manifest": str(args.manifest),
-    }
+    rows, manifest = audit_vault(
+        args.vault,
+        run_id=args.run_id,
+        deterministic_fixture_output=args.deterministic_fixture_output,
+    )
+    manifest["outputs"] = _manifest_outputs(args)
 
     args.jsonl.parent.mkdir(parents=True, exist_ok=True)
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
@@ -38,7 +39,24 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--jsonl", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument(
+        "--deterministic-fixture-output",
+        action="store_true",
+        help="Freeze timestamps and normalize output paths for committed fixture artifacts.",
+    )
     return parser.parse_args(argv)
+
+
+def _manifest_outputs(args: argparse.Namespace) -> dict[str, str]:
+    if args.deterministic_fixture_output:
+        return {
+            "audit_rows": args.jsonl.name,
+            "manifest": args.manifest.name,
+        }
+    return {
+        "audit_rows": str(args.jsonl),
+        "manifest": str(args.manifest),
+    }
 
 
 if __name__ == "__main__":
