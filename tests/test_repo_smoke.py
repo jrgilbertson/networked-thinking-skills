@@ -17,6 +17,13 @@ class RepoSmokeTest(unittest.TestCase):
                 self.assertTrue(skill_path.exists(), f"{skill_path} does not exist")
                 self.assertTrue((skill_path / "SKILL.md").exists(), f"{skill_path} lacks SKILL.md")
 
+    def test_lefthook_runs_required_local_ci_checks(self):
+        text = (ROOT / "lefthook.yml").read_text(encoding="utf-8")
+
+        self.assertIn("python3 -m unittest discover -s tests", text)
+        self.assertIn("python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl", text)
+        self.assertIn("python3 -m shared.scripts.verify_install_commands docs/install.md", text)
+
 
 if __name__ == "__main__":
     unittest.main()

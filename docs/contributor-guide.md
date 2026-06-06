@@ -14,9 +14,7 @@ fixtures only.
 ## Required Checks
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_*.py' -v
-python3 -m shared.scripts.verify_install_commands docs/install.md
-python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl
+lefthook run pre-commit --force --no-auto-install
 ```
 
 Run any added doc-specific tests with the same change.

@@ -52,6 +52,12 @@ LLM for model judgment. The prompt is generated from the scoring vocabulary
 source of truth and must stay aligned with `shared/scripts/finding_codes.py`.
 Model output must be strict JSON and validated before it affects scoring.
 
+To prepare one note for judgment without prompt drift, run:
+
+```bash
+python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
+```
+
 ## Remediation
 
 Do not mutate notes from audit findings alone. Generate or consume an explicit remediation plan. Require official Obsidian skills and preflight before vault mutations. Require approval before destructive operations.

@@ -1,0 +1,8 @@
+pre-commit:
+  commands:
+    tests:
+      run: env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests
+    fixture-jsonl:
+      run: python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl
+    install-docs:
+      run: python3 -m shared.scripts.verify_install_commands docs/install.md

@@ -75,3 +75,10 @@ use `shared/references/model-judgment-prompt.md` and emit strict JSON matching
 they affect scores, buckets, or reports. In default mode, review flagged or
 ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
 review every note.
+
+Prepare single-note model requests with the generated prompt and exact
+vault-relative path:
+
+```bash
+python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
+```
