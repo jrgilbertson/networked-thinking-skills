@@ -36,7 +36,11 @@
       "type": "boolean"
     },
     "factual_risk_reason": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
     },
     "fact_check_required": {
       "type": "boolean"
@@ -48,6 +52,28 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "factual_risk": {
+            "const": true
+          }
+        },
+        "required": [
+          "factual_risk"
+        ]
+      },
+      "then": {
+        "properties": {
+          "factual_risk_reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "adjustment": {
       "type": "integer",
@@ -82,16 +108,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "source",
-        "quote"
+        "excerpt",
+        "reason"
       ],
       "properties": {
-        "source": {
+        "excerpt": {
+          "type": "string"
+        },
+        "reason": {
           "type": "string",
           "minLength": 1
-        },
-        "quote": {
-          "type": "string"
         }
       }
     },
