@@ -5,4 +5,30 @@ description: Use when auditing or improving the quality of Networked Thinking at
 
 # Atomic Note Audit
 
-This scaffolded skill package is completed by the shared rubric, scripts, and workflow implementation in this repo.
+Use this skill to audit every Markdown file in a configured Atomic Notes folder, produce vault-health KPIs, and create remediation queues.
+
+## Required References
+
+- `shared/references/doctrine.md`
+- `shared/references/audit-rubric.md`
+- `shared/references/remediation-context.md`
+- `shared/references/install-matrix.md`
+
+## Read-Only Audit
+
+1. Resolve vault config.
+2. Run `shared/scripts/audit_notes.py`.
+3. Validate JSONL with `shared/scripts/validate_jsonl.py`.
+4. Generate Markdown report with `shared/scripts/generate_report.py`.
+5. Generate Obsidian Base with `shared/scripts/generate_base.py` when requested.
+6. Summarize KPIs and P0-P3 queues.
+
+## Model Judgment
+
+Use deterministic scan for every note. In default mode, model-judge flagged or ambiguous notes and a sample of apparently clean notes. In exhaustive mode, model-judge every note.
+
+Model output must be strict JSON and validated before it affects scoring.
+
+## Remediation
+
+Do not mutate notes from audit findings alone. Generate or consume an explicit remediation plan. Require official Obsidian skills and preflight before vault mutations. Require approval before destructive operations.
