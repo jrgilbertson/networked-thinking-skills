@@ -35,7 +35,7 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertIn("- Total notes: 9", report)
         self.assertIn("- Clean notes: 2 / 9 (22.2%)", report)
         self.assertIn("- Priority counts: P0 1, P1 5, P2 1, P3 2", report)
-        self.assertIn("- Model judgment coverage: 0 / 9 reviewed; 0 pending model judgments", report)
+        self.assertIn("- Model judgment: not run; deterministic audit complete", report)
         for heading in [
             "## P0 Critical Remediation",
             "## P1 High-Impact Remediation",

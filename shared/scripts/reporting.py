@@ -33,8 +33,7 @@ def render_markdown_report(
         f"- Clean notes: {clean_notes} / {total_notes} ({_percentage(clean_notes, total_notes)})",
         "- Priority counts: "
         + ", ".join(f"{priority} {priority_counts[priority]}" for priority in PRIORITY_ORDER),
-        f"- Model judgment coverage: {reviewed_models} / {total_notes} reviewed; "
-        f"{pending_models} pending model judgments",
+        _model_judgment_summary(reviewed_models, pending_models, total_notes),
     ]
 
     for priority in PRIORITY_ORDER:
@@ -73,6 +72,12 @@ def render_markdown_report(
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def _model_judgment_summary(reviewed: int, pending: int, total: int) -> str:
+    if reviewed == 0 and pending == 0:
+        return "- Model judgment: not run; deterministic audit complete"
+    return f"- Model judgment coverage: {reviewed} / {total} reviewed; {pending} pending"
 
 
 def _section(title: str, rows: list[dict[str, object]]) -> list[str]:

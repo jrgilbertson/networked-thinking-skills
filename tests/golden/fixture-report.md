@@ -6,7 +6,7 @@
 - Total notes: 9
 - Clean notes: 2 / 9 (22.2%)
 - Priority counts: P0 1, P1 5, P2 1, P3 2
-- Model judgment coverage: 0 / 9 reviewed; 0 pending model judgments
+- Model judgment: not run; deterministic audit complete
 
 ## P0 Critical Remediation
 
