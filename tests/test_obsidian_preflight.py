@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from shared.scripts.obsidian_adapter import ObsidianAdapter
+from shared.scripts.obsidian_adapter import CommandResult, ObsidianAdapter
 from shared.scripts.preflight_obsidian import check_skill_paths, main
 
 
@@ -88,6 +88,37 @@ class ObsidianPreflightTest(unittest.TestCase):
 
         self.assertEqual(return_code, 3)
         self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=missing")
+
+    def test_require_cli_help_nonzero_returns_4(self):
+        class FakeObsidianAdapter:
+            def __init__(self, binary: str = "obsidian") -> None:
+                self.binary = binary
+
+            def available(self) -> bool:
+                return True
+
+            def help(self) -> CommandResult:
+                return CommandResult(ok=False, stdout="", stderr="failed", returncode=1)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            skills_root = Path(tmp)
+            _create_required_skills(skills_root)
+            stdout = io.StringIO()
+
+            with patch("shared.scripts.preflight_obsidian.ObsidianAdapter", FakeObsidianAdapter):
+                with contextlib.redirect_stdout(stdout):
+                    return_code = main(
+                        [
+                            "--skills-root",
+                            str(skills_root),
+                            "--require-cli",
+                            "--obsidian-binary",
+                            "fake-obsidian",
+                        ]
+                    )
+
+        self.assertEqual(return_code, 4)
+        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
 
     def test_preflight_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:
