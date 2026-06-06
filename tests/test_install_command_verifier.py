@@ -87,12 +87,24 @@ class InstallCommandVerifierTest(unittest.TestCase):
 
         self.assertTrue(any("duplicate runtime: codex-raw" in error for error in errors))
 
+    def test_validate_doc_rejects_doc_without_blocks(self):
+        errors = validate_doc("# Install\n\nNo metadata here.\n")
+
+        self.assertTrue(any("no install-command blocks found" in error for error in errors))
+
     def test_validate_doc_rejects_blocked_status_without_reason(self):
         text = command_block(status="blocked-with-reason")
 
         errors = validate_doc(text)
 
         self.assertTrue(any("requires a non-empty reason" in error for error in errors))
+
+    def test_validate_doc_rejects_empty_command(self):
+        text = command_block(command="")
+
+        errors = validate_doc(text)
+
+        self.assertTrue(any("command must be non-empty" in error for error in errors))
 
 
 if __name__ == "__main__":
