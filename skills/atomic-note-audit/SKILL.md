@@ -9,10 +9,10 @@ Use this skill to audit every Markdown file in a configured Atomic Notes folder,
 
 ## Required References
 
-- `shared/references/doctrine.md`
-- `shared/references/audit-rubric.md`
-- `shared/references/remediation-context.md`
-- `shared/references/install-matrix.md`
+- `../../shared/references/doctrine.md`
+- `../../shared/references/audit-rubric.md`
+- `../../shared/references/remediation-context.md`
+- `../../shared/references/install-matrix.md`
 
 ## Read-Only Audit
 

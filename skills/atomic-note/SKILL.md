@@ -11,8 +11,8 @@ Before writing or editing an Obsidian vault file, load the official Obsidian Mar
 
 ## Required References
 
-- `shared/references/doctrine.md`
-- `shared/references/remediation-context.md`
+- `../../shared/references/doctrine.md`
+- `../../shared/references/remediation-context.md`
 
 ## Workflow
 
