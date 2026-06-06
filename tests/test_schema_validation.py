@@ -7,13 +7,14 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from shared.scripts.schema_validation import ValidationError, validate_audit_row
+from shared.scripts.schema_validation import ValidationError, validate_audit_row, validate_run_manifest
 from shared.scripts.validate_jsonl import main, validate_jsonl_file
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AUDIT_ROW_SCHEMA_PATH = REPO_ROOT / "shared" / "schemas" / "audit-row.schema.json"
 MODEL_JUDGMENT_SCHEMA_PATH = REPO_ROOT / "shared" / "schemas" / "model-judgment.schema.json"
+RUN_MANIFEST_SCHEMA_PATH = REPO_ROOT / "shared" / "schemas" / "run-manifest.schema.json"
 
 VALID_ROW = {
     "schema_version": "1.0.0",
@@ -47,6 +48,33 @@ VALID_ROW = {
     "doctrine_version": "1.0.0",
     "rubric_version": "1.0.0",
     "prompt_version": "1.0.0"
+}
+
+VALID_MANIFEST = {
+    "schema_version": "1.0.0",
+    "run_id": "run-1",
+    "started_at": "2026-06-05T12:00:00Z",
+    "ended_at": "2026-06-05T12:00:01Z",
+    "config_snapshot": {},
+    "total_notes": 1,
+    "row_status_counts": {
+        "complete": 1,
+        "reused_cache": 0,
+        "error": 0,
+        "skipped": 0,
+    },
+    "priority_counts": {
+        "P0": 0,
+        "P1": 0,
+        "P2": 0,
+        "P3": 1,
+    },
+    "validation_status": "not_run",
+    "outputs": {
+        "audit_rows": "audit.jsonl",
+        "manifest": "manifest.json",
+    },
+    "errors": [],
 }
 
 
@@ -143,6 +171,25 @@ class SchemaValidationTest(unittest.TestCase):
     def test_model_judgment_schema_defines_factual_risk_as_boolean(self):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["properties"]["factual_risk"]["type"], "boolean")
+
+    def test_valid_run_manifest_passes(self):
+        validate_run_manifest(dict(VALID_MANIFEST))
+
+    def test_run_manifest_missing_required_key_fails(self):
+        manifest = dict(VALID_MANIFEST)
+        del manifest["priority_counts"]
+        with self.assertRaises(ValidationError):
+            validate_run_manifest(manifest)
+
+    def test_run_manifest_priority_counts_require_all_priorities(self):
+        manifest = dict(VALID_MANIFEST)
+        manifest["priority_counts"] = {}
+        with self.assertRaises(ValidationError):
+            validate_run_manifest(manifest)
+
+    def test_run_manifest_schema_requires_priority_counts_keys(self):
+        schema = json.loads(RUN_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(schema["$defs"]["priority_counts"]["required"], ["P0", "P1", "P2", "P3"])
 
     def test_jsonl_file_validation_counts_rows(self):
         with tempfile.TemporaryDirectory() as tmp:

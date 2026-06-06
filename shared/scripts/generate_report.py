@@ -9,7 +9,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from shared.scripts.reporting import render_markdown_report
-from shared.scripts.schema_validation import ValidationError
+from shared.scripts.schema_validation import ValidationError, validate_run_manifest
 from shared.scripts.validate_jsonl import validate_jsonl_file
 
 
@@ -18,7 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         validate_jsonl_file(args.jsonl, default_scan=True)
         rows = _read_jsonl(args.jsonl)
-        manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+        manifest = _read_manifest(args.manifest)
         report = render_markdown_report(rows, manifest)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report, encoding="utf-8")
@@ -44,6 +44,15 @@ def _read_jsonl(path: Path) -> list[dict[str, object]]:
             if line.strip():
                 rows.append(json.loads(line))
     return rows
+
+
+def _read_manifest(path: Path) -> dict[str, object]:
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        validate_run_manifest(manifest)
+    except ValidationError as exc:
+        raise ValidationError(f"{path}: {exc}") from exc
+    return manifest
 
 
 if __name__ == "__main__":

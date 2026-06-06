@@ -31,10 +31,25 @@ AUDIT_ROW_REQUIRED = {
     "rubric_version",
     "prompt_version",
 }
+RUN_MANIFEST_REQUIRED = {
+    "schema_version",
+    "run_id",
+    "started_at",
+    "ended_at",
+    "config_snapshot",
+    "total_notes",
+    "row_status_counts",
+    "priority_counts",
+    "validation_status",
+    "outputs",
+    "errors",
+}
 
 ROW_STATUSES = {"complete", "reused_cache", "error", "skipped"}
 PRIORITIES = {"P0", "P1", "P2", "P3", None}
 CACHE_STATUSES = {"none", "miss", "hit", "partial"}
+VALIDATION_STATUSES = {"passed", "failed", "not_run"}
+OUTPUT_KEYS = {"audit_rows", "model_judgments", "remediation_plan", "manifest"}
 
 
 @dataclass(frozen=True)
@@ -78,3 +93,65 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
         or not note_target
     ):
         raise ValidationError("note_link must be an Obsidian wikilink")
+
+
+def validate_run_manifest(manifest: dict[str, Any]) -> None:
+    if not isinstance(manifest, dict):
+        raise ValidationError("manifest must be an object")
+    _require_keys(manifest, RUN_MANIFEST_REQUIRED)
+    _reject_extra_keys(manifest, RUN_MANIFEST_REQUIRED, "manifest")
+
+    for key in ("schema_version", "run_id", "started_at", "ended_at"):
+        if not isinstance(manifest[key], str) or not manifest[key]:
+            raise ValidationError(f"{key} must be a non-empty string")
+
+    if not isinstance(manifest["config_snapshot"], dict):
+        raise ValidationError("config_snapshot must be an object")
+    if not _is_non_negative_int(manifest["total_notes"]):
+        raise ValidationError("total_notes must be a non-negative integer")
+
+    _validate_count_mapping(
+        manifest["row_status_counts"],
+        required_keys=set(ROW_STATUSES),
+        label="row_status_counts",
+    )
+    _validate_count_mapping(
+        manifest["priority_counts"],
+        required_keys={"P0", "P1", "P2", "P3"},
+        label="priority_counts",
+    )
+
+    if manifest["validation_status"] not in VALIDATION_STATUSES:
+        raise ValidationError(f"Invalid validation_status: {manifest['validation_status']}")
+
+    outputs = manifest["outputs"]
+    if not isinstance(outputs, dict):
+        raise ValidationError("outputs must be an object")
+    _reject_extra_keys(outputs, OUTPUT_KEYS, "outputs")
+    for key, value in outputs.items():
+        if not isinstance(value, str):
+            raise ValidationError(f"outputs.{key} must be a string")
+
+    errors = manifest["errors"]
+    if not isinstance(errors, list) or not all(isinstance(error, str) for error in errors):
+        raise ValidationError("errors must be an array of strings")
+
+
+def _reject_extra_keys(data: dict[str, Any], allowed_keys: set[str], label: str) -> None:
+    extra = set(data) - allowed_keys
+    if extra:
+        raise ValidationError(f"{label} has unsupported keys: {', '.join(sorted(extra))}")
+
+
+def _validate_count_mapping(data: Any, *, required_keys: set[str], label: str) -> None:
+    if not isinstance(data, dict):
+        raise ValidationError(f"{label} must be an object")
+    _require_keys(data, required_keys)
+    _reject_extra_keys(data, required_keys, label)
+    for key, value in data.items():
+        if not _is_non_negative_int(value):
+            raise ValidationError(f"{label}.{key} must be a non-negative integer")
+
+
+def _is_non_negative_int(value: Any) -> bool:
+    return type(value) is int and value >= 0

@@ -127,6 +127,36 @@ class ReportGenerationTest(unittest.TestCase):
             self.assertFalse(output.exists())
             self.assertIn(str(invalid_jsonl), result.stderr)
 
+    def test_generate_report_rejects_invalid_manifest_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            invalid_manifest = Path(tmp) / "manifest.json"
+            invalid_manifest.write_text(
+                json.dumps({"run_id": "bad-manifest", "priority_counts": {}}),
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "report.md"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.generate_report",
+                    "--jsonl",
+                    str(AUDIT_JSONL),
+                    "--manifest",
+                    str(invalid_manifest),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            self.assertIn(str(invalid_manifest), result.stderr)
+            self.assertIn("Missing required keys", result.stderr)
+
     def test_generate_report_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "direct-report.md"
