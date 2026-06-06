@@ -7,7 +7,7 @@ FRONTMATTER_RE = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", 
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+([^\r\n]+?)[ \t]*$", re.MULTILINE)
 FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
-INLINE_CODE_RE = re.compile(r"(`+)([^`\r\n]*?)\1")
+INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1)[^\r\n])*?\1")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+[.)])[ \t]+")
 
@@ -122,7 +122,9 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
                 fence_content_indent = None
             continue
 
-        if list_marker is not None:
+        if list_marker is not None and (
+            not _is_indented_code_line(line) or active_content_indent is not None
+        ):
             list_content_indent = _list_marker_content_indent(line, content, list_marker)
             list_fence_line = _list_item_text(line, content, list_marker)
             match = FENCE_START_RE.match(list_fence_line)

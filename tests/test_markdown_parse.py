@@ -149,6 +149,24 @@ class MarkdownParseTest(unittest.TestCase):
 """
         self.assertEqual(extract_wikilinks(markdown), ["Real Link"])
 
+    def test_standalone_indented_list_marker_backtick_fence_does_not_hide_structure(self):
+        markdown = "    - ```markdown\n## Definition\n[[Real Note]]\n"
+        self.assertEqual(extract_headings(markdown), ["Definition"])
+        self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
+    def test_standalone_tab_indented_list_marker_backtick_fence_does_not_hide_links(self):
+        markdown = "\t- ```markdown\n[[Real Note]]\n"
+        self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
+    def test_standalone_indented_list_marker_tilde_fence_does_not_hide_structure(self):
+        markdown = "    - ~~~markdown\n## Definition\n[[Real Note]]\n"
+        self.assertEqual(extract_headings(markdown), ["Definition"])
+        self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
+    def test_standalone_tab_indented_list_marker_tilde_fence_does_not_hide_links(self):
+        markdown = "\t- ~~~markdown\n[[Real Note]]\n"
+        self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
     def test_extract_wikilinks_ignores_true_tab_indented_code(self):
         markdown = "\t[[Still not real]]\n[[Top Note]]\n"
         self.assertEqual(extract_wikilinks(markdown), ["Top Note"])
@@ -318,6 +336,10 @@ Example text.
     def test_extract_wikilinks_ignores_inline_code_spans(self):
         markdown = "Ignore `[[Literal Example]]` but keep [[Real Note]].\n"
         self.assertEqual(extract_wikilinks(markdown), ["Real Note"])
+
+    def test_extract_wikilinks_ignores_long_inline_code_with_shorter_backticks(self):
+        markdown = "Ignore ``[[Hidden]] ` literal`` keep [[Real]].\n"
+        self.assertEqual(extract_wikilinks(markdown), ["Real"])
 
     def test_stray_inline_code_ticks_do_not_mask_note_structure_across_blocks(self):
         markdown = """`stray
