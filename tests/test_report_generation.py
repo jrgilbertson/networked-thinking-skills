@@ -1,0 +1,156 @@
+import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+import unittest
+
+from shared.scripts.reporting import render_markdown_report
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+AUDIT_JSONL = REPO_ROOT / "tests" / "golden" / "fixture-audit.jsonl"
+MANIFEST_JSON = REPO_ROOT / "tests" / "golden" / "fixture-manifest.json"
+GOLDEN_REPORT = REPO_ROOT / "tests" / "golden" / "fixture-report.md"
+
+
+def load_fixture_rows() -> list[dict[str, object]]:
+    return [
+        json.loads(line)
+        for line in AUDIT_JSONL.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
+def load_fixture_manifest() -> dict[str, object]:
+    return json.loads(MANIFEST_JSON.read_text(encoding="utf-8"))
+
+
+class ReportGenerationTest(unittest.TestCase):
+    def test_render_markdown_report_contains_kpi_summary_and_priority_sections(self):
+        report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
+
+        self.assertIn("# Atomic Note Audit", report)
+        self.assertIn("- Run ID: fixture-run", report)
+        self.assertIn("- Total notes: 9", report)
+        self.assertIn("- Clean notes: 2 / 9 (22.2%)", report)
+        self.assertIn("- Priority counts: P0 1, P1 5, P2 1, P3 2", report)
+        self.assertIn("- Model judgment coverage: 0 / 9 reviewed; 0 pending model judgments", report)
+        for heading in [
+            "## P0 Critical Remediation",
+            "## P1 High-Impact Remediation",
+            "## P2 Meaningful Improvements",
+            "## P3 Polish And Clean Notes",
+            "## Clean Notes",
+            "## Factual-Risk Notes",
+            "## Duplicate Or Overlap Candidates",
+            "## Remediation Next Steps",
+        ]:
+            self.assertIn(heading, report)
+
+    def test_report_renders_recommendation_objects_without_dict_repr(self):
+        report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
+
+        self.assertIn("link-parent: Link this note from a structure note.", report)
+        self.assertIn("split-multi-note: Split bundled ideas into separate atomic notes.", report)
+        self.assertNotIn("{'mode'", report)
+        self.assertNotIn('"mode":', report)
+
+    def test_report_lists_clean_and_factual_risk_notes(self):
+        report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
+
+        self.assertIn("## Clean Notes\n\n- [[202601010101 Clean DAE note]]", report)
+        self.assertIn("- [[202601010107 Optional Anki note]]", report)
+        self.assertIn("## Factual-Risk Notes\n\n- [[202601010106 Factual risk note]]", report)
+        self.assertIn("mark-factual-risk: Mark the universal claim for fact checking before treating it as reliable.", report)
+
+    def test_report_includes_duplicate_overlap_candidate(self):
+        report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
+
+        self.assertIn("## Duplicate Or Overlap Candidates\n\n- [[202601010109 Duplicate candidate note]]", report)
+        self.assertIn("duplicate_overlap: Review this note against related notes for possible overlap.", report)
+        self.assertIn("duplicate-overlap-review: Review this note against related notes for possible overlap.", report)
+
+    def test_rendered_fixture_matches_golden_report(self):
+        report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
+
+        self.assertEqual(report, GOLDEN_REPORT.read_text(encoding="utf-8"))
+
+    def test_generate_report_validates_jsonl_and_writes_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "reports" / "audit.md"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.generate_report",
+                    "--jsonl",
+                    str(AUDIT_JSONL),
+                    "--manifest",
+                    str(MANIFEST_JSON),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), str(output))
+            self.assertTrue(output.exists())
+            self.assertIn("# Atomic Note Audit", output.read_text(encoding="utf-8"))
+
+    def test_generate_report_rejects_invalid_jsonl_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            invalid_jsonl = Path(tmp) / "invalid.jsonl"
+            invalid_jsonl.write_text("{not json}\n", encoding="utf-8")
+            output = Path(tmp) / "report.md"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.generate_report",
+                    "--jsonl",
+                    str(invalid_jsonl),
+                    "--manifest",
+                    str(MANIFEST_JSON),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            self.assertIn(str(invalid_jsonl), result.stderr)
+
+    def test_generate_report_supports_direct_script_execution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "direct-report.md"
+            script = REPO_ROOT / "shared" / "scripts" / "generate_report.py"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(script),
+                    "--jsonl",
+                    str(AUDIT_JSONL),
+                    "--manifest",
+                    str(MANIFEST_JSON),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), str(output))
+            self.assertTrue(output.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()
