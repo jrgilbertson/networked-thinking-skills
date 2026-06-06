@@ -63,6 +63,27 @@ class RemediationTest(unittest.TestCase):
         with self.assertRaises(RemediationError):
             validate_plan(plan, destructive_allowed=True)
 
+    def test_legacy_operation_type_delete_fails_closed(self):
+        plan = dict(APPROVED_PLAN)
+        plan["operations"] = [{"operation_type": "delete", "note_path": "Atomic Notes/Old.md"}]
+
+        with self.assertRaises(RemediationError):
+            validate_plan(plan, destructive_allowed=False)
+
+    def test_missing_operation_fails_closed(self):
+        plan = dict(APPROVED_PLAN)
+        plan["operations"] = [{"note_path": "Atomic Notes/Missing.md"}]
+
+        with self.assertRaises(RemediationError):
+            validate_plan(plan, destructive_allowed=True)
+
+    def test_unknown_operation_fails_closed(self):
+        plan = dict(APPROVED_PLAN)
+        plan["operations"] = [{"operation": "archive", "note_path": "Atomic Notes/Unknown.md"}]
+
+        with self.assertRaises(RemediationError):
+            validate_plan(plan, destructive_allowed=True)
+
     def test_dry_run_manifest_records_operations(self):
         validate_plan(APPROVED_PLAN, destructive_allowed=True)
         manifest = build_dry_run_manifest(APPROVED_PLAN)

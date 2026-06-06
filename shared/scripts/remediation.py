@@ -10,6 +10,7 @@ class RemediationError(Exception):
 
 
 DESTRUCTIVE_OPERATIONS = {"split", "delete", "rename", "move"}
+SUPPORTED_OPERATIONS = {"edit", "split", "delete", "rename", "move", "relink"}
 REQUIRED_PLAN_KEYS = ("plan_version", "audit_run_id", "mode", "operations")
 
 
@@ -27,8 +28,12 @@ def validate_plan(plan: dict[str, Any], *, destructive_allowed: bool) -> None:
     for index, operation in enumerate(operations):
         if not isinstance(operation, dict):
             raise RemediationError(f"Operation {index} must be an object")
+        if "operation_type" in operation:
+            raise RemediationError(f"Operation {index} uses unsupported operation_type")
 
         operation_name = operation.get("operation")
+        if operation_name not in SUPPORTED_OPERATIONS:
+            raise RemediationError(f"Operation {index} has unsupported operation")
         if operation_name in DESTRUCTIVE_OPERATIONS:
             if not destructive_allowed:
                 raise RemediationError(f"Operation {index} is destructive")
