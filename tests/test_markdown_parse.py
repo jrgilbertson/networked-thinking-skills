@@ -334,6 +334,17 @@ END
         self.assertTrue(has_dae_sections(markdown))
         self.assertEqual(extract_wikilinks(markdown), ["Outside Fence", "After Closer"])
 
+    def test_fence_inside_html_comment_does_not_hide_later_structure(self):
+        markdown = """<!--
+```markdown
+[[Hidden]]
+-->
+## Definition
+[[Real]]
+"""
+        self.assertEqual(extract_headings(markdown), ["Definition"])
+        self.assertEqual(extract_wikilinks(markdown), ["Real"])
+
     def test_tab_indented_fence_marker_does_not_hide_later_structure(self):
         markdown = "\t```\n## Definition\n[[Real Note]]\n"
         self.assertEqual(extract_headings(markdown), ["Definition"])

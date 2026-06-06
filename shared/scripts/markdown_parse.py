@@ -32,6 +32,16 @@ def _is_closing_fence(line: str, fence_char: str, fence_length: int) -> bool:
     return re.match(pattern, line) is not None
 
 
+def _find_html_comment_start_outside_inline_code(line: str) -> int:
+    search_start = 0
+    for match in INLINE_CODE_RE.finditer(line):
+        comment_start = line.find("<!--", search_start, match.start())
+        if comment_start != -1:
+            return comment_start
+        search_start = match.end()
+    return line.find("<!--", search_start)
+
+
 def _active_list_content_indent(
     indent_width: int, list_contexts: list[tuple[int, int]]
 ) -> int | None:
@@ -109,6 +119,7 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
     fence_char = ""
     fence_length = 0
     fence_content_indent: int | None = None
+    in_html_comment = False
     list_contexts: list[tuple[int, int]] = []
 
     for line in markdown.splitlines(keepends=True):
@@ -125,6 +136,12 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
             if _is_closing_fence(fence_line, fence_char, fence_length):
                 in_fence = False
                 fence_content_indent = None
+            continue
+
+        if in_html_comment:
+            masked_lines.append(line)
+            if "-->" in line:
+                in_html_comment = False
             continue
 
         if list_marker is not None and (
@@ -162,6 +179,12 @@ def _mask_fenced_code_blocks(markdown: str) -> str:
             fence_content_indent = active_content_indent
             masked_lines.append(_line_break(line))
             continue
+
+        comment_start = _find_html_comment_start_outside_inline_code(line)
+        if comment_start != -1 and not (
+            _is_indented_code_line(line) and active_content_indent is None
+        ):
+            in_html_comment = "-->" not in line[comment_start + 4:]
 
         masked_lines.append(line)
         list_contexts = _update_list_contexts(
