@@ -277,10 +277,21 @@ def _normalize_heading_text(heading: str) -> str:
     return re.sub(r"\s+#+\s*$", "", heading.strip()).strip()
 
 
+def extract_structural_heading_lines(markdown: str) -> list[tuple[int, int, str]]:
+    """Return structural headings as body-relative line number, level, and text."""
+    headings: list[tuple[int, int, str]] = []
+    for line_number, line in enumerate(_structural_markdown(markdown).splitlines(keepends=True)):
+        match = HEADING_RE.match(line)
+        if match:
+            marker = line.lstrip(" ").split(None, 1)[0]
+            headings.append((line_number, len(marker), _normalize_heading_text(match.group(1))))
+    return headings
+
+
 def extract_headings(markdown: str) -> list[str]:
     return [
-        _normalize_heading_text(match.group(1))
-        for match in HEADING_RE.finditer(_structural_markdown(markdown))
+        heading
+        for _, _, heading in extract_structural_heading_lines(markdown)
     ]
 
 

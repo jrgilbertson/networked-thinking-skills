@@ -1,19 +1,38 @@
 from __future__ import annotations
 
-import re
+from shared.scripts.markdown_parse import (
+    extract_frontmatter,
+    extract_structural_heading_lines,
+)
 
 
-TOP_HEADING_RE = re.compile(r"(?m)^#\s+(.+)$")
+def _line_start_offsets(markdown: str) -> list[int]:
+    offsets = [0]
+    offset = 0
+    for line in markdown.splitlines(keepends=True):
+        offset += len(line)
+        offsets.append(offset)
+    return offsets
 
 
 def propose_split(note_path: str, markdown: str) -> dict[str, object]:
-    matches = list(TOP_HEADING_RE.finditer(markdown))
+    _, body = extract_frontmatter(markdown)
+    body_start = len(markdown) - len(body)
+    body_line_starts = _line_start_offsets(body)
+    headings = [
+        (line_number, title)
+        for line_number, level, title in extract_structural_heading_lines(markdown)
+        if level == 1
+    ]
     outputs: list[dict[str, str]] = []
 
-    for index, match in enumerate(matches):
-        start = match.start()
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(markdown)
-        title = match.group(1).strip()
+    for index, (line_number, title) in enumerate(headings):
+        start = body_start + body_line_starts[line_number]
+        end = (
+            body_start + body_line_starts[headings[index + 1][0]]
+            if index + 1 < len(headings)
+            else len(markdown)
+        )
         safe_title = title.replace("/", "-")
         outputs.append(
             {

@@ -136,6 +136,53 @@ class RemediationTest(unittest.TestCase):
             ],
         )
 
+    def test_propose_split_ignores_fenced_code_headings(self):
+        markdown = """# Real idea
+
+Body.
+
+```markdown
+# Not a note heading
+```
+
+More body.
+
+# Second idea
+
+Body.
+"""
+        proposal = propose_split("Atomic Notes/Bundle.md", markdown)
+
+        self.assertEqual(len(proposal["proposed_outputs"]), 2)
+        self.assertEqual(proposal["proposed_outputs"][0]["note_path"], "Atomic Notes/Real idea.md")
+        self.assertIn("# Not a note heading", proposal["proposed_outputs"][0]["content"])
+        self.assertEqual(proposal["proposed_outputs"][1]["note_path"], "Atomic Notes/Second idea.md")
+
+    def test_propose_split_ignores_frontmatter_and_html_comment_headings(self):
+        markdown = """---
+# Not frontmatter heading
+---
+
+<!--
+# Not comment heading
+-->
+
+# Real idea
+
+Body.
+"""
+        proposal = propose_split("Atomic Notes/Bundle.md", markdown)
+
+        self.assertEqual(
+            proposal["proposed_outputs"],
+            [
+                {
+                    "note_path": "Atomic Notes/Real idea.md",
+                    "content": "# Real idea\n\nBody.\n",
+                }
+            ],
+        )
+
     def test_propose_split_without_top_level_heading_does_not_delete_original(self):
         proposal = propose_split("Atomic Notes/Bundle.md", "## Nested only\n\nBody.\n")
 
