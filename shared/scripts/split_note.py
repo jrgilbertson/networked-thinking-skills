@@ -25,6 +25,6 @@ def propose_split(note_path: str, markdown: str) -> dict[str, object]:
     return {
         "source_note_path": note_path,
         "operation": "split",
-        "delete_original": True,
+        "delete_original": bool(outputs),
         "proposed_outputs": outputs,
     }

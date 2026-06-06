@@ -32,6 +32,8 @@ def validate_plan(plan: dict[str, Any], *, destructive_allowed: bool) -> None:
             raise RemediationError(f"Operation {index} uses unsupported operation_type")
 
         operation_name = operation.get("operation")
+        if not isinstance(operation_name, str):
+            raise RemediationError(f"Operation {index} must state operation")
         if operation_name not in SUPPORTED_OPERATIONS:
             raise RemediationError(f"Operation {index} has unsupported operation")
         if operation_name in DESTRUCTIVE_OPERATIONS:
@@ -39,8 +41,10 @@ def validate_plan(plan: dict[str, Any], *, destructive_allowed: bool) -> None:
                 raise RemediationError(f"Operation {index} is destructive")
             if operation.get("approved") is not True:
                 raise RemediationError(f"Operation {index} requires approval")
-        if operation_name == "split" and operation.get("delete_original") is not True:
-            raise RemediationError(f"Split operation {index} must state delete_original=true")
+        if operation_name == "split":
+            if operation.get("delete_original") is not True:
+                raise RemediationError(f"Split operation {index} must state delete_original=true")
+            _validate_split_outputs(operation, index)
 
 
 def build_dry_run_manifest(plan: dict[str, Any]) -> dict[str, Any]:
@@ -53,3 +57,15 @@ def build_dry_run_manifest(plan: dict[str, Any]) -> dict[str, Any]:
         "operations": deepcopy(plan["operations"]),
         "executed": False,
     }
+
+
+def _validate_split_outputs(operation: dict[str, Any], index: int) -> None:
+    outputs = operation.get("proposed_outputs")
+    if not isinstance(outputs, list) or not outputs:
+        raise RemediationError(f"Split operation {index} requires proposed_outputs")
+    for output_index, output in enumerate(outputs):
+        if not isinstance(output, dict):
+            raise RemediationError(f"Split operation {index} output {output_index} must be an object")
+        for key in ("note_path", "content"):
+            if not isinstance(output.get(key), str) or not output[key]:
+                raise RemediationError(f"Split operation {index} output {output_index} requires {key}")

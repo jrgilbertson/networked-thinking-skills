@@ -77,12 +77,31 @@ class RemediationTest(unittest.TestCase):
         with self.assertRaises(RemediationError):
             validate_plan(plan, destructive_allowed=True)
 
+    def test_non_string_operation_fails_closed(self):
+        plan = dict(APPROVED_PLAN)
+        plan["operations"] = [{"operation": ["delete"], "note_path": "Atomic Notes/List.md"}]
+
+        with self.assertRaises(RemediationError):
+            validate_plan(plan, destructive_allowed=True)
+
     def test_unknown_operation_fails_closed(self):
         plan = dict(APPROVED_PLAN)
         plan["operations"] = [{"operation": "archive", "note_path": "Atomic Notes/Unknown.md"}]
 
         with self.assertRaises(RemediationError):
             validate_plan(plan, destructive_allowed=True)
+
+    def test_split_requires_proposed_outputs(self):
+        for operation in (
+            dict(APPROVED_PLAN["operations"][0], proposed_outputs=[]),
+            {key: value for key, value in APPROVED_PLAN["operations"][0].items() if key != "proposed_outputs"},
+        ):
+            with self.subTest(operation=operation):
+                plan = dict(APPROVED_PLAN)
+                plan["operations"] = [operation]
+
+                with self.assertRaises(RemediationError):
+                    validate_plan(plan, destructive_allowed=True)
 
     def test_dry_run_manifest_records_operations(self):
         validate_plan(APPROVED_PLAN, destructive_allowed=True)
@@ -116,6 +135,12 @@ class RemediationTest(unittest.TestCase):
                 },
             ],
         )
+
+    def test_propose_split_without_top_level_heading_does_not_delete_original(self):
+        proposal = propose_split("Atomic Notes/Bundle.md", "## Nested only\n\nBody.\n")
+
+        self.assertEqual(proposal["delete_original"], False)
+        self.assertEqual(proposal["proposed_outputs"], [])
 
     def test_remediate_notes_cli_writes_manifest(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -172,6 +197,35 @@ class RemediationTest(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(manifest_path.exists())
             self.assertIn("requires approval", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+
+    def test_remediate_notes_cli_rejects_non_string_operation_without_traceback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            plan = dict(APPROVED_PLAN)
+            plan["operations"] = [{"operation": ["delete"], "note_path": "Atomic Notes/List.md"}]
+            plan_path = Path(tmp) / "plan.json"
+            manifest_path = Path(tmp) / "manifest.json"
+            plan_path.write_text(json.dumps(plan), encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.remediate_notes",
+                    "--plan",
+                    str(plan_path),
+                    "--manifest",
+                    str(manifest_path),
+                    "--destructive-allowed",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(manifest_path.exists())
+            self.assertIn("must state operation", result.stderr)
             self.assertNotIn("Traceback", result.stderr)
 
     def test_schema_uses_operation_not_operation_type_as_ssot(self):
