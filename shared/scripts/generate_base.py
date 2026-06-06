@@ -9,15 +9,18 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from shared.scripts.base_generation import render_base
+from shared.scripts.schema_validation import ValidationError
+from shared.scripts.validate_jsonl import validate_jsonl_file
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
+        validate_jsonl_file(args.jsonl, default_scan=True)
         base = render_base(str(args.jsonl))
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(base, encoding="utf-8")
-    except (OSError, json.JSONDecodeError) as exc:
+    except (ValidationError, OSError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
     print(str(args.output))

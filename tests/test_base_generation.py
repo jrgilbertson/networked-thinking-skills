@@ -63,6 +63,30 @@ class BaseGenerationTest(unittest.TestCase):
             self.assertTrue(output.exists())
             self.assertIn('name: "All Audited Notes"', output.read_text(encoding="utf-8"))
 
+    def test_generate_base_rejects_invalid_jsonl_before_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            invalid_jsonl = Path(tmp) / "invalid.jsonl"
+            invalid_jsonl.write_text('{"note_path": "Atomic Notes/Invalid.md"}\n', encoding="utf-8")
+            output = Path(tmp) / "audit.base"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "shared.scripts.generate_base",
+                    "--jsonl",
+                    str(invalid_jsonl),
+                    "--output",
+                    str(output),
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
+            self.assertIn(str(invalid_jsonl), result.stderr)
+
     def test_generate_base_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "direct-audit.base"
