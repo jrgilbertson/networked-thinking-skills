@@ -14,7 +14,7 @@ from shared.scripts.obsidian_adapter import ObsidianAdapter
 REQUIRED_OBSIDIAN_SKILLS = ("obsidian-cli", "obsidian-markdown", "obsidian-bases")
 
 
-@dataclass
+@dataclass(frozen=True)
 class SkillPathCheck:
     ok: bool
     missing: list[str]

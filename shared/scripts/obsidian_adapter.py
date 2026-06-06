@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommandResult:
     ok: bool
     stdout: str
