@@ -237,7 +237,7 @@ def _normalize_wikilink_target(target: str) -> str:
         return ""
     if target.endswith(".md"):
         target = target[:-3]
-    return PurePosixPath(target).stem
+    return PurePosixPath(target).name
 
 
 def _looks_like_multi_note(markdown: str, anki_counts: dict[str, int]) -> bool:

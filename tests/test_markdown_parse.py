@@ -91,6 +91,18 @@ class MarkdownParseTest(unittest.TestCase):
             ["Atomic Note Quality"],
         )
 
+    def test_extract_wikilinks_preserves_inline_code_inside_target(self):
+        self.assertEqual(
+            extract_wikilinks("[[There are multiple ways to use a `for` statement]]"),
+            ["There are multiple ways to use a `for` statement"],
+        )
+
+    def test_extract_wikilinks_ignores_links_inside_inline_code(self):
+        self.assertEqual(
+            extract_wikilinks("Ignore `[[Inline Code Link]]` but keep [[Real Link]]."),
+            ["Real Link"],
+        )
+
     def test_extract_wikilinks_ignores_four_space_indented_code(self):
         markdown = "    [[Not a real link]]\n\n[[Real Note]]\n"
         self.assertEqual(extract_wikilinks(markdown), ["Real Note"])

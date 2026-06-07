@@ -285,11 +285,65 @@ def _structural_markdown(markdown: str) -> str:
 
 def extract_wikilinks(markdown: str) -> list[str]:
     targets: list[str] = []
-    for match in WIKILINK_RE.finditer(_structural_markdown(markdown)):
+    link_markdown = _wikilink_markdown(markdown)
+    inline_code_spans = [
+        (match.start(), match.end())
+        for match in INLINE_CODE_RE.finditer(link_markdown)
+    ]
+    for match in WIKILINK_RE.finditer(link_markdown):
+        if _is_contained_by_any_span(match.start(), match.end(), inline_code_spans):
+            continue
         link = match.group(1) or match.group(2)
         target = link.split("|", 1)[0].strip()
         targets.append(target)
     return targets
+
+
+def _wikilink_markdown(markdown: str) -> str:
+    _, body = extract_frontmatter(markdown)
+    without_fenced_code = _mask_fenced_code_blocks(body)
+    without_indented_code = _mask_indented_code_blocks(without_fenced_code)
+    return _mask_html_comments_outside_inline_code(without_indented_code)
+
+
+def _is_contained_by_any_span(start: int, end: int, spans: list[tuple[int, int]]) -> bool:
+    return any(span_start <= start and end <= span_end for span_start, span_end in spans)
+
+
+def _is_position_inside_any_span(position: int, spans: list[tuple[int, int]]) -> bool:
+    return any(span_start <= position < span_end for span_start, span_end in spans)
+
+
+def _mask_html_comments_outside_inline_code(markdown: str) -> str:
+    inline_code_spans = [
+        (match.start(), match.end())
+        for match in INLINE_CODE_RE.finditer(markdown)
+    ]
+    comment_ranges: list[tuple[int, int]] = []
+    position = 0
+    while True:
+        start = markdown.find("<!--", position)
+        if start == -1:
+            break
+        if _is_position_inside_any_span(start, inline_code_spans):
+            position = start + 4
+            continue
+        end = markdown.find("-->", start + 4)
+        if end == -1:
+            comment_ranges.append((start, len(markdown)))
+            break
+        comment_ranges.append((start, end + 3))
+        position = end + 3
+    if not comment_ranges:
+        return markdown
+    chunks: list[str] = []
+    position = 0
+    for start, end in comment_ranges:
+        chunks.append(markdown[position:start])
+        chunks.append(_mask_text_preserving_line_breaks(markdown[start:end]))
+        position = end
+    chunks.append(markdown[position:])
+    return "".join(chunks)
 
 
 def _normalize_heading_text(heading: str) -> str:

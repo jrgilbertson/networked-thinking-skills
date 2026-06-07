@@ -11,10 +11,32 @@ from shared.scripts.schema_validation import validate_audit_row
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_VAULT = REPO_ROOT / "tests" / "fixtures" / "tiny-vault"
+VALID_DAE_MARKDOWN = """---
+aliases: []
+title: Test Note
+---
+
+# Test Note
+
+START
+Basic
+Front: What does this test note represent?
+
+Back: A test note represents one small idea with enough context to check audit behavior.
+
+A test note is like a labeled shelf: it gives one item a clear place where a reader can find it.
+
+For example, an audit test can create a temporary note called Test Note and link it from a temporary structure note.
+END
+"""
 
 
 def rows_by_stem(rows):
     return {Path(row["note_path"]).stem: row for row in rows}
+
+
+def finding_codes(row):
+    return {finding["code"] for finding in row["findings"]}
 
 
 class AuditEngineTest(unittest.TestCase):
@@ -28,6 +50,22 @@ class AuditEngineTest(unittest.TestCase):
             self.assertEqual(row["row_status"], "complete")
             self.assertFalse(row["pending_model"])
             self.assertIsNone(row["model_judgment"])
+
+    def test_structure_parent_match_preserves_periods_in_note_title(self):
+        row = self.audit_single_note(
+            VALID_DAE_MARKDOWN,
+            stem="202601010110 A dotted title has one sentence. A second sentence stays in the title",
+        )
+
+        self.assertNotIn("missing_parent", finding_codes(row))
+
+    def test_structure_parent_match_preserves_backticks_in_note_title(self):
+        row = self.audit_single_note(
+            VALID_DAE_MARKDOWN,
+            stem="202601010111 There are multiple ways to use a `for` statement",
+        )
+
+        self.assertNotIn("missing_parent", finding_codes(row))
 
     def test_multi_note_bundle_scores_into_p0(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
