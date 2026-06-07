@@ -58,6 +58,17 @@ To prepare one note for judgment without prompt drift, run:
 python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
 
+For Codex CLI exhaustive runs, use the validated batch collector:
+
+```bash
+python3 -m shared.scripts.collect_model_judgments --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
+```
+
+Keep `--raw-dir` outside the vault by default because it contains private note
+content in prompts and logs. The collector resumes from an existing valid
+`model-judgments.jsonl`, validates each response, and splits failed batches into
+smaller retries.
+
 Collect model responses as JSONL, one strict
 `shared/schemas/model-judgment.schema.json` object per line. Then apply them to
 the deterministic audit rows before generating the model-judgment report or

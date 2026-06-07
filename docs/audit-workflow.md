@@ -19,6 +19,8 @@ python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/fi
 Expected command signals:
 
 - `audit_notes` prints `rows=<count>`.
+- `collect_model_judgments` prints `total=<count> completed=<count> remaining=<count>`,
+  one line per validated batch, then `done=<count> output=<path>`.
 - `apply_model_judgments` prints `rows=<count> model_judgments=<count>`.
 - `validate_jsonl` prints `valid_rows=<count>`.
 - `generate_report` prints the Markdown report path.
@@ -83,6 +85,21 @@ vault-relative path:
 ```bash
 python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
+
+For Codex CLI, collect exhaustive model judgments in validated batches:
+
+```bash
+python3 -m shared.scripts.collect_model_judgments --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
+```
+
+The collector writes raw prompts and agent stdout/stderr to `--raw-dir`. Those
+files contain private note content, so keep `--raw-dir` outside the vault unless
+the user explicitly wants private prompt logs stored there. The collector is
+resumable: if `model-judgments.jsonl` already contains valid judgments, it skips
+those note paths. It validates every model response against
+`shared/scripts/model_contract.py` before appending and splits a failed batch
+into smaller retries when the model drifts from JSONL or the controlled finding
+vocabulary.
 
 After model judgments have been collected into JSONL, apply them to the
 deterministic audit rows before generating review artifacts:
