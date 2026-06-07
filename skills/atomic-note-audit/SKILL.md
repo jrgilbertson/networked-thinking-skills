@@ -89,4 +89,17 @@ reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`, and
 
 ## Remediation
 
-Do not mutate notes from audit findings alone. Generate or consume an explicit remediation plan. Require official Obsidian skills and preflight before vault mutations. Require approval before destructive operations.
+Do not mutate notes from audit findings alone. Generate or consume an explicit
+remediation plan, or produce an explicit per-note destructive dry run for a
+single user-directed operation. Load `../../shared/references/remediation-context.md`
+before planning any vault mutation.
+
+Require official Obsidian skills and preflight before vault mutations. Use the
+actual Obsidian CLI binary; `obsidian-cli` is the default because some systems
+reserve `obsidian` for the GUI app binary. Require approval before destructive
+operations.
+
+For delete, split, move, or rename dry runs, report the target path, Anki
+status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
+the operation is permanent. Stop for an Anki-specific decision when a note has
+Anki markers or Obsidian-to-Anki identifiers.

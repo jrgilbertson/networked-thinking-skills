@@ -13,6 +13,11 @@ Both skills load shared references through paths such as `../../shared/reference
 
 Install the official Obsidian skills before running remediation. Remediation hard-fails without `obsidian-cli`, `obsidian-markdown`, and `obsidian-bases`.
 
+For app-context file operations, verify the actual Obsidian CLI executable. On
+current macOS installs this is often `obsidian-cli`; `obsidian` may launch the
+GUI binary instead of the CLI. See [remediation.md](remediation.md) for the
+preflight command and destructive-operation runbook.
+
 ### Codex
 
 Source: [kepano/obsidian-skills](https://github.com/kepano/obsidian-skills)

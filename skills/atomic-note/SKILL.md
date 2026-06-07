@@ -7,7 +7,10 @@ description: Use when creating or improving a Networked Thinking atomic note in 
 
 Use this skill to create or improve one Networked Thinking atomic note.
 
-Before writing or editing an Obsidian vault file, load the official Obsidian Markdown and file-management skills when available. For file moves, renames, deletes, and link-sensitive operations, require Obsidian-aware tooling.
+Before writing or editing an Obsidian vault file, load the official Obsidian
+Markdown and file-management skills when available. For file moves, renames,
+deletes, and link-sensitive operations, require Obsidian-aware tooling and
+verify the actual Obsidian CLI binary before mutating the vault.
 
 ## Required References
 
