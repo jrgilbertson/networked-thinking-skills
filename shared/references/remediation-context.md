@@ -26,13 +26,22 @@ Recommend a better home by default. Do not move the note automatically.
 
 Delete only from an approved remediation plan or explicit per-note approval.
 Before approval, report the target path, Anki status, backlinks, intended CLI
-delete command, link cleanup plan, and whether deletion is permanent. Default to
-Obsidian's normal non-permanent delete behavior; permanent delete requires a
-separate explicit approval.
+delete command, link cleanup plan, and whether deletion is permanent. Deleting
+without the CLI `permanent` flag uses the vault's configured Obsidian
+`trashOption`; check the running app and report whether that means system trash,
+Obsidian `.trash`, or permanent deletion. Permanent delete requires a separate
+explicit approval.
 
 If a note contains `TARGET DECK`, `START`, `END`, `Basic`, `Cloze`, or
 Obsidian-to-Anki identifiers, stop for an Anki-specific decision before deleting
 or splitting it.
+
+## Audit Outputs
+
+Timestamped audit reports, Bases, JSONL files, and manifests are immutable
+historical artifacts by default. Remediation cleans live knowledge-graph files,
+not prior audit outputs, unless the user explicitly asks for an audit artifact
+correction.
 
 ## Duplicate And Overlap Review
 

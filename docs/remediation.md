@@ -73,15 +73,25 @@ summary and get explicit approval. The dry run must include:
   `Cloze`, or Obsidian-to-Anki identifiers, stop and ask for an Anki-specific
   policy before deleting, splitting, or moving the note.
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
-- Intended Obsidian CLI command. Deletes default to Obsidian's normal
-  non-permanent delete behavior:
+- Intended Obsidian CLI command. Deletes default to Obsidian's configured
+  **Deleted files** behavior when the `permanent` flag is omitted. Check
+  `trashOption` in the running app and report whether the vault will use system
+  trash, Obsidian `.trash`, or permanent deletion:
+
+```bash
+obsidian-cli eval code='app.vault.getConfig("trashOption")'
+```
 
 ```bash
 obsidian-cli delete path="Atomic Notes/Example.md"
 ```
 
 - Link cleanup plan for each backlink that should change. Use Obsidian-aware
-  file editing for link-sensitive changes.
+  file editing for live knowledge-graph changes.
+- Audit-output handling. Timestamped audit reports, Bases, JSONL files, and
+  manifests are immutable historical artifacts by default. Do not edit old audit
+  outputs during remediation unless the user explicitly asks for an audit
+  artifact correction.
 - Whether any operation is permanent. Permanent delete requires separate
   explicit approval and must use the CLI's `permanent` flag only after that
   approval.
