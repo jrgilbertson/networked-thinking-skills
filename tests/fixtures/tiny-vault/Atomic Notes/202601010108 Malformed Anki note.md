@@ -30,4 +30,4 @@ Back: It starts but never ends.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

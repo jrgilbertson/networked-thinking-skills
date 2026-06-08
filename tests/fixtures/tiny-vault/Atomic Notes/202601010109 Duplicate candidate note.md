@@ -27,4 +27,4 @@ For example, this overlaps with the quality criteria collected in
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

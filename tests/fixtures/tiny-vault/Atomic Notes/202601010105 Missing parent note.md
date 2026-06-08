@@ -23,4 +23,4 @@ it omits any structure-note parent link.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

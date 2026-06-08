@@ -287,7 +287,7 @@ END
 
 Sources:
 
-- Synthetic source.
+1. Synthetic source.
 """
         analysis = analyze_dae(markdown)
 

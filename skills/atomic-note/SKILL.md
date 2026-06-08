@@ -22,7 +22,7 @@ verify the actual Obsidian CLI binary before mutating the vault.
 1. Read the relevant source material or existing note.
 2. Check for an existing note on the same concept.
 3. Draft one DAE note: Definition, Analogy, Example.
-4. Add useful aliases, links, and sources.
+4. Add useful aliases, links, and sources; write source sections as numbered lists.
 5. Add Anki only when memorization is useful.
 6. Preview the note before writing when working in a user's vault.
 7. Write through Obsidian-aware tooling when modifying vault files.

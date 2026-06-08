@@ -25,4 +25,4 @@ learner will improve with any memory technique.
 
 ## Sources
 
-- Synthetic fixture claim log, 2026.
+1. Synthetic fixture claim log, 2026.

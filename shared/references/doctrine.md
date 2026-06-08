@@ -9,7 +9,7 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 - Frontmatter with `title` and `aliases`.
 - Clear Definition, Analogy, and Example content.
 - At least one useful connection to a structure note or related concept.
-- Sources when the idea came from external material.
+- Sources when the idea came from external material; write source sections as numbered lists.
 
 ## DAE Rules
 

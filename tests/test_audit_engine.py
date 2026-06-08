@@ -325,7 +325,7 @@ END
 
 Sources:
 
-- Synthetic source.
+1. Synthetic source.
 """,
             stem="202601010201 Stateless Protocol",
         )
