@@ -70,7 +70,7 @@
         "integer",
         "null"
       ],
-      "minimum": 0,
+      "minimum": 1,
       "maximum": 100
     },
     "priority": {
@@ -184,22 +184,30 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "priority",
         "code",
         "message"
       ],
       "properties": {
-        "priority": {
-          "type": "string",
-          "enum": [
-            "P0",
-            "P1",
-            "P2",
-            "P3"
-          ]
-        },
         "code": {
           "type": "string",
+          "enum": [
+            "missing_frontmatter",
+            "invalid_dae",
+            "definition_too_long",
+            "missing_parent",
+            "malformed_anki",
+            "multi_note",
+            "misfiled_reference",
+            "weak_dae",
+            "not_atomic",
+            "weak_definition",
+            "weak_analogy",
+            "weak_example",
+            "unclear",
+            "title_body_mismatch",
+            "duplicate_overlap",
+            "factual_risk"
+          ],
           "minLength": 1
         },
         "message": {

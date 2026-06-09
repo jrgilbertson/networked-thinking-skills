@@ -16,6 +16,9 @@ It is like opening a quotation mark and forgetting to close it.
 
 ## Example
 
+For example, this note opens an Anki card block and never writes the matching
+END marker.
+
 START
 Basic
 What is wrong with this card?
@@ -27,4 +30,4 @@ Back: It starts but never ends.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

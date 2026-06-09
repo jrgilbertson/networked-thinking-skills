@@ -10,7 +10,7 @@ VIEW_ORDER = (
     "P1 High Impact",
     "P2 Improvements",
     "P3 Polish",
-    "Clean Notes",
+    "No Changes",
     "Factual Risk",
     "Multi-Note Split Candidates",
     "Missing Parent Candidates",
@@ -27,9 +27,9 @@ def render_base(jsonl_path: str) -> str:
         "P1 High Impact": [row for row in rows if row.get("priority") == "P1"],
         "P2 Improvements": [row for row in rows if row.get("priority") == "P2"],
         "P3 Polish": [row for row in rows if row.get("priority") == "P3"],
-        "Clean Notes": [row for row in rows if row.get("clean") is True],
+        "No Changes": [row for row in rows if row.get("priority") is None],
         "Factual Risk": [row for row in rows if _is_factual_risk(row)],
-        "Multi-Note Split Candidates": [row for row in rows if _has_finding(row, "multi_note_file")],
+        "Multi-Note Split Candidates": [row for row in rows if _has_finding(row, "multi_note")],
         "Missing Parent Candidates": [row for row in rows if _has_finding(row, "missing_parent")],
         "Duplicate Or Overlap Candidates": [
             row for row in rows if _has_finding(row, "duplicate_overlap")

@@ -5,6 +5,9 @@ import shutil
 import subprocess
 
 
+DEFAULT_OBSIDIAN_BINARY = "obsidian-cli"
+
+
 @dataclass(frozen=True)
 class CommandResult:
     ok: bool
@@ -14,7 +17,7 @@ class CommandResult:
 
 
 class ObsidianAdapter:
-    def __init__(self, binary: str = "obsidian") -> None:
+    def __init__(self, binary: str = DEFAULT_OBSIDIAN_BINARY) -> None:
         self.binary = binary
 
     def available(self) -> bool:

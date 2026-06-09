@@ -26,8 +26,8 @@ container.
 
 ## Example
 
-A note about "good atomic note quality" names the quality, shows a useful
-contrast, and links to [[Atomic Note Quality]] for review context.
+For example, a note about "good atomic note quality" names the quality, shows a
+useful contrast, and links to [[Atomic Note Quality]] for review context.
 
 ## Links
 
@@ -35,7 +35,7 @@ contrast, and links to [[Atomic Note Quality]] for review context.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010102 Weak DAE note.md": """---
 aliases: []
@@ -112,12 +112,12 @@ It is like a labeled folder left on a desk instead of filed in a cabinet.
 
 ## Example
 
-This note defines a review concern and gives a concrete example, but it omits
-any structure-note parent link.
+For example, this note defines a review concern and gives a concrete case, but
+it omits any structure-note parent link.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010106 Factual risk note.md": """---
 aliases: []
@@ -129,7 +129,7 @@ tags:
 
 ## Definition
 
-All memory techniques always work for every learner.
+All memory techniques always work for every learner in every learning context.
 
 ## Analogy
 
@@ -137,8 +137,8 @@ This is like claiming one pair of shoes fits every person in every race.
 
 ## Example
 
-A learner who improves with spaced repetition proves that every learner will
-improve with any memory technique.
+For example, a learner who improves with spaced repetition proves that every
+learner will improve with any memory technique.
 
 ## Links
 
@@ -146,7 +146,7 @@ improve with any memory technique.
 
 ## Sources
 
-- Synthetic fixture claim log, 2026.
+1. Synthetic fixture claim log, 2026.
 """,
     "Atomic Notes/202601010107 Optional Anki note.md": """---
 aliases:
@@ -168,6 +168,9 @@ It is like a smoke alarm for memory: useful when it checks the right risk.
 
 ## Example
 
+For example, an optional Anki card can ask which claim the note is testing
+without exposing the answer inside the prompt.
+
 START
 Basic
 What should an optional Anki card test?
@@ -180,7 +183,7 @@ END
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010108 Malformed Anki note.md": """---
 aliases: []
@@ -200,6 +203,9 @@ It is like opening a quotation mark and forgetting to close it.
 
 ## Example
 
+For example, this note opens an Anki card block and never writes the matching
+END marker.
+
 START
 Basic
 What is wrong with this card?
@@ -211,7 +217,7 @@ Back: It starts but never ends.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010109 Duplicate candidate note.md": """---
 aliases:
@@ -233,8 +239,8 @@ It is like checking a single ingredient before adding it to a recipe.
 
 ## Example
 
-This overlaps with the quality criteria collected in [[Atomic Note Quality]] and
-may duplicate the clean DAE example.
+For example, this overlaps with the quality criteria collected in
+[[Atomic Note Quality]] and may duplicate the clean DAE example.
 
 ## Links
 
@@ -242,7 +248,7 @@ may duplicate the clean DAE example.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Structure Notes/Atomic Note Quality.md": """---
 aliases:

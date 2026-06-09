@@ -8,7 +8,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.scripts.obsidian_adapter import ObsidianAdapter
+from shared.scripts.obsidian_adapter import DEFAULT_OBSIDIAN_BINARY, ObsidianAdapter
 
 
 REQUIRED_OBSIDIAN_SKILLS = ("obsidian-cli", "obsidian-markdown", "obsidian-bases")
@@ -53,7 +53,11 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Preflight Obsidian mutation support.")
     parser.add_argument("--skills-root", type=Path, default=Path.home() / ".agents/skills")
     parser.add_argument("--require-cli", action="store_true")
-    parser.add_argument("--obsidian-binary", default="obsidian")
+    parser.add_argument(
+        "--obsidian-binary",
+        default=DEFAULT_OBSIDIAN_BINARY,
+        help=f"Obsidian CLI executable to use. Defaults to {DEFAULT_OBSIDIAN_BINARY}.",
+    )
     return parser.parse_args(argv)
 
 

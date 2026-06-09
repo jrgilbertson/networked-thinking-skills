@@ -91,7 +91,8 @@
         "P0",
         "P1",
         "P2",
-        "P3"
+        "P3",
+        "no_change"
       ],
       "properties": {
         "P0": {
@@ -107,6 +108,10 @@
           "minimum": 0
         },
         "P3": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "no_change": {
           "type": "integer",
           "minimum": 0
         }

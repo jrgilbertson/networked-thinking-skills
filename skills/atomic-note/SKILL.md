@@ -7,7 +7,10 @@ description: Use when creating or improving a Networked Thinking atomic note in 
 
 Use this skill to create or improve one Networked Thinking atomic note.
 
-Before writing or editing an Obsidian vault file, load the official Obsidian Markdown and file-management skills when available. For file moves, renames, deletes, and link-sensitive operations, require Obsidian-aware tooling.
+Before writing or editing an Obsidian vault file, load the official Obsidian
+Markdown and file-management skills when available. For file moves, renames,
+deletes, and link-sensitive operations, require Obsidian-aware tooling and
+verify the actual Obsidian CLI binary before mutating the vault.
 
 ## Required References
 
@@ -19,7 +22,7 @@ Before writing or editing an Obsidian vault file, load the official Obsidian Mar
 1. Read the relevant source material or existing note.
 2. Check for an existing note on the same concept.
 3. Draft one DAE note: Definition, Analogy, Example.
-4. Add useful aliases, links, and sources.
+4. Add useful aliases, links, and sources; write source sections as numbered lists.
 5. Add Anki only when memorization is useful.
 6. Preview the note before writing when working in a user's vault.
 7. Write through Obsidian-aware tooling when modifying vault files.

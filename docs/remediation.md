@@ -9,6 +9,10 @@ notes. The source context is
 - Install the official Obsidian skills before mutation. Remediation requires
   `obsidian-cli`, `obsidian-markdown`, and `obsidian-bases` for vault-aware file
   edits, links, moves, and deletes.
+- Use the actual Obsidian CLI binary for app-context commands. On current macOS
+  installs this is often `obsidian-cli`, while `obsidian` may resolve to the GUI
+  app binary and should not be used for CLI automation unless it is verified to
+  print CLI help.
 - Use a remediation plan with `plan_version`, `audit_run_id`, `mode`, and
   `operations`.
 - Use dry-run manifests to validate a plan before execution:
@@ -32,6 +36,87 @@ python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json 
   `proposed_outputs` with `note_path` and `content` for each child note.
 - Duplicate and overlap findings are review candidates only. Do not auto-merge
   notes.
+
+## Obsidian CLI Routing
+
+Run preflight before any vault mutation:
+
+```bash
+python3 -m shared.scripts.preflight_obsidian --require-cli
+```
+
+The default binary is `obsidian-cli`. Override only when the target environment
+uses a different executable for the official CLI:
+
+```bash
+python3 -m shared.scripts.preflight_obsidian --require-cli --obsidian-binary obsidian
+```
+
+Verify the chosen binary against the running Obsidian app before relying on it:
+
+```bash
+obsidian-cli help
+obsidian-cli vault info=name
+```
+
+If an agent sandbox cannot see the running app, rerun the CLI step in an
+approved unsandboxed context instead of falling back to raw filesystem moves,
+renames, or deletes.
+
+## Per-Note Destructive Dry Run
+
+Before a destructive operation on one note, produce a human-readable dry-run
+summary and get explicit approval. The dry run must include:
+
+- Target `note_path`.
+- Anki status. If the note contains `TARGET DECK`, `START`, `END`, `Basic`,
+  `Cloze`, or Obsidian-to-Anki identifiers, stop and ask for an Anki-specific
+  policy before deleting, splitting, or moving the note.
+- Anki deletion path. If the approved delete target has an Obsidian-to-Anki ID,
+  delete the Anki note before deleting the Obsidian file:
+  1. Confirm Anki is open and AnkiConnect is reachable.
+  2. Add a standalone `DELETE` line immediately above the existing ID line.
+  3. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
+  4. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID
+     block was removed from the Obsidian note.
+  5. Delete the Obsidian note with Obsidian-aware tooling.
+
+  Example marker block:
+
+  ```markdown
+  DELETE
+  <!--ID: 1722884195648-->
+  ```
+
+  Delete the Obsidian note promptly after the successful scan. If an ID-less
+  `START`/`END` card block remains in the vault and a later scan runs, the
+  plugin can recreate the Anki card.
+- Current backlinks from `obsidian-cli backlinks path="..." format=json`.
+- Intended Obsidian CLI command. Deletes default to Obsidian's configured
+  **Deleted files** behavior when the `permanent` flag is omitted. Check
+  `trashOption` in the running app and report whether the vault will use system
+  trash, Obsidian `.trash`, or permanent deletion:
+
+```bash
+obsidian-cli eval code='app.vault.getConfig("trashOption")'
+```
+
+```bash
+obsidian-cli delete path="Atomic Notes/Example.md"
+```
+
+- Link cleanup plan for each backlink that should change. Use Obsidian-aware
+  file editing for live knowledge-graph changes.
+- Audit-output handling. Timestamped audit reports, Bases, JSONL files, and
+  manifests are immutable historical artifacts by default. Do not edit old audit
+  outputs during remediation unless the user explicitly asks for an audit
+  artifact correction.
+- Whether any operation is permanent. Permanent delete requires separate
+  explicit approval and must use the CLI's `permanent` flag only after that
+  approval.
+
+Do not treat a dry-run manifest or summary as permission to mutate the vault.
+Approval must happen after the user sees the expected effects.
 
 ## Modes
 

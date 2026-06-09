@@ -13,10 +13,11 @@
     "manifest": "fixture-manifest.json"
   },
   "priority_counts": {
-    "P0": 1,
-    "P1": 5,
-    "P2": 1,
-    "P3": 2
+    "P0": 2,
+    "P1": 1,
+    "P2": 2,
+    "P3": 2,
+    "no_change": 2
   },
   "row_status_counts": {
     "complete": 9,

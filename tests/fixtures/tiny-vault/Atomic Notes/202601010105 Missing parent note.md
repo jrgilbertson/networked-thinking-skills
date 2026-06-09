@@ -18,9 +18,9 @@ It is like a labeled folder left on a desk instead of filed in a cabinet.
 
 ## Example
 
-This note defines a review concern and gives a concrete example, but it omits
-any structure-note parent link.
+For example, this note defines a review concern and gives a concrete case, but
+it omits any structure-note parent link.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

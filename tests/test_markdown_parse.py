@@ -1,6 +1,8 @@
 import unittest
 
 from shared.scripts.markdown_parse import (
+    analyze_dae,
+    count_rendered_words,
     count_anki_blocks,
     extract_frontmatter,
     extract_headings,
@@ -87,6 +89,18 @@ class MarkdownParseTest(unittest.TestCase):
         self.assertEqual(
             extract_wikilinks("[[Atomic Note Quality|quality]]"),
             ["Atomic Note Quality"],
+        )
+
+    def test_extract_wikilinks_preserves_inline_code_inside_target(self):
+        self.assertEqual(
+            extract_wikilinks("[[There are multiple ways to use a `for` statement]]"),
+            ["There are multiple ways to use a `for` statement"],
+        )
+
+    def test_extract_wikilinks_ignores_links_inside_inline_code(self):
+        self.assertEqual(
+            extract_wikilinks("Ignore `[[Inline Code Link]]` but keep [[Real Link]]."),
+            ["Real Link"],
         )
 
     def test_extract_wikilinks_ignores_four_space_indented_code(self):
@@ -251,6 +265,87 @@ class MarkdownParseTest(unittest.TestCase):
     def test_has_dae_sections_supports_closing_hashes(self):
         markdown = "## Definition ##\n\n## Analogy ##\n\n## Example ##\n"
         self.assertTrue(has_dae_sections(markdown))
+
+    def test_analyze_dae_accepts_basic_card_shape(self):
+        markdown = """---
+title: Stateless Protocol
+---
+
+# Stateless Protocol
+
+START
+Basic
+What is a stateless protocol?
+
+Back: A stateless protocol treats each transaction independently and does not retain session information from previous interactions.
+
+A stateless protocol is like a vending machine: each purchase starts fresh without memory of previous purchases.
+
+For example, HTTP processes each browser request without remembering which pages that browser previously requested.
+<!--ID: 1-->
+END
+
+Sources:
+
+1. Synthetic source.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
+        self.assertEqual(analysis.shape, "Basic")
+        self.assertFalse(analysis.definition_too_long)
+
+    def test_analyze_dae_counts_wikilink_aliases_as_rendered_words(self):
+        markdown = """START
+Basic
+What is eventual consistency?
+Back: Eventual consistency is a [[202201191901 Long note title|consistency]] guarantee where replicas in a [[202212171827 Long distributed title|distributed system]] temporarily diverge before converging after writes stop.
+
+Eventual consistency is like ripples spreading across a pond: close areas change first, while distant areas settle later.
+
+For example, Twitter followers in New York might see a post seconds before followers in Tokyo during replication lag.
+END
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
+        self.assertEqual(analysis.definition_word_count, 19)
+        self.assertEqual(count_rendered_words("[[202201010101 Very long target|short alias]]"), 2)
+
+    def test_analyze_dae_flags_overlong_basic_definition(self):
+        markdown = """START
+Basic
+What is replication?
+Back: Replication is the process of maintaining identical copies of data across multiple servers or storage devices, with synchronization mechanisms ensuring changes propagate to all replicas. This technique serves multiple purposes including fault tolerance, improved read performance, reduced latency by placing data closer to users, disaster recovery, regional availability, and operational resilience during hardware failures or network outages.
+
+Replication is like a library maintaining identical books at several branches: each branch can serve readers while updates spread.
+
+For example, a streaming service stores popular shows in multiple regions so viewers in different cities can stream from nearby replicas.
+END
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertTrue(analysis.definition_too_long)
+
+    def test_analyze_dae_accepts_cloze_extra_shape(self):
+        markdown = """START
+Cloze
+The CAP theorem states that a distributed data system can only guarantee two out of three properties simultaneously:
+
+1. {{c1::Consistency}}: All nodes see the same data.
+2. {{c2::Availability}}: Every request receives a response.
+3. {{c3::Partition tolerance}}: The system continues through network failures.
+
+Extra: This can be compared to note-takers in separate rooms: they can keep identical notes or keep writing while separated, but not both.
+
+For example, during a network partition, one database may stay available with temporary inconsistency while another may reject some requests to preserve consistency.
+END
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
+        self.assertEqual(analysis.shape, "Cloze")
 
     def test_has_dae_sections_returns_false_without_example(self):
         markdown = "## Definition\n\n## Analogy\n"

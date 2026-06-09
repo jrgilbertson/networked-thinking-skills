@@ -18,8 +18,8 @@ It is like checking a single ingredient before adding it to a recipe.
 
 ## Example
 
-This overlaps with the quality criteria collected in [[Atomic Note Quality]] and
-may duplicate the clean DAE example.
+For example, this overlaps with the quality criteria collected in
+[[Atomic Note Quality]] and may duplicate the clean DAE example.
 
 ## Links
 
@@ -27,4 +27,4 @@ may duplicate the clean DAE example.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.

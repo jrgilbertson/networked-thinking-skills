@@ -4,7 +4,8 @@ import hashlib
 import json
 from typing import Any
 
-from shared.scripts.schema_validation import DIMENSION_KEYS, PRIORITY_COUNT_KEYS, ValidationError
+from shared.scripts.finding_codes import ALLOWED_FINDING_CODES
+from shared.scripts.schema_validation import DIMENSION_KEYS, ValidationError
 
 
 MODEL_JUDGMENT_REQUIRED = {
@@ -17,7 +18,7 @@ MODEL_JUDGMENT_REQUIRED = {
     "fact_check_required",
     "evidence",
 }
-FINDING_REQUIRED = {"priority", "code", "message"}
+FINDING_REQUIRED = {"code", "message"}
 FINDING_ALLOWED = FINDING_REQUIRED | {"evidence"}
 EVIDENCE_KEYS = {"excerpt", "reason"}
 MAX_EVIDENCE_EXCERPT_WORDS = 40
@@ -100,9 +101,7 @@ def _validate_findings(findings: Any) -> None:
             raise ValidationError(f"{label} must be an object")
         _require_keys(finding, FINDING_REQUIRED, label)
         _reject_extra_keys(finding, FINDING_ALLOWED, label)
-        if finding["priority"] not in PRIORITY_COUNT_KEYS:
-            raise ValidationError(f"Invalid {label}.priority: {finding['priority']}")
-        _validate_non_empty_string(finding["code"], f"{label}.code")
+        _validate_finding_code(finding["code"], f"{label}.code")
         _validate_non_empty_string(finding["message"], f"{label}.message")
         if "evidence" in finding:
             _validate_evidence_array(finding["evidence"], f"{label}.evidence")
@@ -117,6 +116,12 @@ def _validate_factual_risk(judgment: dict[str, Any]) -> None:
         _validate_non_empty_string(reason, "model_judgment.factual_risk_reason")
     if judgment["factual_risk"] is True and reason is None:
         raise ValidationError("model_judgment.factual_risk_reason must explain factual_risk")
+
+
+def _validate_finding_code(value: Any, label: str) -> None:
+    _validate_non_empty_string(value, label)
+    if value not in ALLOWED_FINDING_CODES:
+        raise ValidationError(f"Invalid {label}: {value}")
 
 
 def _validate_evidence_array(evidence: Any, label: str) -> None:
