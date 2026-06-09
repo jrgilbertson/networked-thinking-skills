@@ -72,6 +72,25 @@ summary and get explicit approval. The dry run must include:
 - Anki status. If the note contains `TARGET DECK`, `START`, `END`, `Basic`,
   `Cloze`, or Obsidian-to-Anki identifiers, stop and ask for an Anki-specific
   policy before deleting, splitting, or moving the note.
+- Anki deletion path. If the approved delete target has an Obsidian-to-Anki ID,
+  delete the Anki note before deleting the Obsidian file:
+  1. Confirm Anki is open and AnkiConnect is reachable.
+  2. Add a standalone `DELETE` line immediately above the existing ID line.
+  3. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
+  4. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID
+     block was removed from the Obsidian note.
+  5. Delete the Obsidian note with Obsidian-aware tooling.
+
+  Example marker block:
+
+  ```markdown
+  DELETE
+  <!--ID: 1722884195648-->
+  ```
+
+  Delete the Obsidian note promptly after the successful scan. If an ID-less
+  `START`/`END` card block remains in the vault and a later scan runs, the
+  plugin can recreate the Anki card.
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
 - Intended Obsidian CLI command. Deletes default to Obsidian's configured
   **Deleted files** behavior when the `permanent` flag is omitted. Check

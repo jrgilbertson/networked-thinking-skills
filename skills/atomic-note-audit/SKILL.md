@@ -102,7 +102,9 @@ operations.
 For delete, split, move, or rename dry runs, report the target path, Anki
 status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
 the operation is permanent. Stop for an Anki-specific decision when a note has
-Anki markers or Obsidian-to-Anki identifiers.
+Anki markers or Obsidian-to-Anki identifiers. When deleting a note with an
+Obsidian-to-Anki ID, follow the exact `DELETE` marker, scan, verify, then delete
+sequence in `../../shared/references/remediation-context.md`.
 
 Before delete, verify the running vault's `trashOption`. Deleting without the
 CLI `permanent` flag follows that configured Obsidian behavior.
