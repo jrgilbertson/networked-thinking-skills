@@ -51,6 +51,13 @@ De-duplication rules used by scoring:
 - If `multi_note` applies, do not also emit `not_atomic` for the same bundled-note problem.
 - If factual risk applies, set `factual_risk` and `fact_check_required` to true and emit exactly one `factual_risk` finding.
 
+Examples:
+
+- A note with no complete DAE structure should emit `invalid_dae`, not `weak_definition` or `weak_example` for the same missing structure.
+- A note with weak Definition, Analogy, and Example content can emit component codes, but scoring caps those DAE component losses at 35.
+- A note that bundles two separate concepts should emit `multi_note`, not both `multi_note` and `not_atomic` for that bundled-note problem.
+- A note with check-worthy factual claims should emit one `factual_risk` finding and set both `factual_risk` and `fact_check_required` to true.
+
 ## Output JSON Shape
 
 Return this object shape exactly:

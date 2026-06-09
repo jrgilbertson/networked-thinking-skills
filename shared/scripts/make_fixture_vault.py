@@ -35,7 +35,7 @@ useful contrast, and links to [[Atomic Note Quality]] for review context.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010102 Weak DAE note.md": """---
 aliases: []
@@ -117,7 +117,7 @@ it omits any structure-note parent link.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010106 Factual risk note.md": """---
 aliases: []
@@ -146,7 +146,7 @@ learner will improve with any memory technique.
 
 ## Sources
 
-- Synthetic fixture claim log, 2026.
+1. Synthetic fixture claim log, 2026.
 """,
     "Atomic Notes/202601010107 Optional Anki note.md": """---
 aliases:
@@ -183,7 +183,7 @@ END
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010108 Malformed Anki note.md": """---
 aliases: []
@@ -217,7 +217,7 @@ Back: It starts but never ends.
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Atomic Notes/202601010109 Duplicate candidate note.md": """---
 aliases:
@@ -248,7 +248,7 @@ For example, this overlaps with the quality criteria collected in
 
 ## Sources
 
-- Synthetic fixture handbook, 2026.
+1. Synthetic fixture handbook, 2026.
 """,
     "Structure Notes/Atomic Note Quality.md": """---
 aliases:

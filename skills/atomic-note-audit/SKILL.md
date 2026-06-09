@@ -86,6 +86,9 @@ For reviewed rows, model findings replace deterministic semantic findings. The
 apply step keeps only deterministic audit checks a single-note model cannot
 reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`, and
 `duplicate_overlap`.
+These checks depend on frontmatter presence, graph parentage, Anki marker
+integrity, or cross-note context that deterministic validation can verify more
+reliably than a single-note model judgment.
 
 ## Remediation
 

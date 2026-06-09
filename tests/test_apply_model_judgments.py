@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from shared.scripts.apply_model_judgments import apply_model_judgments, main
+from shared.scripts.apply_model_judgments import _read_jsonl, apply_model_judgments, main
 from shared.scripts.schema_validation import (
     ValidationError,
     validate_audit_row,
@@ -167,6 +167,14 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         changed = next(row for row in merged_rows if row["note_path"] == weak_dae_row["note_path"])
         self.assertEqual(changed["score"], 92)
         self.assertEqual(changed["findings"], [{"code": "missing_parent", "message": "Link this note from a structure note."}])
+
+    def test_read_jsonl_wraps_malformed_json_as_validation_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "bad.jsonl"
+            path.write_text('{"ok": true}\n{"broken":\n', encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "bad.jsonl:2"):
+                _read_jsonl(path)
 
     def test_invalid_dae_suppresses_component_model_findings(self):
         rows = load_fixture_rows()

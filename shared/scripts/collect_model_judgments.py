@@ -30,6 +30,9 @@ class Batch:
     rows: list[dict[str, Any]]
 
 
+RETRYABLE_BATCH_ERRORS = (ValidationError, RuntimeError, OSError, subprocess.TimeoutExpired)
+
+
 @dataclass(frozen=True)
 class CodexRunner:
     vault_root: Path
@@ -183,7 +186,7 @@ def _run_batch_with_split(
 ) -> None:
     try:
         judgments = _run_batch(batch, vault_root=vault_root, raw_dir=raw_dir, runner=runner)
-    except Exception as exc:
+    except RETRYABLE_BATCH_ERRORS as exc:
         if len(batch.rows) == 1:
             raise
         midpoint = len(batch.rows) // 2

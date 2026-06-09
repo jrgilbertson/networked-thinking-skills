@@ -29,6 +29,14 @@ class ModelPromptTest(unittest.TestCase):
         self.assertIn("Do not prefix codes with `model_`.", prompt)
         self.assertIn("Do not output a score.", prompt)
 
+    def test_prompt_contains_deduplication_examples(self):
+        prompt = render_model_judgment_prompt()
+        self.assertIn("Examples:", prompt)
+        self.assertIn("not `weak_definition` or `weak_example`", prompt)
+        self.assertIn("caps those DAE component losses at 35", prompt)
+        self.assertIn("not both `multi_note` and `not_atomic`", prompt)
+        self.assertIn("set both `factual_risk` and `fact_check_required` to true", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

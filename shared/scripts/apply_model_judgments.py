@@ -283,7 +283,7 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
             try:
                 value = json.loads(line)
             except json.JSONDecodeError as exc:
-                raise json.JSONDecodeError(f"{path}:{line_number}: {exc.msg}", exc.doc, exc.pos) from exc
+                raise ValidationError(f"{path}:{line_number}: {exc}") from exc
             if not isinstance(value, dict):
                 raise ValidationError(f"{path}:{line_number}: line must be a JSON object")
             rows.append(value)
