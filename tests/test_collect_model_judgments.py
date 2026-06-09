@@ -67,6 +67,15 @@ class BrokenRunner:
         raise AssertionError("programmer bug")
 
 
+class OSErrorRunner:
+    def __init__(self):
+        self.prompts: list[str] = []
+
+    def run(self, prompt: str, *, output_path: Path, stdout_path: Path, stderr_path: Path) -> None:
+        self.prompts.append(prompt)
+        raise OSError("filesystem unavailable")
+
+
 class CollectModelJudgmentsTest(unittest.TestCase):
     def test_parse_model_output_accepts_jsonl_json_array_and_fence(self):
         rows = load_fixture_rows()
@@ -178,6 +187,27 @@ class CollectModelJudgmentsTest(unittest.TestCase):
             output = tmp_path / "model-judgments.jsonl"
 
             with self.assertRaises(AssertionError):
+                collect_model_judgments(
+                    vault_root=FIXTURE_VAULT,
+                    audit_jsonl=AUDIT_JSONL,
+                    output_jsonl=output,
+                    raw_dir=tmp_path / "raw",
+                    max_notes=2,
+                    max_chars=100_000,
+                    limit=2,
+                    runner=runner,
+                )
+
+            self.assertEqual(len(runner.prompts), 1)
+
+    def test_collect_model_judgments_does_not_split_os_errors(self):
+        runner = OSErrorRunner()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            output = tmp_path / "model-judgments.jsonl"
+
+            with self.assertRaises(OSError):
                 collect_model_judgments(
                     vault_root=FIXTURE_VAULT,
                     audit_jsonl=AUDIT_JSONL,

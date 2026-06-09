@@ -30,7 +30,7 @@ class Batch:
     rows: list[dict[str, Any]]
 
 
-RETRYABLE_BATCH_ERRORS = (ValidationError, RuntimeError, OSError, subprocess.TimeoutExpired)
+RETRYABLE_BATCH_ERRORS = (ValidationError, RuntimeError, subprocess.TimeoutExpired)
 
 
 @dataclass(frozen=True)
