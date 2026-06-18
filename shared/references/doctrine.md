@@ -31,6 +31,9 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   the note format.
 - Example: concrete and specific. It starts with `For example,` and uses named
   tools, real numbers, real domains, or real situations.
+- Use stable wording in generic DAE prose. Avoid temporal or support-status
+  words such as `currently`, `latest`, and `supported` unless the note is
+  intentionally making a claim that should be marked for factual-risk review.
 
 ## Anki
 
