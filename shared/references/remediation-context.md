@@ -13,6 +13,12 @@ ask for approved unsandboxed execution.
 Create atomic notes through Obsidian app-context APIs. Do not create notes with
 direct filesystem path writes.
 
+When invoking app-context create or modify operations from a shell, pass note
+content through a quote-safe transport such as a serialized JSON/base64 payload
+or a helper that escapes content before eval. Do not inline large Markdown in
+shell quotes when content may contain apostrophes, backticks, shell
+substitutions, or wikilinks.
+
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.

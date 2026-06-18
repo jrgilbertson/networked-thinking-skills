@@ -27,7 +27,7 @@ mutating the vault.
 5. Add Anki only when memorization is useful.
 6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing.
 7. Preview the note before writing when working in a user's vault.
-8. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes through direct filesystem path writes.
+8. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes through direct filesystem path writes. Use quote-safe content transport for app-context writes.
 
 ## Quality Bar
 
