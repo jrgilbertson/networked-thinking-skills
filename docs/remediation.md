@@ -134,6 +134,15 @@ summary and get explicit approval. The dry run must include:
   file. Run `Obsidian_to_Anki: Scan Vault` again to create a fresh ID. Verify
   the new Anki note exists and its card count equals the number of distinct
   current cloze ordinals.
+- Stale-ID repair path. If AnkiConnect or `Obsidian_to_Anki: Scan Vault`
+  shows that an Obsidian-to-Anki ID in the note no longer exists in Anki, do
+  not add `DELETE`; there is no Anki note left to delete. If the note should
+  remain Anki-backed, remove only the stale `<!--ID: ...-->` marker through
+  Obsidian app-context tooling, run `Obsidian_to_Anki: Scan Vault`, and verify
+  that the file receives a fresh ID. Then check the new Anki note's model,
+  deck, card count, and representative field content. If the note's
+  memorization value is uncertain, stop for the learner's judgment before
+  recreating the card.
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
 - Intended Obsidian CLI command. Deletes default to Obsidian's configured
   **Deleted files** behavior when the `permanent` flag is omitted. Check

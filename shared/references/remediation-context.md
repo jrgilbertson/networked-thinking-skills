@@ -119,6 +119,11 @@ resolves in Anki with the expected model, deck, card count, and representative
 field content. For a note whose memorization value is uncertain, stop for a
 learner decision instead of recreating the card automatically.
 
+Do not add a `DELETE` marker for stale-ID repair. `DELETE` is for deleting a
+real Anki note that still resolves; a stale ID means Anki already has no note
+under that identifier. Removing only the stale ID lets Obsidian-to-Anki create a
+fresh note while preserving the existing Obsidian card block.
+
 ## Audit Outputs
 
 Timestamped audit reports, Bases, JSONL files, and manifests are immutable

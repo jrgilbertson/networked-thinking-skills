@@ -89,6 +89,8 @@ Anki-backed, remove only the stale `<!--ID: ...-->` marker through Obsidian
 app-context tooling, rescan, and verify a fresh ID, model, deck, card count, and
 representative field value. If the note should not remain Anki-backed, stop for
 the learner's decision before removing the card block or deleting the note.
+Do not use a `DELETE` marker for this repair, because there is no existing Anki
+note to delete.
 
 Reference material that should be available in Obsidian but not tested in Anki
 belongs outside the Anki block, after `END` and before `Sources:`. Keep it
