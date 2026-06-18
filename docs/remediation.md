@@ -93,6 +93,13 @@ summary and get explicit approval. The dry run must include:
 - Anki status. If the note contains `TARGET DECK`, `START`, `END`, `Basic`,
   `Cloze`, or Obsidian-to-Anki identifiers, stop and ask for an Anki-specific
   policy before deleting, splitting, or moving the note.
+- Anki YAGNI status. If the audit or review raises `anki_yagni`, stop and ask
+  whether the card is worth memorizing for the learner's current use case. Do
+  not remove Anki markers, delete Anki cards, or keep the card by default. If
+  the user chooses to remove only the Anki card while keeping the Obsidian note,
+  use the `DELETE` marker and scan sequence, verify the old Anki note ID no
+  longer resolves, then promptly remove the ID-less `TARGET DECK`/`START`/`END`
+  card block so a later scan cannot recreate the card.
 - Anki deletion path. If the approved delete target has an Obsidian-to-Anki ID,
   delete the Anki note before deleting the Obsidian file:
   1. Confirm Anki is open and AnkiConnect is reachable. Try
@@ -116,6 +123,17 @@ summary and get explicit approval. The dry run must include:
   Delete the Obsidian note promptly after the successful scan. If an ID-less
   `START`/`END` card block remains in the vault and a later scan runs, the
   plugin can recreate the Anki card.
+- Cloze replacement path. If an existing synced `Cloze` note reduces or
+  renumbers cloze deletions, do not rely on a normal edit-and-scan. Removed
+  cloze ordinals can leave stale Anki cards. Use the same `DELETE` marker and
+  scan sequence to delete the old Anki note, but do not delete the Obsidian
+  file. After the old ID no longer resolves and the Obsidian note is ID-less,
+  force the plugin to rescan the ID-less file before recreating it. Either make
+  a harmless app-context content normalization or use the plugin's file-hash
+  cache clearing behavior; a plain second scan can skip the unchanged ID-less
+  file. Run `Obsidian_to_Anki: Scan Vault` again to create a fresh ID. Verify
+  the new Anki note exists and its card count equals the number of distinct
+  current cloze ordinals.
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
 - Intended Obsidian CLI command. Deletes default to Obsidian's configured
   **Deleted files** behavior when the `permanent` flag is omitted. Check

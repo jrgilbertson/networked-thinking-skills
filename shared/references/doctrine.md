@@ -41,6 +41,15 @@ content. `Cloze` cards can store the Definition in the cloze body and keep the
 Analogy and Example behind `Extra:` so Anki does not reveal them while testing
 the cloze fields.
 
+When reducing or renumbering cloze deletions on an existing synced `Cloze`
+note, do not treat the change as a normal edit. Obsidian-to-Anki can leave
+stale cards for removed cloze ordinals. Use the remediation-context
+delete-sync-recreate sequence: delete the old Anki note with a `DELETE` marker,
+verify the old ID is gone, force the plugin to rescan the ID-less Obsidian note
+by changing its content hash or clearing the plugin's file-hash cache, rescan to
+create a fresh ID, then verify the Anki card count matches the current cloze
+ordinals.
+
 New Anki-intended notes must be created through Obsidian app-context APIs, such
 as the official CLI `create` command from a verified Obsidian CLI binary or
 `app.vault.create(...)` from an app-context eval. Do not create them through

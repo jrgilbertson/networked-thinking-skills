@@ -52,6 +52,14 @@ If a note contains `TARGET DECK`, `START`, `END`, `Basic`, `Cloze`, or
 Obsidian-to-Anki identifiers, stop for an Anki-specific decision before deleting
 or splitting it.
 
+If an audit finding or review judgment raises `anki_yagni`, stop and ask whether
+the card is worth memorizing for the learner's current use case. Do not remove
+Anki markers, delete Anki cards, or keep the card by default. If the user chooses
+to remove only the Anki card while keeping the Obsidian note, use the `DELETE`
+marker and scan sequence, verify the old Anki note ID no longer resolves, then
+promptly remove the ID-less `TARGET DECK`/`START`/`END` card block so a later
+scan cannot recreate the card.
+
 If the user approves deleting a note that has an Obsidian-to-Anki ID, do not
 delete the Obsidian file first. Use this sequence exactly so the Anki note is
 not orphaned:
@@ -77,6 +85,18 @@ not orphaned:
 Delete the Obsidian note promptly after the successful scan. If an ID-less
 `START`/`END` card block remains in the vault and a later scan runs, the plugin
 can recreate the Anki card.
+
+For an existing synced `Cloze` note, reducing or renumbering cloze deletions is
+also an Anki replacement operation. Do not rely on a normal scan after editing:
+removed cloze ordinals can leave stale Anki cards. Add `DELETE` above the
+existing ID, run `Obsidian_to_Anki: Scan Vault`, verify the old Anki note ID no
+longer resolves and the note is ID-less, then force the plugin to rescan the
+ID-less Obsidian note before recreating it. Either make a harmless app-context
+content normalization or use the plugin's file-hash-cache clearing behavior; a
+plain second scan can skip the unchanged ID-less file. Scan again to recreate
+the Anki note. After recreation, verify the new ID is present and the number of
+Anki cards equals the number of distinct current cloze ordinals. Do not delete
+the Obsidian file for this cloze replacement case.
 
 ## Audit Outputs
 

@@ -137,6 +137,7 @@
             "definition_too_long",
             "missing_parent",
             "malformed_anki",
+            "anki_yagni",
             "multi_note",
             "misfiled_reference",
             "weak_dae",

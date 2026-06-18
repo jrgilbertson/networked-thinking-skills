@@ -113,6 +113,12 @@ Obsidian-to-Anki ID, follow the exact `DELETE` marker, scan, verify, then delete
 sequence in `../../shared/references/remediation-context.md`, including warning
 that the scan may update Obsidian-to-Anki plugin state files.
 
+When a synced Anki card appears potentially not worth memorizing, treat it as
+`anki_yagni`: flag it as a sanity check and stop for the learner's judgment. Do
+not remove or keep Anki automatically; medical students, professors, and other
+specialized learners may need memorization that a general-purpose auditor would
+not.
+
 Before delete, verify the running vault's `trashOption`. Deleting without the
 CLI `permanent` flag follows that configured Obsidian behavior.
 

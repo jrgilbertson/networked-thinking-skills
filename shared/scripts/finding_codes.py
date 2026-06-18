@@ -36,6 +36,11 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         message="Balance START and END markers for Anki card blocks.",
         recommendation_mode="improve-in-place",
     ),
+    "anki_yagni": FindingCodeSpec(
+        loss=5,
+        message="Confirm this Anki card is worth memorizing for the intended learner before keeping it.",
+        recommendation_mode="confirm-anki-utility",
+    ),
     "multi_note": FindingCodeSpec(
         loss=45,
         message="Split bundled ideas into separate atomic notes.",

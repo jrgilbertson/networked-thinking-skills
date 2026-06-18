@@ -37,6 +37,12 @@ class ModelPromptTest(unittest.TestCase):
         self.assertIn("not both `multi_note` and `not_atomic`", prompt)
         self.assertIn("set both `factual_risk` and `fact_check_required` to true", prompt)
 
+    def test_prompt_contains_anki_yagni_sanity_check(self):
+        prompt = render_model_judgment_prompt()
+        self.assertIn("`anki_yagni`", prompt)
+        self.assertIn("Confirm this Anki card is worth memorizing", prompt)
+        self.assertIn("learner's domain", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()
