@@ -26,6 +26,12 @@ or a helper that escapes content before eval. Do not inline Markdown content,
 target strings, or replacement strings in shell quotes when they may contain
 apostrophes, backticks, shell substitutions, or wikilinks; even small code-span
 replacements can be interpreted by the shell before Obsidian sees them.
+If a helper language builds the payload, also make the payload escape-safe for
+Markdown math and backslashes. For example, Python triple-quoted strings can
+turn LaTeX commands such as `\frac`, `\begin`, or `\text` into control
+characters unless they are raw strings or otherwise escaped. Before running
+Obsidian-to-Anki after a bulk write, scan the touched files for unexpected
+control characters so corrupted formulas do not sync into Anki.
 
 ## Improve In Place
 
