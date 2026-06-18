@@ -40,8 +40,10 @@ fact-check-required flag.
 Anki notes. Use it when the card appears reference-only, low-stakes, or unlikely
 to be worth recall practice for the intended learner. Do not use it merely
 because the topic is advanced, specialized, medical, academic, or outside the
-auditor's own work. Remediation must stop for learner judgment before removing
-Anki from the note.
+auditor's own work. Pronunciation-only person cards and other reference-only
+person details are valid `anki_yagni` candidates before rehoming or removing the
+card. Remediation must stop for learner judgment before removing Anki from the
+note.
 
 DAE doctrine failures include missing DAE content and overlong Definitions. A
 Definition longer than 50 rendered words receives `definition_too_long` so it can
