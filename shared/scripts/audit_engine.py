@@ -95,6 +95,10 @@ HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 URL_RE = re.compile(r"https?://\S+")
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
+DUPLICATE_REVIEW_RE = re.compile(
+    r"\b(?:duplicate candidate|overlap candidate|may duplicate|may overlap|overlaps? with|possible duplicate|possible overlap|duplicate[_-]overlap)\b",
+    re.IGNORECASE,
+)
 
 
 def audit_vault(
@@ -377,8 +381,8 @@ def _render_wikilinks_for_factual_risk(text: str) -> str:
 
 
 def _looks_like_duplicate_candidate(path: Path, body: str) -> bool:
-    text = f"{path.stem}\n{body}".casefold()
-    return "duplicate" in text or "overlap" in text
+    text = f"{path.stem}\n{body}"
+    return DUPLICATE_REVIEW_RE.search(text) is not None
 
 
 def _dae_section_word_counts(body: str) -> dict[str, int]:

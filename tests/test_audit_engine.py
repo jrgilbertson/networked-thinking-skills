@@ -419,6 +419,32 @@ END
         self.assertIn("invalid_dae", codes)
         self.assertNotIn("multi_note", codes)
 
+    def test_duplicate_overlap_ignores_ordinary_prose(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - relational model
+---
+
+# Relational Model
+
+## Definition
+
+The relational model represents database information as named relations whose tuples can be queried with relational operations.
+
+## Analogy
+
+It is like standardized ledgers: each ledger keeps one kind of record, and shared identifiers connect related ledgers.
+
+## Example
+
+For example, a SQL database may permit duplicate rows even though formal relational theory treats relation bodies as sets of tuples.
+""",
+            stem="202601010212 Relational Model",
+        )
+
+        self.assertNotIn("duplicate_overlap", finding_codes(row))
+
     def test_interview_template_is_misfiled_reference(self):
         row = self.audit_single_note(
             """---

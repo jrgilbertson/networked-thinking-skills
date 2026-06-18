@@ -56,7 +56,9 @@ If the user approves deleting a note that has an Obsidian-to-Anki ID, do not
 delete the Obsidian file first. Use this sequence exactly so the Anki note is
 not orphaned:
 
-1. Confirm Anki is open and AnkiConnect is reachable.
+1. Confirm Anki is open and AnkiConnect is reachable. Try
+   `http://localhost:8765` if `http://127.0.0.1:8765` does not respond; some
+   local AnkiConnect installs bind to one host name but not the other.
 2. Add a standalone `DELETE` line immediately above the existing ID line, for
    example:
 

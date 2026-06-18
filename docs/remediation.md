@@ -95,7 +95,9 @@ summary and get explicit approval. The dry run must include:
   policy before deleting, splitting, or moving the note.
 - Anki deletion path. If the approved delete target has an Obsidian-to-Anki ID,
   delete the Anki note before deleting the Obsidian file:
-  1. Confirm Anki is open and AnkiConnect is reachable.
+  1. Confirm Anki is open and AnkiConnect is reachable. Try
+     `http://localhost:8765` if `http://127.0.0.1:8765` does not respond; some
+     local AnkiConnect installs bind to one host name but not the other.
   2. Add a standalone `DELETE` line immediately above the existing ID line.
   3. Tell the user that the scan may update Obsidian-to-Anki plugin state files
      such as `.obsidian/plugins/obsidian-to-anki-plugin/data.json`.
