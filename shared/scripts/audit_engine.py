@@ -292,6 +292,8 @@ def _contains_factual_risk(body: str) -> bool:
             continue
         if _is_formal_definition_sentence(sentence) and not _has_hard_empirical_trigger(sentence):
             continue
+        if _is_generic_example_sentence(sentence) and not _has_non_generic_example_trigger(sentence):
+            continue
         score = _factual_risk_sentence_score(sentence)
         if score >= 3:
             return True
@@ -336,6 +338,20 @@ def _has_named_entity_claim(sentence: str) -> bool:
             FACTUAL_RISK_EMPIRICAL_PREDICATE_RE.search(sentence)
             or FACTUAL_RISK_PRODUCT_CLASS_RE.search(sentence)
         )
+    )
+
+
+def _is_generic_example_sentence(sentence: str) -> bool:
+    return sentence.lower().startswith("for example,")
+
+
+def _has_non_generic_example_trigger(sentence: str) -> bool:
+    return bool(
+        FACTUAL_RISK_CURRENT_RE.search(sentence)
+        or FACTUAL_RISK_SENSITIVE_RE.search(sentence)
+        or FACTUAL_RISK_ATTRIBUTION_RE.search(sentence)
+        or FACTUAL_RISK_CAUSAL_RE.search(sentence)
+        or _has_named_entity_claim(sentence)
     )
 
 

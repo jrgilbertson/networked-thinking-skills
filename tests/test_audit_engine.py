@@ -143,6 +143,35 @@ END
 
         self.assertFalse(row["factual_risk"])
 
+    def test_sampling_definition_quantifiers_do_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - simple random sample
+---
+
+# Simple Random Sample
+
+TARGET DECK: General
+
+START
+Basic
+What is a simple random sample?
+
+Back: Simple random sampling gives every population member and every same-size subset an equal chance of selection.
+
+Simple random sampling is like drawing names from a well-shuffled hat. No name or group of names gets a special path into the sample.
+
+For example, a school with 1,000 students could assign each student a number and use a random-number generator to select 100 students, giving every group of 100 students the same selection chance.
+<!--ID: 1-->
+END
+""",
+            stem="202601010208 Simple Random Sample",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", finding_codes(row))
+
     def test_named_product_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---
