@@ -13,7 +13,8 @@ moves, renames, deletes, Anki syncs, and link-sensitive operations, require
 Obsidian-aware tooling and verify the actual Obsidian CLI binary before
 mutating the vault. If a sandboxed agent cannot attach to the running Obsidian
 app, request approved unsandboxed CLI execution instead of falling back to raw
-filesystem writes.
+filesystem writes. When working from this repo, prefer
+`python3 -m shared.scripts.obsidian_cli` for app-context CLI commands.
 
 ## Required References
 

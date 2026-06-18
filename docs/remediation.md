@@ -52,12 +52,20 @@ uses a different executable for the official CLI:
 python3 -m shared.scripts.preflight_obsidian --require-cli --obsidian-binary obsidian
 ```
 
+Use the repo helper for app-context commands. It resolves the real CLI binary,
+falls back to the app-bundled macOS `obsidian-cli`, and refuses the macOS GUI
+binary when `obsidian` resolves to the wrong executable:
+
+```bash
+python3 -m shared.scripts.obsidian_cli vault="My Vault" eval code="app.vault.getFiles().length"
+```
+
 Verify the chosen binary against the running Obsidian app before relying on it:
 
 ```bash
 type -a obsidian obsidian-cli
-obsidian-cli help
-obsidian-cli vault info=name
+python3 -m shared.scripts.obsidian_cli help
+python3 -m shared.scripts.obsidian_cli vault info=name
 ```
 
 If `obsidian` resolves to the GUI app binary, use `obsidian-cli` or a verified
@@ -113,11 +121,11 @@ summary and get explicit approval. The dry run must include:
   trash, Obsidian `.trash`, or permanent deletion:
 
 ```bash
-obsidian-cli eval code='app.vault.getConfig("trashOption")'
+python3 -m shared.scripts.obsidian_cli eval code='app.vault.getConfig("trashOption")'
 ```
 
 ```bash
-obsidian-cli delete path="Atomic Notes/Example.md"
+python3 -m shared.scripts.obsidian_cli delete path="Atomic Notes/Example.md"
 ```
 
 - Link cleanup plan for each backlink that should change. Use Obsidian-aware

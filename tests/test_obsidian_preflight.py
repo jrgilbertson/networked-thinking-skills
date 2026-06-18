@@ -7,7 +7,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from shared.scripts.obsidian_adapter import DEFAULT_OBSIDIAN_BINARY, CommandResult, ObsidianAdapter
+from shared.scripts.obsidian_adapter import (
+    DEFAULT_OBSIDIAN_BINARY,
+    CommandResult,
+    ObsidianAdapter,
+    resolve_obsidian_binary,
+)
 from shared.scripts.preflight_obsidian import check_skill_paths, main
 
 
@@ -68,6 +73,25 @@ class ObsidianPreflightTest(unittest.TestCase):
             adapter = ObsidianAdapter(binary="example")
 
             self.assertTrue(adapter.available())
+
+    def test_default_binary_falls_back_to_app_bundled_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp) / "obsidian-cli"
+            cli.write_text("", encoding="utf-8")
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=None):
+                with patch("shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH", cli):
+                    resolved = resolve_obsidian_binary(DEFAULT_OBSIDIAN_BINARY)
+
+        self.assertEqual(resolved, str(cli))
+
+    def test_resolver_refuses_macos_gui_binary(self):
+        gui_binary = "/Applications/Obsidian.app/Contents/MacOS/obsidian"
+
+        with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=gui_binary):
+            resolved = resolve_obsidian_binary("obsidian")
+
+        self.assertIsNone(resolved)
 
     def test_require_cli_missing_binary_returns_3(self):
         with tempfile.TemporaryDirectory() as tmp:

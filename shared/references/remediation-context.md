@@ -7,6 +7,9 @@ Audit and remediation are separate phases. Audit recommendations do not mutate n
 Use the official Obsidian skills and the actual Obsidian CLI binary for
 link-sensitive file operations. Prefer `obsidian-cli` unless the environment
 has verified that `obsidian` is the official CLI executable, not the GUI binary.
+When working from this repo, prefer `python3 -m shared.scripts.obsidian_cli` so
+agents use the shared resolver and attach-failure hint instead of hard-coded
+local binary paths.
 If the CLI cannot reach the running Obsidian app from an agent sandbox, stop and
 ask for approved unsandboxed execution. The official CLI uses a local Unix
 socket such as `~/.obsidian-cli.sock`; in Codex CLI, sandboxed commands can fail

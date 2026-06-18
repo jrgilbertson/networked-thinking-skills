@@ -18,7 +18,9 @@ current macOS installs this is often `obsidian-cli`; `obsidian` may launch the
 GUI binary instead of the CLI. See [remediation.md](remediation.md) for the
 preflight command and destructive-operation runbook. In Codex CLI, Obsidian
 CLI commands may also need approved unsandboxed execution because the CLI talks
-to the running app through a local Unix socket.
+to the running app through a local Unix socket. This repo includes
+`python3 -m shared.scripts.obsidian_cli` as the preferred wrapper for
+app-context commands.
 
 ### Codex
 

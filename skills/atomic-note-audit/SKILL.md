@@ -102,7 +102,8 @@ actual Obsidian CLI binary; `obsidian-cli` is the default because some systems
 reserve `obsidian` for the GUI app binary. Require approval before destructive
 operations. If a sandboxed agent cannot attach to the running Obsidian app,
 rerun the Obsidian CLI step in an approved unsandboxed context instead of using
-raw filesystem edits for app-context operations.
+raw filesystem edits for app-context operations. When working from this repo,
+prefer `python3 -m shared.scripts.obsidian_cli` for app-context CLI commands.
 
 For delete, split, move, or rename dry runs, report the target path, Anki
 status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
