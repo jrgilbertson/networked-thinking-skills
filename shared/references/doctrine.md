@@ -45,6 +45,12 @@ content. `Cloze` cards can store the Definition in the cloze body and keep the
 Analogy and Example behind `Extra:` so Anki does not reveal them while testing
 the cloze fields.
 
+For `Cloze` cards, write the `Extra:` content as normal DAE prose. Put the
+Analogy immediately after `Extra:` or in the first paragraph after it, then put
+the Example in a separate paragraph that starts with `For example,`. Do not
+combine the Analogy and Example into one `Extra:` paragraph; that makes the
+card harder to scan and can fail deterministic DAE validation.
+
 If a synced `Cloze` note's cloze ordinals are still useful, preserve the
 existing ordinals and add or repair the DAE `Extra:` content instead of
 replacing the Anki note. Treat the edit as a normal synced update when no cloze
