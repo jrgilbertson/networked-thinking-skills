@@ -143,3 +143,10 @@ Do not manually reverse Obsidian's automatic rename updates.
 ## Duplicate And Overlap Review
 
 Flag candidates only. Do not auto-merge.
+
+During autonomous audit-review batches, hold likely duplicate, overlap, or
+Anki-YAGNI notes instead of forcing them to a clean score. Summarize each hold
+at the batch checkpoint with the candidate note, the nearby overlapping note or
+memorization concern, and the recommended user decision. Do not delete, merge,
+remove Anki markers, or rewrite the held note until the learner approves the
+specific outcome.

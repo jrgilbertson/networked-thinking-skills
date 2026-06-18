@@ -36,6 +36,12 @@ python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json 
   `proposed_outputs` with `note_path` and `content` for each child note.
 - Duplicate and overlap findings are review candidates only. Do not auto-merge
   notes.
+- In autonomous audit-review batches, hold likely duplicate, overlap, or
+  Anki-YAGNI notes instead of forcing them to a clean score. Summarize each hold
+  at the batch checkpoint with the candidate note, the nearby overlapping note
+  or memorization concern, and the recommended user decision. Do not delete,
+  merge, remove Anki markers, or rewrite the held note until the learner
+  approves the specific outcome.
 
 ## Obsidian CLI Routing
 
