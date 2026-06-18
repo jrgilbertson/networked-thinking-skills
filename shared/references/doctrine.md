@@ -40,7 +40,11 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   phrases such as `according to`; explain the relationship directly. For generic
   math and proof concepts, prefer definitional wording such as `is a proof
   technique` over assertion wording such as `proves` unless the sentence is
-  intentionally presenting a theorem result.
+  intentionally presenting a theorem result. For distribution patterns, prefer
+  structural wording such as `follows a pattern that favors smaller digits`
+  over comparative empirical wording such as `smaller digits appear more often
+  than larger digits` unless the note is intentionally making a check-worthy
+  empirical claim.
 
 ## Anki
 
