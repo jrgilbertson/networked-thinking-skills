@@ -8,9 +8,10 @@ description: Use when creating or improving a Networked Thinking atomic note in 
 Use this skill to create or improve one Networked Thinking atomic note.
 
 Before writing or editing an Obsidian vault file, load the official Obsidian
-Markdown and file-management skills when available. For file moves, renames,
-deletes, and link-sensitive operations, require Obsidian-aware tooling and
-verify the actual Obsidian CLI binary before mutating the vault.
+Markdown and file-management skills when available. For note creates, file
+moves, renames, deletes, Anki syncs, and link-sensitive operations, require
+Obsidian-aware tooling and verify the actual Obsidian CLI binary before
+mutating the vault.
 
 ## Required References
 
@@ -20,13 +21,28 @@ verify the actual Obsidian CLI binary before mutating the vault.
 ## Workflow
 
 1. Read the relevant source material or existing note.
-2. Check for an existing note on the same concept.
+2. Scan nearby notes and topics before writing: exact duplicates, overlapping aliases, parent structure notes, sibling notes, prerequisites, and connective gaps.
 3. Draft one DAE note: Definition, Analogy, Example.
-4. Add useful aliases, links, and sources; write source sections as numbered lists.
+4. Add useful aliases, links, and sources; follow the doctrine for numbered source sections, optional compact reference material, and agent-access dates.
 5. Add Anki only when memorization is useful.
-6. Preview the note before writing when working in a user's vault.
-7. Write through Obsidian-aware tooling when modifying vault files.
+6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing.
+7. Preview the note before writing when working in a user's vault.
+8. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes through direct filesystem path writes.
 
 ## Quality Bar
 
 The note should explain one concept clearly enough to stand alone while remaining connected to the surrounding knowledge network.
+
+## Nearby-Topic Scan
+
+Do not treat duplicate review as an exact-title search. Search likely aliases,
+neighboring topic sections, backlinks, parent structure notes, and adjacent
+concept families before creating or splitting a note.
+
+Use the scan to decide whether to:
+
+- improve an existing note instead of creating a duplicate;
+- link to sibling or prerequisite notes already present;
+- create a missing connective note when the current note is carrying a related
+  concept that has no atomic home;
+- update the relevant structure note so the new or improved note is findable.

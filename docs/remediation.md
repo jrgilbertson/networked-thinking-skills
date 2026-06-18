@@ -60,8 +60,11 @@ obsidian-cli vault info=name
 ```
 
 If an agent sandbox cannot see the running app, rerun the CLI step in an
-approved unsandboxed context instead of falling back to raw filesystem moves,
-renames, or deletes.
+approved unsandboxed context instead of falling back to raw filesystem creates,
+moves, renames, or deletes.
+
+Create atomic notes through Obsidian app-context APIs. Do not create notes with
+direct filesystem path writes.
 
 ## Per-Note Destructive Dry Run
 
@@ -76,10 +79,12 @@ summary and get explicit approval. The dry run must include:
   delete the Anki note before deleting the Obsidian file:
   1. Confirm Anki is open and AnkiConnect is reachable.
   2. Add a standalone `DELETE` line immediately above the existing ID line.
-  3. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
-  4. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID
+  3. Tell the user that the scan may update Obsidian-to-Anki plugin state files
+     such as `.obsidian/plugins/obsidian-to-anki-plugin/data.json`.
+  4. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
+  5. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID
      block was removed from the Obsidian note.
-  5. Delete the Obsidian note with Obsidian-aware tooling.
+  6. Delete the Obsidian note with Obsidian-aware tooling.
 
   Example marker block:
 
@@ -110,7 +115,9 @@ obsidian-cli delete path="Atomic Notes/Example.md"
 - Audit-output handling. Timestamped audit reports, Bases, JSONL files, and
   manifests are immutable historical artifacts by default. Do not edit old audit
   outputs during remediation unless the user explicitly asks for an audit
-  artifact correction.
+  artifact correction. One exception: when an approved Obsidian-aware rename
+  updates wikilinks inside audit reports automatically, keep the automatic link
+  maintenance. Do not manually reverse those mechanical Obsidian updates.
 - Whether any operation is permanent. Permanent delete requires separate
   explicit approval and must use the CLI's `permanent` flag only after that
   approval.
@@ -123,7 +130,9 @@ Approval must happen after the user sees the expected effects.
 - `improve-in-place`: Edit one DAE note while preserving its path unless a
   rename is separately approved.
 - `split-multi-note`: Propose child notes, rebuild aliases and links, then
-  delete the original only after approval and Obsidian-aware preflight.
+  delete the original only after approval and Obsidian-aware preflight. Create
+  Anki-intended child notes through Obsidian app-context APIs before the first
+  Obsidian-to-Anki scan; do not use direct filesystem path writes.
 - `rehome-non-DAE`: Recommend a better home for source material or non-DAE
   notes. Do not move automatically.
 - `link-parent`: Add or propose a structure-note link so the atomic note has a

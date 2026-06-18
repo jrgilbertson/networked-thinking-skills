@@ -107,7 +107,8 @@ status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
 the operation is permanent. Stop for an Anki-specific decision when a note has
 Anki markers or Obsidian-to-Anki identifiers. When deleting a note with an
 Obsidian-to-Anki ID, follow the exact `DELETE` marker, scan, verify, then delete
-sequence in `../../shared/references/remediation-context.md`.
+sequence in `../../shared/references/remediation-context.md`, including warning
+that the scan may update Obsidian-to-Anki plugin state files.
 
 Before delete, verify the running vault's `trashOption`. Deleting without the
 CLI `permanent` flag follows that configured Obsidian behavior.
@@ -115,4 +116,6 @@ CLI `permanent` flag follows that configured Obsidian behavior.
 Treat timestamped audit reports, Bases, JSONL files, and manifests as immutable
 historical artifacts by default. Remediation cleans live knowledge-graph files,
 not prior audit outputs, unless the user explicitly asks for an audit artifact
-correction.
+correction. If an approved Obsidian-aware rename automatically updates
+wikilinks inside audit reports, keep those mechanical link-maintenance changes
+instead of manually reversing them.
