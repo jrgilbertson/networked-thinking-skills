@@ -29,6 +29,11 @@ substitutions, or wikilinks.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
+When fixing a missing parent link, insert the backlink into the relevant
+structure note with line-aware logic that preserves the surrounding list nesting
+and numbering. Verify the rendered source text after the write; do not rely on a
+brittle exact multi-line replacement when Obsidian may have already updated
+nearby wikilinks.
 
 ## Split Multi-Note Files
 
