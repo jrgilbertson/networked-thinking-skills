@@ -149,6 +149,30 @@ summary and get explicit approval. The dry run must include:
   deck, card count, and representative field content. If the note's
   memorization value is uncertain, stop for the learner's judgment before
   recreating the card.
+- Sync verification helper. After any sync-affecting edit or stale-ID repair,
+  prefer a JSON spec with `verify_anki_notes` over ad hoc AnkiConnect probes.
+  Representative text should be chosen from rendered Anki field content; avoid
+  snippets that cross an Obsidian wikilink because Anki renders those as HTML.
+
+  ```json
+  [
+    {
+      "note_path": "Atomic Notes/Example.md",
+      "expected_model": "Basic",
+      "expected_deck": "General",
+      "expected_card_count": 1,
+      "representative_text": "For example,"
+    },
+    {
+      "note_path": "Atomic Notes/Reference Only.md",
+      "anki": false
+    }
+  ]
+  ```
+
+  ```bash
+  python3 -m shared.scripts.verify_anki_notes --vault /path/to/vault --spec /tmp/anki-verify.json
+  ```
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
 - Intended Obsidian CLI command. Deletes default to Obsidian's configured
   **Deleted files** behavior when the `permanent` flag is omitted. Check

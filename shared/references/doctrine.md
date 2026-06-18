@@ -106,7 +106,9 @@ may render the Back field as DAE paragraphs without literal `Definition:` or
 `Analogy:` labels in Anki. Verify the vault note for doctrine labels and verify
 the Anki note for the rendered card shape: expected model, deck, one card,
 non-empty Front and Back, and representative updated Back content such as the
-Example paragraph.
+Example paragraph. Prefer `python3 -m shared.scripts.verify_anki_notes` with a
+JSON spec for this check so deck/model/card-count verification stays consistent
+across remediation batches.
 
 If a scan reports that an Obsidian-to-Anki ID does not exist in Anki, treat the
 ID as stale. Do not leave the stale ID in place. If the note should remain
