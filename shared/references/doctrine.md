@@ -45,6 +45,11 @@ content. `Cloze` cards can store the Definition in the cloze body and keep the
 Analogy and Example behind `Extra:` so Anki does not reveal them while testing
 the cloze fields.
 
+If a synced `Cloze` note's cloze ordinals are still useful, preserve the
+existing ordinals and add or repair the DAE `Extra:` content instead of
+replacing the Anki note. Treat the edit as a normal synced update when no cloze
+ordinal is removed or renumbered.
+
 When reducing or renumbering cloze deletions on an existing synced `Cloze`
 note, do not treat the change as a normal edit. Obsidian-to-Anki can leave
 stale cards for removed cloze ordinals. Use the remediation-context
@@ -69,8 +74,9 @@ present. Tell the user before scanning that plugin state files such as
 
 Reference material that should be available in Obsidian but not tested in Anki
 belongs outside the Anki block, after `END` and before `Sources:`. Keep it
-compact and exact. Typical uses are formulas, lookup tables, syntax snippets,
-and commands that support the concept but would make a poor flashcard.
+compact and exact. Typical uses are formulas, lookup tables, worked-example
+calculations, syntax snippets, and commands that support the concept but would
+make a poor flashcard.
 
 ## Misfiled Notes
 
