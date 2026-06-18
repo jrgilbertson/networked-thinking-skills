@@ -36,7 +36,11 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   intentionally making a claim that should be marked for factual-risk review.
   In examples, prefer stable reporting verbs such as `reports` over `says`, and
   avoid human-generalization phrasing like `every ... suggests` unless the note
-  is intentionally making an evidence claim.
+  is intentionally making an evidence claim. In analogies, avoid attribution
+  phrases such as `according to`; explain the relationship directly. For generic
+  math and proof concepts, prefer definitional wording such as `is a proof
+  technique` over assertion wording such as `proves` unless the sentence is
+  intentionally presenting a theorem result.
 
 ## Anki
 
@@ -93,7 +97,12 @@ present. Tell the user before scanning that plugin state files such as
 
 After any sync-affecting edit, verify more than the presence of an ID. Check the
 Anki note model, deck, card count, and a representative field value so stale
-Anki content is caught before continuing.
+Anki content is caught before continuing. For `Basic` cards, Obsidian-to-Anki
+may render the Back field as DAE paragraphs without literal `Definition:` or
+`Analogy:` labels in Anki. Verify the vault note for doctrine labels and verify
+the Anki note for the rendered card shape: expected model, deck, one card,
+non-empty Front and Back, and representative updated Back content such as the
+Example paragraph.
 
 If a scan reports that an Obsidian-to-Anki ID does not exist in Anki, treat the
 ID as stale. Do not leave the stale ID in place. If the note should remain
