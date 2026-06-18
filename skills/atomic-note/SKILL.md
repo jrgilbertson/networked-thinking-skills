@@ -11,7 +11,9 @@ Before writing or editing an Obsidian vault file, load the official Obsidian
 Markdown and file-management skills when available. For note creates, file
 moves, renames, deletes, Anki syncs, and link-sensitive operations, require
 Obsidian-aware tooling and verify the actual Obsidian CLI binary before
-mutating the vault.
+mutating the vault. If a sandboxed agent cannot attach to the running Obsidian
+app, request approved unsandboxed CLI execution instead of falling back to raw
+filesystem writes.
 
 ## Required References
 

@@ -100,7 +100,9 @@ before planning any vault mutation.
 Require official Obsidian skills and preflight before vault mutations. Use the
 actual Obsidian CLI binary; `obsidian-cli` is the default because some systems
 reserve `obsidian` for the GUI app binary. Require approval before destructive
-operations.
+operations. If a sandboxed agent cannot attach to the running Obsidian app,
+rerun the Obsidian CLI step in an approved unsandboxed context instead of using
+raw filesystem edits for app-context operations.
 
 For delete, split, move, or rename dry runs, report the target path, Anki
 status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether

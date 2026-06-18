@@ -8,7 +8,11 @@ Use the official Obsidian skills and the actual Obsidian CLI binary for
 link-sensitive file operations. Prefer `obsidian-cli` unless the environment
 has verified that `obsidian` is the official CLI executable, not the GUI binary.
 If the CLI cannot reach the running Obsidian app from an agent sandbox, stop and
-ask for approved unsandboxed execution.
+ask for approved unsandboxed execution. The official CLI uses a local Unix
+socket such as `~/.obsidian-cli.sock`; in Codex CLI, sandboxed commands can fail
+with "unable to find Obsidian" even when Obsidian is running and owns that
+socket. Do not work around that by using raw filesystem writes for app-context
+creates, moves, renames, deletes, Anki scans, or link-sensitive edits.
 
 Create atomic notes through Obsidian app-context APIs. Do not create notes with
 direct filesystem path writes.

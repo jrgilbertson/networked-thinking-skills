@@ -55,13 +55,23 @@ python3 -m shared.scripts.preflight_obsidian --require-cli --obsidian-binary obs
 Verify the chosen binary against the running Obsidian app before relying on it:
 
 ```bash
+type -a obsidian obsidian-cli
 obsidian-cli help
 obsidian-cli vault info=name
 ```
 
-If an agent sandbox cannot see the running app, rerun the CLI step in an
-approved unsandboxed context instead of falling back to raw filesystem creates,
-moves, renames, or deletes.
+If `obsidian` resolves to the GUI app binary, use `obsidian-cli` or a verified
+CLI shim instead. If `obsidian-cli` says it is unable to find Obsidian while the
+app is running, check whether Obsidian owns the CLI socket:
+
+```bash
+lsof -U | grep .obsidian-cli.sock
+```
+
+When Obsidian owns `~/.obsidian-cli.sock` but the CLI still cannot attach from
+Codex, rerun the Obsidian CLI command in an approved unsandboxed context. Do not
+fall back to raw filesystem creates, moves, renames, deletes, Anki scans, or
+link-sensitive edits.
 
 Create atomic notes through Obsidian app-context APIs. Do not create notes with
 direct filesystem path writes.

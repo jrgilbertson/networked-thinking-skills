@@ -144,7 +144,8 @@ class ObsidianPreflightTest(unittest.TestCase):
                         )
 
         self.assertEqual(return_code, 4)
-        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
+        self.assertIn("obsidian_cli=unavailable", stdout.getvalue())
+        self.assertIn("approved unsandboxed context", stdout.getvalue())
 
     def test_require_cli_help_nonzero_returns_4(self):
         class FakeObsidianAdapter:
@@ -175,7 +176,8 @@ class ObsidianPreflightTest(unittest.TestCase):
                     )
 
         self.assertEqual(return_code, 4)
-        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
+        self.assertIn("obsidian_cli=unavailable", stdout.getvalue())
+        self.assertIn("local CLI socket", stdout.getvalue())
 
     def test_preflight_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:
