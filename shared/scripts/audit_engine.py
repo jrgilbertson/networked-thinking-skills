@@ -96,7 +96,7 @@ URL_RE = re.compile(r"https?://\S+")
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
 DUPLICATE_REVIEW_RE = re.compile(
-    r"\b(?:duplicate candidate|overlap candidate|may duplicate|may overlap|overlaps? with|possible duplicate|possible overlap|duplicate[_-]overlap)\b",
+    r"\b(?:duplicate candidate|overlap candidate|may duplicate|may overlap|possible duplicate|possible overlap|duplicate[_-]overlap)\b",
     re.IGNORECASE,
 )
 

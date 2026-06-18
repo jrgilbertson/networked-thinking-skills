@@ -500,6 +500,33 @@ For example, a SQL database may permit duplicate rows even though formal relatio
 
         self.assertNotIn("duplicate_overlap", finding_codes(row))
 
+    def test_duplicate_overlap_ignores_domain_overlap_phrase(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - sequence race probability
+---
+
+# Pattern-Race Probability
+
+TARGET DECK: General
+
+START
+Basic
+Why can one coin-flip pattern beat another in a sequence race?
+
+Back: Pattern-race probability depends on how each target pattern overlaps with recent outcomes, so equally long patterns need not have equal chances of appearing first.
+
+Pattern-race probability is like watching for license-plate endings in traffic. A partial match can either help the same pattern continue or hand an advantage to a competing pattern.
+
+For example, in a fair-coin race between HH and TH, the HH player wins only when the first two flips are HH.
+END
+""",
+            stem="202601010213 Pattern-Race Probability",
+        )
+
+        self.assertNotIn("duplicate_overlap", finding_codes(row))
+
     def test_interview_template_is_misfiled_reference(self):
         row = self.audit_single_note(
             """---
