@@ -59,6 +59,13 @@ by changing its content hash or clearing the plugin's file-hash cache, rescan to
 create a fresh ID, then verify the Anki card count matches the current cloze
 ordinals.
 
+Do not change a synced note between `Basic` and `Cloze` by editing only the
+Obsidian block type. Obsidian-to-Anki may leave the existing Anki note model and
+field content unchanged even after a scan. If the Anki model should change, use
+the same delete-sync-recreate replacement flow. If the model should stay the
+same, rewrite the Obsidian block to match the existing Anki model before
+scanning.
+
 New Anki-intended notes must be created through Obsidian app-context APIs, such
 as the official CLI `create` command from a verified Obsidian CLI binary or
 `app.vault.create(...)` from an app-context eval. Do not create them through
@@ -71,6 +78,10 @@ running Obsidian app and verify the file received an `<!--ID: ...-->` line.
 Treat the note as written but not fully created in Anki until the ID is
 present. Tell the user before scanning that plugin state files such as
 `.obsidian/plugins/obsidian-to-anki-plugin/data.json` may change.
+
+After any sync-affecting edit, verify more than the presence of an ID. Check the
+Anki note model, deck, card count, and a representative field value so stale
+Anki content is caught before continuing.
 
 Reference material that should be available in Obsidian but not tested in Anki
 belongs outside the Anki block, after `END` and before `Sources:`. Keep it

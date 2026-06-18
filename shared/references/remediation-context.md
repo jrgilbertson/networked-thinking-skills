@@ -103,6 +103,14 @@ the Anki note. After recreation, verify the new ID is present and the number of
 Anki cards equals the number of distinct current cloze ordinals. Do not delete
 the Obsidian file for this cloze replacement case.
 
+Changing a synced note between `Basic` and `Cloze` is also an Anki replacement
+operation. A normal scan can leave the old Anki model and stale fields in place
+even when the Obsidian block type has changed. Before changing the block type,
+inspect the current Anki note model. If the model change is intentional, use the
+delete-sync-recreate flow. If the existing model should remain, make the
+Obsidian block match that model and verify deck, card count, model name, and a
+representative field value after scanning.
+
 ## Audit Outputs
 
 Timestamped audit reports, Bases, JSONL files, and manifests are immutable

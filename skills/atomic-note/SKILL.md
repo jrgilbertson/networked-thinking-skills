@@ -29,7 +29,7 @@ filesystem writes. When working from this repo, prefer
    explicit `## Definition`, `## Analogy`, and `## Example` headings.
 4. Add useful aliases, links, and sources; follow the doctrine for numbered source sections, optional compact reference material, and agent-access dates.
 5. Add Anki only when memorization is useful.
-6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced `Cloze` notes, reducing or renumbering cloze deletions requires the remediation-context delete-sync-recreate flow so stale Anki cards are not retained.
+6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
 7. Preview the note before writing when working in a user's vault.
 8. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes through direct filesystem path writes. Use quote-safe content transport for app-context writes.
 
