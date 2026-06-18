@@ -83,6 +83,13 @@ After any sync-affecting edit, verify more than the presence of an ID. Check the
 Anki note model, deck, card count, and a representative field value so stale
 Anki content is caught before continuing.
 
+If a scan reports that an Obsidian-to-Anki ID does not exist in Anki, treat the
+ID as stale. Do not leave the stale ID in place. If the note should remain
+Anki-backed, remove only the stale `<!--ID: ...-->` marker through Obsidian
+app-context tooling, rescan, and verify a fresh ID, model, deck, card count, and
+representative field value. If the note should not remain Anki-backed, stop for
+the learner's decision before removing the card block or deleting the note.
+
 Reference material that should be available in Obsidian but not tested in Anki
 belongs outside the Anki block, after `END` and before `Sources:`. Keep it
 compact and exact. Typical uses are formulas, lookup tables, worked-example

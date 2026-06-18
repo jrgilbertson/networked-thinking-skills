@@ -111,6 +111,14 @@ delete-sync-recreate flow. If the existing model should remain, make the
 Obsidian block match that model and verify deck, card count, model name, and a
 representative field value after scanning.
 
+If `Obsidian_to_Anki: Scan Vault` warns that a note ID from the vault does not
+exist in Anki, recover based on the intended outcome. For a note that should
+stay Anki-backed, remove only the stale `<!--ID: ...-->` marker through
+Obsidian app-context tooling, scan again, and verify the newly written ID
+resolves in Anki with the expected model, deck, card count, and representative
+field content. For a note whose memorization value is uncertain, stop for a
+learner decision instead of recreating the card automatically.
+
 ## Audit Outputs
 
 Timestamped audit reports, Bases, JSONL files, and manifests are immutable
