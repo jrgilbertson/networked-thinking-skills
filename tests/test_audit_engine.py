@@ -224,6 +224,32 @@ For example, in a clinical trial, the dependent variable could be the patient's 
 
         self.assertFalse(row["factual_risk"])
 
+    def test_domain_show_verb_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - class diagram
+---
+
+# Class Diagram
+
+## Definition
+
+A class diagram shows software classes and the structural relationships between them.
+
+## Analogy
+
+A class diagram is like an org chart for code: it shows the main units and how they relate without showing every runtime event.
+
+## Example
+
+For example, a payment service class diagram can show an InvoiceService depending on a PaymentGateway and InvoiceRepository.
+""",
+            stem="202601010212 Class Diagram",
+        )
+
+        self.assertFalse(row["factual_risk"])
+
     def test_quantified_research_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---

@@ -34,7 +34,11 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 
 ## Anki
 
-Anki cards are optional. A non-Anki atomic note still needs DAE. When Anki markers are present, `START` and `END` blocks must be balanced and scoped to the note's concept.
+Anki cards are optional. A non-Anki atomic note still needs DAE. Write non-Anki
+atomic notes with explicit `## Definition`, `## Analogy`, and `## Example`
+headings so the structure is readable and deterministic audits can verify it.
+When Anki markers are present, `START` and `END` blocks must be balanced and
+scoped to the note's concept.
 
 `Basic` cards can store the Definition, Analogy, and Example in the `Back:`
 content. `Cloze` cards can store the Definition in the cloze body and keep the

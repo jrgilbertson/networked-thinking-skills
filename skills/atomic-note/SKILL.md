@@ -25,7 +25,8 @@ filesystem writes. When working from this repo, prefer
 
 1. Read the relevant source material or existing note.
 2. Scan nearby notes and topics before writing: exact duplicates, overlapping aliases, parent structure notes, sibling notes, prerequisites, and connective gaps.
-3. Draft one DAE note: Definition, Analogy, Example.
+3. Draft one DAE note: Definition, Analogy, Example. For non-Anki notes, use
+   explicit `## Definition`, `## Analogy`, and `## Example` headings.
 4. Add useful aliases, links, and sources; follow the doctrine for numbered source sections, optional compact reference material, and agent-access dates.
 5. Add Anki only when memorization is useful.
 6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced `Cloze` notes, reducing or renumbering cloze deletions requires the remediation-context delete-sync-recreate flow so stale Anki cards are not retained.
