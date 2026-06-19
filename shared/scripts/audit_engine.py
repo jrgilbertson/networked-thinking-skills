@@ -61,7 +61,7 @@ FACTUAL_RISK_SENSITIVE_RE = re.compile(
 FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
     r"\b(according to|found|finds|says|said|proves|"
     r"(?:research|stud(?:y|ies)|paper|report|analysis|(?:[a-z]+(?:-[a-z]+)?\s+){0,2}"
-    r"(?:benchmarks?|trials?|surveys?|experiments?))\s+"
+    r"(?:benchmarks?|reviews?|trials?|surveys?|experiments?))\s+"
     r"(?:found|finds|show|showed|shows|said|says|reported))\b",
     re.IGNORECASE,
 )

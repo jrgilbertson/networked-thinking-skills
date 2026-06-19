@@ -14,7 +14,7 @@ from typing import Any
 
 ANKI_ID_RE = re.compile(r"<!--ID:\s*(\d+)-->")
 ANKI_CARD_MARKER_RE = re.compile(r"(?m)^\s*(?:TARGET DECK:.*|START|END|Basic|Cloze)\s*$")
-ANKI_TARGET_DECK_RE = re.compile(r"(?m)^\s*TARGET DECK:.*$")
+ANKI_TARGET_DECK_RE = re.compile(r"(?m)^\s*TARGET DECK:\s*(?P<deck>.*?)\s*$")
 ANKI_START_RE = re.compile(r"(?m)^\s*START\s*$")
 ANKI_END_RE = re.compile(r"(?m)^\s*END\s*$")
 DEFAULT_ANKICONNECT_URLS = ("http://127.0.0.1:8765", "http://localhost:8765")
@@ -111,6 +111,7 @@ def verify_entries(
                 entry["note_path"],
                 text,
                 entry["expected_model"],
+                entry["expected_deck"],
             )
             if marker_failures:
                 failures.extend(marker_failures)
@@ -184,19 +185,39 @@ def extract_anki_ids(text: str) -> list[int]:
     return [int(match) for match in ANKI_ID_RE.findall(text)]
 
 
-def _verify_anki_source_markers(path: str, text: str, expected_model: str) -> list[str]:
+def _verify_anki_source_markers(
+    path: str,
+    text: str,
+    expected_model: str,
+    expected_deck: str,
+) -> list[str]:
     failures: list[str] = []
-    if not ANKI_TARGET_DECK_RE.search(text):
+    deck_matches = [match.group("deck").strip() for match in ANKI_TARGET_DECK_RE.finditer(text)]
+    if not deck_matches:
         failures.append(f"{path}: missing Obsidian-to-Anki TARGET DECK marker")
+    elif len(deck_matches) > 1:
+        failures.append(f"{path}: expected exactly one Obsidian-to-Anki TARGET DECK marker")
+    elif deck_matches[0] != expected_deck:
+        failures.append(f"{path}: source deck={deck_matches[0]}, expected={expected_deck}")
 
-    start_count = len(ANKI_START_RE.findall(text))
-    end_count = len(ANKI_END_RE.findall(text))
-    if start_count < 1 or start_count != end_count:
-        failures.append(f"{path}: expected balanced Obsidian-to-Anki START/END markers")
+    lines = text.splitlines()
+    start_indexes = [index for index, line in enumerate(lines) if line.strip() == "START"]
+    end_indexes = [index for index, line in enumerate(lines) if line.strip() == "END"]
+    if len(start_indexes) != 1 or len(end_indexes) != 1 or start_indexes[0] >= end_indexes[0]:
+        failures.append(f"{path}: expected exactly one Obsidian-to-Anki START/END block")
 
     model_marker_re = re.compile(rf"(?m)^\s*{re.escape(expected_model)}\s*$")
     if not model_marker_re.search(text):
         failures.append(f"{path}: missing Obsidian-to-Anki {expected_model} model marker")
+    elif len(start_indexes) == 1 and len(end_indexes) == 1 and start_indexes[0] < end_indexes[0]:
+        block_lines = lines[start_indexes[0] + 1 : end_indexes[0]]
+        content_lines = [
+            line.strip()
+            for line in block_lines
+            if line.strip() and line.strip() != expected_model
+        ]
+        if not content_lines:
+            failures.append(f"{path}: missing local {expected_model} card content")
 
     return failures
 

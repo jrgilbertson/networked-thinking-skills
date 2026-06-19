@@ -504,6 +504,33 @@ A benchmark shows the cache improves latency.
         self.assertTrue(row["factual_risk"])
         self.assertIn("factual_risk", finding_codes(row))
 
+    def test_review_attribution_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice review claim
+---
+
+# Retrieval Practice Review Claim
+
+## Definition
+
+A retrieval practice review claim states that summarized evidence supports a retention result.
+
+## Analogy
+
+It is like reading a field report before deciding which study habit to use.
+
+## Example
+
+A systematic review shows retrieval practice improves retention.
+""",
+            stem="202601010240 Retrieval Practice Review Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
     def test_universal_human_example_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---

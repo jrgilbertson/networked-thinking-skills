@@ -438,9 +438,95 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             result.failures,
             [
                 "Atomic Notes/Id Only.md: missing Obsidian-to-Anki TARGET DECK marker",
-                "Atomic Notes/Id Only.md: expected balanced Obsidian-to-Anki START/END markers",
+                "Atomic Notes/Id Only.md: expected exactly one Obsidian-to-Anki START/END block",
                 "Atomic Notes/Id Only.md: missing Obsidian-to-Anki Basic model marker",
             ],
+        )
+        self.assertEqual(client.calls, [])
+
+    def test_verify_rejects_multiple_source_card_blocks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Extra Block.md").write_text(
+                ANKI_BASIC_NOTE
+                + "\nTARGET DECK: General\nSTART\nBasic\nExtra front\nExtra back\nEND\n",
+                encoding="utf-8",
+            )
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Extra Block.md",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertIn(
+            "Atomic Notes/Extra Block.md: expected exactly one Obsidian-to-Anki START/END block",
+            result.failures,
+        )
+        self.assertEqual(client.calls, [])
+
+    def test_verify_rejects_source_deck_mismatch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Old Deck.md").write_text(
+                ANKI_BASIC_NOTE.replace("TARGET DECK: General", "TARGET DECK: OldDeck"),
+                encoding="utf-8",
+            )
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Old Deck.md",
+                        "expected_deck": "General",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Old Deck.md: source deck=OldDeck, expected=General"],
+        )
+        self.assertEqual(client.calls, [])
+
+    def test_verify_rejects_marker_only_source_card_block(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Marker Only.md").write_text(
+                "TARGET DECK: General\nSTART\nBasic\nEND\n<!--ID: 12345-->\n",
+                encoding="utf-8",
+            )
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Marker Only.md",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Marker Only.md: missing local Basic card content"],
         )
         self.assertEqual(client.calls, [])
 
