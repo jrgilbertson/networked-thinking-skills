@@ -104,6 +104,17 @@ class SkillIntegrityTest(unittest.TestCase):
         self.assertIn("`<runtime-home>/skills/<skill>`", text)
         self.assertIn("`<runtime-home>/shared/references`", text)
 
+    def test_remediation_reference_requires_durable_hold_tracking(self):
+        text = (ROOT / "shared/references/remediation-context.md").read_text(encoding="utf-8")
+        normalized = " ".join(text.split())
+
+        self.assertIn("durable held-decision artifact", normalized)
+        self.assertIn("Do not rely on chat history", normalized)
+        self.assertIn("The artifact must include", normalized)
+        self.assertIn("hold reason", normalized)
+        self.assertIn("recommended decision", normalized)
+        self.assertIn("next action needed from the learner", normalized)
+
     def _assert_required_references_exist(self, skill_dir, text, skill):
         for reference in _required_reference_paths(text):
             with self.subTest(skill=skill, reference=reference):

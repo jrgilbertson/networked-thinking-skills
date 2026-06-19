@@ -153,3 +153,12 @@ at the batch checkpoint with the candidate note, the nearby overlapping note or
 memorization concern, and the recommended user decision. Do not delete, merge,
 remove Anki markers, or rewrite the held note until the learner approves the
 specific outcome.
+
+When the user asks the agent to use a long-running goal, loop, or autonomous
+batch process to improve audit findings, maintain a durable held-decision
+artifact in addition to chat summaries. Do not rely on chat history, goal state,
+or checkpoint prose as the only record. The artifact must include each held
+note link/path, hold reason, recommended decision, current status, and the next
+action needed from the learner. Update it whenever a hold is added, resolved,
+or intentionally deferred so pauses, crashes, and context compaction do not
+erase the decision queue.

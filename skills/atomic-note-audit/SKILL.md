@@ -119,6 +119,12 @@ not remove or keep Anki automatically; medical students, professors, and other
 specialized learners may need memorization that a general-purpose auditor would
 not.
 
+For long-running goals, loops, or autonomous remediation batches, keep a durable
+held-decision artifact as described in
+`../../shared/references/remediation-context.md`. Chat history and checkpoint
+summaries are not sufficient state for duplicate, YAGNI, split, delete, rehome,
+or factual-risk decisions.
+
 Before delete, verify the running vault's `trashOption`. Deleting without the
 CLI `permanent` flag follows that configured Obsidian behavior.
 
