@@ -93,8 +93,12 @@ direct filesystem path writes; the Obsidian-to-Anki plugin may create cards
 before Obsidian writes IDs back to files, making sync state ambiguous. New
 Anki-intended notes do not include an Obsidian-to-Anki `<!--ID: ...-->` line
 when first written. After writing a note with `TARGET DECK`, `START` and `END`,
-and a `Basic` or `Cloze` card block, run `Obsidian_to_Anki: Scan Vault` in the
+and a `Basic` or `Cloze` card block, run the Obsidian-to-Anki vault scan in the
 running Obsidian app and verify the file received an `<!--ID: ...-->` line.
+When scanning from an app-context agent, prefer awaiting the loaded plugin's
+`scanVault()` method directly, because command-dispatch helpers such as
+`app.commands.executeCommandById(...)` can return before existing Anki note
+fields are updated.
 Treat the note as written but not fully created in Anki until the ID is
 present. Tell the user before scanning that plugin state files such as
 `.obsidian/plugins/obsidian-to-anki-plugin/data.json` may change.

@@ -89,7 +89,10 @@ not orphaned:
 
 3. Tell the user that the scan may update Obsidian-to-Anki plugin state files
    such as `.obsidian/plugins/obsidian-to-anki-plugin/data.json`.
-4. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
+4. Run the Obsidian-to-Anki vault scan in the running Obsidian app. When
+   scanning from an app-context agent, prefer awaiting
+   `app.plugins.plugins['obsidian-to-anki-plugin'].scanVault()` directly;
+   command-dispatch helpers can return before existing Anki fields are updated.
 5. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID block
    was removed from the Obsidian note.
 6. Delete the Obsidian note with Obsidian-aware tooling.
@@ -101,7 +104,7 @@ can recreate the Anki card.
 For an existing synced `Cloze` note, reducing or renumbering cloze deletions is
 also an Anki replacement operation. Do not rely on a normal scan after editing:
 removed cloze ordinals can leave stale Anki cards. Add `DELETE` above the
-existing ID, run `Obsidian_to_Anki: Scan Vault`, verify the old Anki note ID no
+existing ID, run the awaited Obsidian-to-Anki vault scan, verify the old Anki note ID no
 longer resolves and the note is ID-less, then force the plugin to rescan the
 ID-less Obsidian note before recreating it. Either make a harmless app-context
 content normalization or use the plugin's file-hash-cache clearing behavior; a

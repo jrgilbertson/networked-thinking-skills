@@ -114,7 +114,10 @@ summary and get explicit approval. The dry run must include:
   2. Add a standalone `DELETE` line immediately above the existing ID line.
   3. Tell the user that the scan may update Obsidian-to-Anki plugin state files
      such as `.obsidian/plugins/obsidian-to-anki-plugin/data.json`.
-  4. Run `Obsidian_to_Anki: Scan Vault` in the running Obsidian app.
+  4. Run the Obsidian-to-Anki vault scan in the running Obsidian app. When
+     scanning from an app-context agent, prefer awaiting
+     `app.plugins.plugins['obsidian-to-anki-plugin'].scanVault()` directly;
+     command-dispatch helpers can return before existing Anki fields are updated.
   5. Verify the Anki note ID no longer resolves in Anki and the `DELETE`/ID
      block was removed from the Obsidian note.
   6. Delete the Obsidian note with Obsidian-aware tooling.
@@ -137,14 +140,14 @@ summary and get explicit approval. The dry run must include:
   force the plugin to rescan the ID-less file before recreating it. Either make
   a harmless app-context content normalization or use the plugin's file-hash
   cache clearing behavior; a plain second scan can skip the unchanged ID-less
-  file. Run `Obsidian_to_Anki: Scan Vault` again to create a fresh ID. Verify
+  file. Run the awaited Obsidian-to-Anki vault scan again to create a fresh ID. Verify
   the new Anki note exists and its card count equals the number of distinct
   current cloze ordinals.
 - Stale-ID repair path. If AnkiConnect or `Obsidian_to_Anki: Scan Vault`
   shows that an Obsidian-to-Anki ID in the note no longer exists in Anki, do
   not add `DELETE`; there is no Anki note left to delete. If the note should
   remain Anki-backed, remove only the stale `<!--ID: ...-->` marker through
-  Obsidian app-context tooling, run `Obsidian_to_Anki: Scan Vault`, and verify
+  Obsidian app-context tooling, run the awaited Obsidian-to-Anki vault scan, and verify
   that the file receives a fresh ID. Then check the new Anki note's model,
   deck, card count, and representative field content. If the note's
   memorization value is uncertain, stop for the learner's judgment before
