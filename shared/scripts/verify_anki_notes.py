@@ -14,6 +14,9 @@ from typing import Any
 
 ANKI_ID_RE = re.compile(r"<!--ID:\s*(\d+)-->")
 ANKI_CARD_MARKER_RE = re.compile(r"(?m)^\s*(?:TARGET DECK:.*|START|END|Basic|Cloze)\s*$")
+ANKI_TARGET_DECK_RE = re.compile(r"(?m)^\s*TARGET DECK:.*$")
+ANKI_START_RE = re.compile(r"(?m)^\s*START\s*$")
+ANKI_END_RE = re.compile(r"(?m)^\s*END\s*$")
 DEFAULT_ANKICONNECT_URLS = ("http://127.0.0.1:8765", "http://localhost:8765")
 
 
@@ -96,10 +99,21 @@ def verify_entries(
             failures.append(f"{entry['note_path']}: unable to read note: {exc}")
             continue
 
-        note_id = extract_anki_id(text)
+        note_ids = extract_anki_ids(text)
+        note_id = note_ids[0] if note_ids else None
         if entry["anki"]:
-            if note_id is None:
-                failures.append(f"{entry['note_path']}: missing Obsidian-to-Anki ID")
+            if len(note_ids) != 1:
+                failures.append(
+                    f"{entry['note_path']}: expected exactly one Obsidian-to-Anki ID, found {len(note_ids)}"
+                )
+                continue
+            marker_failures = _verify_anki_source_markers(
+                entry["note_path"],
+                text,
+                entry["expected_model"],
+            )
+            if marker_failures:
+                failures.extend(marker_failures)
                 continue
             if note_id in seen_anki_ids:
                 failures.append(
@@ -164,6 +178,27 @@ def verify_entries(
 def extract_anki_id(text: str) -> int | None:
     match = ANKI_ID_RE.search(text)
     return int(match.group(1)) if match else None
+
+
+def extract_anki_ids(text: str) -> list[int]:
+    return [int(match) for match in ANKI_ID_RE.findall(text)]
+
+
+def _verify_anki_source_markers(path: str, text: str, expected_model: str) -> list[str]:
+    failures: list[str] = []
+    if not ANKI_TARGET_DECK_RE.search(text):
+        failures.append(f"{path}: missing Obsidian-to-Anki TARGET DECK marker")
+
+    start_count = len(ANKI_START_RE.findall(text))
+    end_count = len(ANKI_END_RE.findall(text))
+    if start_count < 1 or start_count != end_count:
+        failures.append(f"{path}: expected balanced Obsidian-to-Anki START/END markers")
+
+    model_marker_re = re.compile(rf"(?m)^\s*{re.escape(expected_model)}\s*$")
+    if not model_marker_re.search(text):
+        failures.append(f"{path}: missing Obsidian-to-Anki {expected_model} model marker")
+
+    return failures
 
 
 def _verify_note(
@@ -256,18 +291,28 @@ def _normalize_entry(entry: Any, index: int) -> dict[str, Any]:
     expected_model = entry.get("expected_model", "Basic")
     expected_deck = entry.get("expected_deck", "General")
     expected_card_count = entry.get("expected_card_count", 1)
-    representative_text = entry.get("representative_text", [])
+    representative_text = entry.get("representative_text")
 
     if not isinstance(expected_model, str) or not expected_model:
         raise ValueError(f"{note_path}: expected_model must be a non-empty string")
     if not isinstance(expected_deck, str) or not expected_deck:
         raise ValueError(f"{note_path}: expected_deck must be a non-empty string")
-    if not isinstance(expected_card_count, int) or expected_card_count < 1:
+    if (
+        not isinstance(expected_card_count, int)
+        or isinstance(expected_card_count, bool)
+        or expected_card_count < 1
+    ):
         raise ValueError(f"{note_path}: expected_card_count must be a positive integer")
+    if representative_text is None:
+        raise ValueError(f"{note_path}: representative_text is required for Anki-backed notes")
     if isinstance(representative_text, str):
         representative_text = [representative_text]
-    if not isinstance(representative_text, list) or not all(
-        isinstance(item, str) and item for item in representative_text
+    if (
+        not isinstance(representative_text, list)
+        or not representative_text
+        or not all(
+            isinstance(item, str) and item for item in representative_text
+        )
     ):
         raise ValueError(f"{note_path}: representative_text must be a string or string list")
 

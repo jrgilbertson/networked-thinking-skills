@@ -46,7 +46,8 @@ FACTUAL_RISK_ABSOLUTE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_NUMBER_RE = re.compile(
-    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d|\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))(?=\W|$)",
+    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d+(?:,\d{3})*(?:\.\d+)?|"
+    r"\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))(?=\W|$)",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CURRENT_RE = re.compile(
@@ -58,7 +59,10 @@ FACTUAL_RISK_SENSITIVE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
-    r"\b(according to|found|finds|says|said|proves|(?:research|stud(?:y|ies)|paper|report|analysis|(?:[a-z]+(?:-[a-z]+)?\s+){0,2}(?:trials?|surveys?|experiments?))\s+(?:found|finds|show|showed|shows|said|says|reported))\b",
+    r"\b(according to|found|finds|says|said|proves|"
+    r"(?:research|stud(?:y|ies)|paper|report|analysis|(?:[a-z]+(?:-[a-z]+)?\s+){0,2}"
+    r"(?:benchmarks?|trials?|surveys?|experiments?))\s+"
+    r"(?:found|finds|show|showed|shows|said|says|reported))\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CAUSAL_RE = re.compile(
@@ -79,7 +83,7 @@ FACTUAL_RISK_HUMAN_CLASS_PATTERN = (
 FACTUAL_RISK_ABSOLUTE_HUMAN_PREFIX_RE = re.compile(
     rf"\b(?:all|every|none|only)\s+"
     rf"(?:of\s+(?:the\s+)?)?"
-    rf"(?:\w+\s+)?(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\b",
+    rf"(?:\w+\s+){{0,3}}(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_HUMAN_ABSOLUTE_SUFFIX_RE = re.compile(
@@ -93,7 +97,13 @@ FACTUAL_RISK_SELECTION_CHANCE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE = re.compile(
-    r"^(?:\s+|\b(?:receives?|gets?|has|have|had|is|are|was|were|be|being|been|given|assigned|allocated|granted|the|a|an|same|equal|of|to|with)\b)*$",
+    r"^(?:\s+|\b(?:receives?|gets?|has|have|had|is|are|was|were|be|being|been|"
+    r"given|assigned|allocated|granted|the|a|an|same|equal|of|to|with)\b)*$",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_SELECTION_OUTCOME_AFTER_RE = re.compile(
+    r"\band\s+(?:\w+\s+){0,4}"
+    r"(?:remember|remembers|recall|recalls|learn|learns|retain|retains|perform|performs|score|scores)\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_NONHUMAN_HEADS_AFTER_SINGULAR_HUMAN_TERM = {
@@ -429,6 +439,8 @@ def _is_selection_chance_match(sentence: str, match: re.Match[str]) -> bool:
 def _is_selection_chance_after(sentence: str, start: int) -> bool:
     selection_match = FACTUAL_RISK_SELECTION_CHANCE_RE.search(sentence, start, start + 80)
     if not selection_match:
+        return False
+    if FACTUAL_RISK_SELECTION_OUTCOME_AFTER_RE.search(sentence, selection_match.end()):
         return False
     return FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE.fullmatch(sentence[start : selection_match.start()]) is not None
 

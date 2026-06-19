@@ -1,7 +1,9 @@
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
-from shared.scripts.finding_codes import ALLOWED_FINDING_CODES, FINDING_CODE_SPECS
+import shared.scripts.model_prompt as model_prompt
+from shared.scripts.finding_codes import ALLOWED_FINDING_CODES, DAE_COMPONENT_LOSS_CAP, FINDING_CODE_SPECS
 from shared.scripts.model_prompt import render_model_judgment_prompt
 
 
@@ -33,9 +35,16 @@ class ModelPromptTest(unittest.TestCase):
         prompt = render_model_judgment_prompt()
         self.assertIn("Examples:", prompt)
         self.assertIn("not `weak_definition` or `weak_example`", prompt)
-        self.assertIn("caps those DAE component losses at 35", prompt)
+        self.assertIn(f"caps those DAE component losses at {DAE_COMPONENT_LOSS_CAP}", prompt)
         self.assertIn("not both `multi_note` and `not_atomic`", prompt)
         self.assertIn("set both `factual_risk` and `fact_check_required` to true", prompt)
+
+    def test_prompt_deduplication_example_uses_dae_cap_constant(self):
+        with patch.object(model_prompt, "DAE_COMPONENT_LOSS_CAP", 42):
+            prompt = model_prompt.render_model_judgment_prompt()
+
+        self.assertIn("caps those DAE component losses at 42", prompt)
+        self.assertNotIn("caps those DAE component losses at 35", prompt)
 
     def test_prompt_contains_anki_yagni_sanity_check(self):
         prompt = render_model_judgment_prompt()

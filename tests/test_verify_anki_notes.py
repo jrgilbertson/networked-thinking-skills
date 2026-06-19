@@ -5,6 +5,16 @@ from pathlib import Path
 from shared.scripts.verify_anki_notes import extract_anki_id, verify_entries
 
 
+ANKI_BASIC_NOTE = """TARGET DECK: General
+START
+Basic
+Front
+Back
+END
+<!--ID: 12345-->
+"""
+
+
 class FakeAnkiClient:
     def __init__(self, notes=None, cards=None):
         self.notes = notes or []
@@ -30,10 +40,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Example.md").write_text(
-                "TARGET DECK: General\n<!--ID: 12345-->\n",
-                encoding="utf-8",
-            )
+            (note / "Example.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -107,14 +114,20 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "First.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
-            (note / "Second.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "First.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
+            (note / "Second.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient()
 
             result = verify_entries(
                 [
-                    {"note_path": "Atomic Notes/First.md"},
-                    {"note_path": "Atomic Notes/Second.md"},
+                    {
+                        "note_path": "Atomic Notes/First.md",
+                        "representative_text": "First",
+                    },
+                    {
+                        "note_path": "Atomic Notes/Second.md",
+                        "representative_text": "Second",
+                    },
                 ],
                 vault=vault,
                 client=client,
@@ -133,7 +146,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Linked.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Linked.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -172,7 +185,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Blank Front.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Blank Front.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -206,7 +219,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Blank Front Html.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Blank Front Html.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -240,7 +253,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Blank Back.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Blank Back.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -274,11 +287,16 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp) / "vault"
             vault.mkdir()
             outside = Path(tmp) / "Outside.md"
-            outside.write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            outside.write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient()
 
             result = verify_entries(
-                [{"note_path": str(outside)}],
+                [
+                    {
+                        "note_path": str(outside),
+                        "representative_text": "Answer",
+                    }
+                ],
                 vault=vault,
                 client=client,
             )
@@ -291,11 +309,16 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             root = Path(tmp)
             vault = root / "vault"
             vault.mkdir()
-            (root / "Outside.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (root / "Outside.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient()
 
             result = verify_entries(
-                [{"note_path": "../Outside.md"}],
+                [
+                    {
+                        "note_path": "../Outside.md",
+                        "representative_text": "Answer",
+                    }
+                ],
                 vault=vault,
                 client=client,
             )
@@ -308,7 +331,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             vault = Path(tmp)
             note = vault / "Atomic Notes"
             note.mkdir()
-            (note / "Two Cards.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Two Cards.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
             client = FakeAnkiClient(
                 notes=[
                     {
@@ -340,6 +363,103 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             result.failures,
             ["Atomic Notes/Two Cards.md: missing cardsInfo for card IDs [222]"],
         )
+
+    def test_verify_rejects_boolean_expected_card_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Example.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "expected_card_count must be a positive integer",
+            ):
+                verify_entries(
+                    [
+                        {
+                            "note_path": "Atomic Notes/Example.md",
+                            "expected_card_count": True,
+                            "representative_text": "Answer",
+                        }
+                    ],
+                    vault=vault,
+                    client=FakeAnkiClient(),
+                )
+
+    def test_verify_rejects_multiple_anki_ids_in_same_note(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Extra Id.md").write_text(
+                f"{ANKI_BASIC_NOTE}<!--ID: 99999-->\n",
+                encoding="utf-8",
+            )
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Extra Id.md",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Extra Id.md: expected exactly one Obsidian-to-Anki ID, found 2"],
+        )
+        self.assertEqual(client.calls, [])
+
+    def test_verify_rejects_anki_note_without_local_card_block(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Id Only.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Id Only.md",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            [
+                "Atomic Notes/Id Only.md: missing Obsidian-to-Anki TARGET DECK marker",
+                "Atomic Notes/Id Only.md: expected balanced Obsidian-to-Anki START/END markers",
+                "Atomic Notes/Id Only.md: missing Obsidian-to-Anki Basic model marker",
+            ],
+        )
+        self.assertEqual(client.calls, [])
+
+    def test_verify_requires_representative_text_for_anki_notes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Example.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "representative_text is required for Anki-backed notes",
+            ):
+                verify_entries(
+                    [{"note_path": "Atomic Notes/Example.md"}],
+                    vault=vault,
+                    client=FakeAnkiClient(),
+                )
 
 
 if __name__ == "__main__":

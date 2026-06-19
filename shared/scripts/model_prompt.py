@@ -61,7 +61,7 @@ def render_model_judgment_prompt() -> str:
             "Examples:",
             "",
             "- A note with no complete DAE structure should emit `invalid_dae`, not `weak_definition` or `weak_example` for the same missing structure.",
-            "- A note with weak Definition, Analogy, and Example content can emit component codes, but scoring caps those DAE component losses at 35.",
+            f"- A note with weak Definition, Analogy, and Example content can emit component codes, but scoring caps those DAE component losses at {DAE_COMPONENT_LOSS_CAP}.",
             "- A note that bundles two separate concepts should emit `multi_note`, not both `multi_note` and `not_atomic` for that bundled-note problem.",
             "- A note with check-worthy factual claims should emit one `factual_risk` finding and set both `factual_risk` and `fact_check_required` to true.",
             "- A synced Anki card for a reference-only, low-stakes, or rarely recalled concept can emit `anki_yagni`, but do not use it merely because the topic is advanced, specialized, medical, academic, or outside your own work.",

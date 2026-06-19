@@ -444,6 +444,66 @@ For example, an A/B test had a 97% completion rate after the redesign.
         self.assertTrue(row["factual_risk"])
         self.assertIn("factual_risk", finding_codes(row))
 
+    def test_currency_example_claim_triggers_factual_risk(self):
+        examples = {
+            "202601010234 Monthly Tool Price": "For example, the tool costs $25 per month.",
+            "202601010235 Annual Tool Price": "For example, the tool costs $120 per year.",
+            "202601010236 Decimal Tool Price": "For example, the tool costs $12.50 per user.",
+        }
+        for stem, example in examples.items():
+            with self.subTest(stem=stem):
+                row = self.audit_single_note(
+                    f"""---
+aliases: []
+---
+
+# {stem[13:]}
+
+## Definition
+
+A tool price claim states the cost of a software service.
+
+## Analogy
+
+It is like reading a price tag before deciding whether to buy a tool.
+
+## Example
+
+{example}
+""",
+                    stem=stem,
+                )
+
+                self.assertTrue(row["factual_risk"])
+                self.assertIn("factual_risk", finding_codes(row))
+
+    def test_benchmark_attribution_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - cache benchmark claim
+---
+
+# Cache Benchmark Claim
+
+## Definition
+
+A cache benchmark claim states that a measured test supports a performance result.
+
+## Analogy
+
+It is like timing two routes before choosing the faster one.
+
+## Example
+
+A benchmark shows the cache improves latency.
+""",
+            stem="202601010237 Cache Benchmark Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
     def test_universal_human_example_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---
@@ -552,6 +612,33 @@ For example, all of the learners remember topics better when examples are emotio
         self.assertTrue(row["factual_risk"])
         self.assertIn("factual_risk", finding_codes(row))
 
+    def test_multi_word_human_class_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - high school examples effect
+---
+
+# High School Examples Effect
+
+## Definition
+
+A high school examples effect claims that example wording changes student recall.
+
+## Analogy
+
+It is like changing the lighting in a classroom: the change may alter what students notice.
+
+## Example
+
+For example, all high school students remember topics better when examples are emotional.
+""",
+            stem="202601010238 High School Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
     def test_selection_chance_does_not_hide_separate_human_generalization(self):
         row = self.audit_single_note(
             """---
@@ -601,6 +688,33 @@ It is like making one claim about what people remember and another about how the
 For example, all learners remember topics better, and every student receives the same selection chance.
 """,
             stem="202601010233 Memory Then Sampling Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_selection_chance_followed_by_same_subject_outcome_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - sampling then memory claim
+---
+
+# Sampling Then Memory Claim
+
+## Definition
+
+A sampling then memory claim combines a fair-selection statement with a learner outcome.
+
+## Analogy
+
+It is like explaining who enters a study and then making a separate claim about what they learned.
+
+## Example
+
+For example, every student receives the same selection chance and remembers topics better after the lesson.
+""",
+            stem="202601010239 Sampling Then Memory Claim",
         )
 
         self.assertTrue(row["factual_risk"])
