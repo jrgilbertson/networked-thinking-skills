@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 import shutil
 import subprocess
 
 
 DEFAULT_OBSIDIAN_BINARY = "obsidian-cli"
+MACOS_OBSIDIAN_CLI_PATH = Path("/Applications/Obsidian.app/Contents/MacOS/obsidian-cli")
 
 
 @dataclass(frozen=True)
@@ -21,12 +24,20 @@ class ObsidianAdapter:
         self.binary = binary
 
     def available(self) -> bool:
-        return shutil.which(self.binary) is not None
+        return resolve_obsidian_binary(self.binary) is not None
 
     def run(self, args: list[str]) -> CommandResult:
+        resolved_binary = resolve_obsidian_binary(self.binary)
+        if resolved_binary is None:
+            return CommandResult(
+                ok=False,
+                stdout="",
+                stderr=f"Unable to resolve Obsidian CLI binary: {self.binary}",
+                returncode=127,
+            )
         try:
             completed = subprocess.run(
-                [self.binary, *args],
+                [resolved_binary, *args],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -42,3 +53,45 @@ class ObsidianAdapter:
 
     def help(self) -> CommandResult:
         return self.run(["help"])
+
+
+def resolve_obsidian_binary(binary: str = DEFAULT_OBSIDIAN_BINARY) -> str | None:
+    candidate = _resolve_candidate(binary)
+    if candidate is not None:
+        resolved_candidate = candidate.resolve()
+        if not _looks_like_macos_gui_binary(resolved_candidate):
+            return str(candidate)
+
+    if binary == DEFAULT_OBSIDIAN_BINARY and _is_executable_file(MACOS_OBSIDIAN_CLI_PATH):
+        return str(MACOS_OBSIDIAN_CLI_PATH)
+
+    return None
+
+
+def _resolve_candidate(binary: str) -> Path | None:
+    binary_path = Path(binary).expanduser()
+    if _is_bare_command(binary):
+        found = shutil.which(binary)
+        return Path(found) if found else None
+    if _is_executable_file(binary_path):
+        return binary_path
+    found = shutil.which(binary)
+    if found:
+        return Path(found)
+    return None
+
+
+def _is_bare_command(binary: str) -> bool:
+    binary_path = Path(binary)
+    return binary_path.parent == Path(".") and not binary_path.is_absolute() and not binary.startswith(("~", "."))
+
+
+def _is_executable_file(path: Path) -> bool:
+    return path.is_file() and os.access(path, os.X_OK)
+
+
+def _looks_like_macos_gui_binary(path: Path) -> bool:
+    return (
+        path.name.casefold() == "obsidian"
+        and path.parent.as_posix().endswith("/Obsidian.app/Contents/MacOS")
+    )

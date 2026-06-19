@@ -31,6 +31,7 @@ Do not preserve an issue unless it truly applies to the note content you reviewe
 | `definition_too_long` | 20 | Shorten the Definition to 10-50 rendered words. |
 | `missing_parent` | 8 | Link this note from a structure note. |
 | `malformed_anki` | 18 | Balance START and END markers for Anki card blocks. |
+| `anki_yagni` | 5 | Confirm this Anki card is worth memorizing for the intended learner before keeping it. |
 | `multi_note` | 45 | Split bundled ideas into separate atomic notes. |
 | `misfiled_reference` | 35 | Move source-material notes out of Atomic Notes or rewrite them as DAE notes. |
 | `weak_dae` | 15 | Strengthen the DAE content with concrete, self-contained explanations. |
@@ -50,6 +51,7 @@ De-duplication rules used by scoring:
 - DAE component codes are: `definition_too_long`, `weak_analogy`, `weak_dae`, `weak_definition`, `weak_example`.
 - If `multi_note` applies, do not also emit `not_atomic` for the same bundled-note problem.
 - If factual risk applies, set `factual_risk` and `fact_check_required` to true and emit exactly one `factual_risk` finding.
+- If `anki_yagni` applies, do not delete or remove Anki cards automatically; remediation must confirm with the learner because memorization value depends on the learner's domain.
 
 Examples:
 
@@ -57,6 +59,8 @@ Examples:
 - A note with weak Definition, Analogy, and Example content can emit component codes, but scoring caps those DAE component losses at 35.
 - A note that bundles two separate concepts should emit `multi_note`, not both `multi_note` and `not_atomic` for that bundled-note problem.
 - A note with check-worthy factual claims should emit one `factual_risk` finding and set both `factual_risk` and `fact_check_required` to true.
+- A synced Anki card for a reference-only, low-stakes, or rarely recalled concept can emit `anki_yagni`, but do not use it merely because the topic is advanced, specialized, medical, academic, or outside your own work.
+- A synced Anki card that only asks for a person's name pronunciation or other reference-only person detail can emit `anki_yagni` before rehoming or removing the card.
 
 ## Output JSON Shape
 

@@ -43,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
             return 3
         if not adapter.help().ok:
             print("obsidian_cli=unavailable")
+            print("hint=verify Obsidian is running; in Codex CLI, rerun app-context Obsidian CLI commands in an approved unsandboxed context if the local CLI socket is blocked by the sandbox")
             return 4
 
     print("obsidian_preflight=ok")

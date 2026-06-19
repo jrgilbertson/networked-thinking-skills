@@ -100,14 +100,30 @@ before planning any vault mutation.
 Require official Obsidian skills and preflight before vault mutations. Use the
 actual Obsidian CLI binary; `obsidian-cli` is the default because some systems
 reserve `obsidian` for the GUI app binary. Require approval before destructive
-operations.
+operations. If a sandboxed agent cannot attach to the running Obsidian app,
+rerun the Obsidian CLI step in an approved unsandboxed context instead of using
+raw filesystem edits for app-context operations. When working from this repo,
+prefer `python3 -m shared.scripts.obsidian_cli` for app-context CLI commands.
 
 For delete, split, move, or rename dry runs, report the target path, Anki
 status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
 the operation is permanent. Stop for an Anki-specific decision when a note has
 Anki markers or Obsidian-to-Anki identifiers. When deleting a note with an
 Obsidian-to-Anki ID, follow the exact `DELETE` marker, scan, verify, then delete
-sequence in `../../shared/references/remediation-context.md`.
+sequence in `../../shared/references/remediation-context.md`, including warning
+that the scan may update Obsidian-to-Anki plugin state files.
+
+When a synced Anki card appears potentially not worth memorizing, treat it as
+`anki_yagni`: flag it as a sanity check and stop for the learner's judgment. Do
+not remove or keep Anki automatically; medical students, professors, and other
+specialized learners may need memorization that a general-purpose auditor would
+not.
+
+For long-running goals, loops, or autonomous remediation batches, keep a durable
+held-decision artifact as described in
+`../../shared/references/remediation-context.md`. Chat history and checkpoint
+summaries are not sufficient state for duplicate, YAGNI, split, delete, rehome,
+or factual-risk decisions.
 
 Before delete, verify the running vault's `trashOption`. Deleting without the
 CLI `permanent` flag follows that configured Obsidian behavior.
@@ -115,4 +131,6 @@ CLI `permanent` flag follows that configured Obsidian behavior.
 Treat timestamped audit reports, Bases, JSONL files, and manifests as immutable
 historical artifacts by default. Remediation cleans live knowledge-graph files,
 not prior audit outputs, unless the user explicitly asks for an audit artifact
-correction.
+correction. If an approved Obsidian-aware rename automatically updates
+wikilinks inside audit reports, keep those mechanical link-maintenance changes
+instead of manually reversing them.

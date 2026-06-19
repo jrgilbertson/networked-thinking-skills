@@ -20,6 +20,7 @@
     "mode": {
       "type": "string",
       "enum": [
+        "confirm-anki-utility",
         "improve-in-place",
         "split-multi-note",
         "rehome-non-DAE",

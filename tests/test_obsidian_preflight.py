@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -7,7 +8,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from shared.scripts.obsidian_adapter import DEFAULT_OBSIDIAN_BINARY, CommandResult, ObsidianAdapter
+from shared.scripts.obsidian_adapter import (
+    DEFAULT_OBSIDIAN_BINARY,
+    CommandResult,
+    ObsidianAdapter,
+    resolve_obsidian_binary,
+)
 from shared.scripts.preflight_obsidian import check_skill_paths, main
 
 
@@ -68,6 +74,61 @@ class ObsidianPreflightTest(unittest.TestCase):
             adapter = ObsidianAdapter(binary="example")
 
             self.assertTrue(adapter.available())
+
+    def test_default_binary_falls_back_to_app_bundled_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp) / "obsidian-cli"
+            cli.write_text("", encoding="utf-8")
+            cli.chmod(0o755)
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=None):
+                with patch("shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH", cli):
+                    resolved = resolve_obsidian_binary(DEFAULT_OBSIDIAN_BINARY)
+
+        self.assertEqual(resolved, str(cli))
+
+    def test_resolver_uses_path_binary_when_local_shadow_is_not_executable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_shadow = root / DEFAULT_OBSIDIAN_BINARY
+            local_shadow.write_text("", encoding="utf-8")
+            path_binary = root / "bin" / DEFAULT_OBSIDIAN_BINARY
+            path_binary.parent.mkdir()
+            path_binary.write_text("", encoding="utf-8")
+            path_binary.chmod(0o755)
+            previous_cwd = Path.cwd()
+
+            try:
+                os.chdir(root)
+                with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=str(path_binary)):
+                    resolved = resolve_obsidian_binary(DEFAULT_OBSIDIAN_BINARY)
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertEqual(resolved, str(path_binary))
+
+    def test_resolver_refuses_macos_gui_binary(self):
+        gui_binary = "/Applications/Obsidian.app/Contents/MacOS/obsidian"
+
+        with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=gui_binary):
+            resolved = resolve_obsidian_binary("obsidian")
+
+        self.assertIsNone(resolved)
+
+    def test_resolver_refuses_symlink_to_macos_gui_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            app_binary = root / "Obsidian.app" / "Contents" / "MacOS" / "Obsidian"
+            app_binary.parent.mkdir(parents=True)
+            app_binary.write_text("", encoding="utf-8")
+            shim = root / "bin" / "obsidian"
+            shim.parent.mkdir()
+            shim.symlink_to(app_binary)
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=str(shim)):
+                resolved = resolve_obsidian_binary("obsidian")
+
+        self.assertIsNone(resolved)
 
     def test_require_cli_missing_binary_returns_3(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -144,7 +205,8 @@ class ObsidianPreflightTest(unittest.TestCase):
                         )
 
         self.assertEqual(return_code, 4)
-        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
+        self.assertIn("obsidian_cli=unavailable", stdout.getvalue())
+        self.assertIn("approved unsandboxed context", stdout.getvalue())
 
     def test_require_cli_help_nonzero_returns_4(self):
         class FakeObsidianAdapter:
@@ -175,7 +237,8 @@ class ObsidianPreflightTest(unittest.TestCase):
                     )
 
         self.assertEqual(return_code, 4)
-        self.assertEqual(stdout.getvalue().strip(), "obsidian_cli=unavailable")
+        self.assertIn("obsidian_cli=unavailable", stdout.getvalue())
+        self.assertIn("local CLI socket", stdout.getvalue())
 
     def test_preflight_supports_direct_script_execution(self):
         with tempfile.TemporaryDirectory() as tmp:

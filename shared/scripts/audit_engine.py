@@ -46,7 +46,8 @@ FACTUAL_RISK_ABSOLUTE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_NUMBER_RE = re.compile(
-    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d|\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))\b",
+    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d+(?:,\d{3})*(?:\.\d+)?|"
+    r"\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))(?=\W|$)",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CURRENT_RE = re.compile(
@@ -58,11 +59,14 @@ FACTUAL_RISK_SENSITIVE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
-    r"\b(according to|found|finds|showed|shows|says|said|proves)\b",
+    r"\b(according to|found|finds|says|said|proves|"
+    r"(?:research|stud(?:y|ies)|paper|report|analysis|(?:[a-z]+(?:-[a-z]+)?\s+){0,2}"
+    r"(?:benchmarks?|reviews?|trials?|surveys?|experiments?))\s+"
+    r"(?:found|finds|show|showed|shows|said|says|reported))\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CAUSAL_RE = re.compile(
-    r"\b(causes?|leads? to|results? in|reduces?|increases?|decreases?|improves?|boosts?|lowers?|raises?|prevents?|predicts?|correlates?|indicates?|suggests?|is associated with|more .* than|less .* than|better .* than|worse .* than)\b",
+    r"\b(causes?|caused|leads? to|led to|results? in|resulted in|reduc(?:e|es|ed)|increas(?:e|es|ed)|decreas(?:e|es|ed)|improv(?:e|es|ed)|boost(?:s|ed)?|lower(?:s|ed)?|rais(?:e|es|ed)|prevent(?:s|ed)?|predict(?:s|ed)?|correlat(?:e|es|ed)|indicat(?:e|es|ed)|suggest(?:s|ed)?|(?:is|was|were) associated with|more .* than|less .* than|better .* than|worse .* than)\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_EMPIRICAL_PREDICATE_RE = re.compile(
@@ -73,10 +77,67 @@ FACTUAL_RISK_PRODUCT_CLASS_RE = re.compile(
     r"\b(?:AP|CP|CA)\s+system\b|\bdefault configuration\b",
     re.IGNORECASE,
 )
-FACTUAL_RISK_HUMAN_GENERALIZATION_RE = re.compile(
-    r"\b(people|learners|employees|customers|users|humans|children|adults|patients|students)\b",
+FACTUAL_RISK_HUMAN_CLASS_PATTERN = (
+    r"(?:people|person|learners?|employees?|customers?|users?|humans?|children|child|adults?|patients?|students?)"
+)
+FACTUAL_RISK_ABSOLUTE_HUMAN_PREFIX_RE = re.compile(
+    rf"\b(?:all|every|none|only)\s+"
+    rf"(?:of\s+(?:the\s+)?)?"
+    rf"(?:\w+\s+){{0,3}}(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\b",
     re.IGNORECASE,
 )
+FACTUAL_RISK_HUMAN_ABSOLUTE_SUFFIX_RE = re.compile(
+    rf"\b(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\s+"
+    rf"(?:\w+\s+){{0,3}}(?:always|never|only)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_EVERYONE_RE = re.compile(r"\beveryone\b", re.IGNORECASE)
+FACTUAL_RISK_SELECTION_CHANCE_RE = re.compile(
+    r"\b(?:same|equal)\s+(?:selection chance|chance of selection)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE = re.compile(
+    r"^(?:\s+|\b(?:receives?|gets?|has|have|had|is|are|was|were|be|being|been|"
+    r"given|assigned|allocated|granted|the|a|an|same|equal|of|to|with)\b)*$",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_SELECTION_OUTCOME_AFTER_RE = re.compile(
+    r"\band\s+(?:\w+\s+){0,4}"
+    r"(?:remember|remembers|recall|recalls|learn|learns|retain|retains|perform|performs|score|scores)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_NONHUMAN_HEADS_AFTER_SINGULAR_HUMAN_TERM = {
+    "account",
+    "accounts",
+    "class",
+    "classes",
+    "element",
+    "elements",
+    "event",
+    "events",
+    "id",
+    "ids",
+    "input",
+    "inputs",
+    "interface",
+    "interfaces",
+    "node",
+    "nodes",
+    "object",
+    "objects",
+    "order",
+    "orders",
+    "permission",
+    "permissions",
+    "profile",
+    "profiles",
+    "record",
+    "records",
+    "role",
+    "roles",
+    "session",
+    "sessions",
+}
 FORMAL_DEFINITION_RE = re.compile(
     r"\b(is|are|means|refers to|is defined as|stands for|denotes|states that|can be written as|assigns|represents)\b",
     re.IGNORECASE,
@@ -95,6 +156,10 @@ HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 URL_RE = re.compile(r"https?://\S+")
 WIKILINK_RE = re.compile(r"!\[\[([^\[\]\r\n]+)\]\]|\[\[([^\[\]\r\n]+)\]\]")
 HEADING_RE = re.compile(r"^[ ]{0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", re.MULTILINE)
+DUPLICATE_REVIEW_RE = re.compile(
+    r"\b(?:duplicate candidate|overlap candidate|may duplicate|may overlap|possible duplicate|possible overlap|duplicate[_-]overlap)\b",
+    re.IGNORECASE,
+)
 
 
 def audit_vault(
@@ -288,6 +353,8 @@ def _contains_factual_risk(body: str) -> bool:
             continue
         if _is_formal_definition_sentence(sentence) and not _has_hard_empirical_trigger(sentence):
             continue
+        if _is_generic_example_sentence(sentence) and not _has_non_generic_example_trigger(sentence):
+            continue
         score = _factual_risk_sentence_score(sentence)
         if score >= 3:
             return True
@@ -309,7 +376,7 @@ def _factual_risk_sentence_score(sentence: str) -> int:
         score += 2
     if FACTUAL_RISK_CAUSAL_RE.search(sentence):
         score += 2
-    if FACTUAL_RISK_HUMAN_GENERALIZATION_RE.search(sentence) and absolute_count:
+    if _has_absolute_human_generalization(sentence):
         score += 2
     if _has_named_entity_claim(sentence):
         score += 3
@@ -333,6 +400,68 @@ def _has_named_entity_claim(sentence: str) -> bool:
             or FACTUAL_RISK_PRODUCT_CLASS_RE.search(sentence)
         )
     )
+
+
+def _is_generic_example_sentence(sentence: str) -> bool:
+    return sentence.lower().startswith("for example,")
+
+
+def _has_non_generic_example_trigger(sentence: str) -> bool:
+    return bool(
+        FACTUAL_RISK_NUMBER_RE.search(sentence)
+        or FACTUAL_RISK_CURRENT_RE.search(sentence)
+        or FACTUAL_RISK_SENSITIVE_RE.search(sentence)
+        or FACTUAL_RISK_ATTRIBUTION_RE.search(sentence)
+        or FACTUAL_RISK_CAUSAL_RE.search(sentence)
+        or _has_absolute_human_generalization(sentence)
+        or _has_named_entity_claim(sentence)
+    )
+
+
+def _has_absolute_human_generalization(sentence: str) -> bool:
+    for match in FACTUAL_RISK_EVERYONE_RE.finditer(sentence):
+        if not _is_selection_chance_after(sentence, match.end()):
+            return True
+    for pattern in (FACTUAL_RISK_ABSOLUTE_HUMAN_PREFIX_RE, FACTUAL_RISK_HUMAN_ABSOLUTE_SUFFIX_RE):
+        for match in pattern.finditer(sentence):
+            if not _is_nonhuman_human_modifier(sentence, match) and not _is_selection_chance_match(
+                sentence,
+                match,
+            ):
+                return True
+    return False
+
+
+def _is_selection_chance_match(sentence: str, match: re.Match[str]) -> bool:
+    return _is_selection_chance_after(sentence, match.end("human"))
+
+
+def _is_selection_chance_after(sentence: str, start: int) -> bool:
+    selection_match = FACTUAL_RISK_SELECTION_CHANCE_RE.search(sentence, start, start + 80)
+    if not selection_match:
+        return False
+    if FACTUAL_RISK_SELECTION_OUTCOME_AFTER_RE.search(sentence, selection_match.end()):
+        return False
+    return FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE.fullmatch(sentence[start : selection_match.start()]) is not None
+
+
+def _is_nonhuman_human_modifier(sentence: str, match: re.Match[str]) -> bool:
+    matched_term = match.group("human").lower()
+    if _is_plural_human_term(matched_term):
+        return False
+
+    tail = sentence[match.end("human") :]
+    if re.match(r"-[A-Za-z]+\b", tail):
+        return True
+    next_word_match = re.match(r"\s+([A-Za-z]+)\b", tail)
+    return bool(
+        next_word_match
+        and next_word_match.group(1).lower() in FACTUAL_RISK_NONHUMAN_HEADS_AFTER_SINGULAR_HUMAN_TERM
+    )
+
+
+def _is_plural_human_term(term: str) -> bool:
+    return term in {"children", "people"} or (term.endswith("s") and term != "person")
 
 
 def _contains_named_entity(sentence: str) -> bool:
@@ -377,8 +506,8 @@ def _render_wikilinks_for_factual_risk(text: str) -> str:
 
 
 def _looks_like_duplicate_candidate(path: Path, body: str) -> bool:
-    text = f"{path.stem}\n{body}".casefold()
-    return "duplicate" in text or "overlap" in text
+    text = f"{path.stem}\n{body}"
+    return DUPLICATE_REVIEW_RE.search(text) is not None
 
 
 def _dae_section_word_counts(body: str) -> dict[str, int]:

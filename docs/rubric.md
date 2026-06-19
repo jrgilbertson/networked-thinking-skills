@@ -40,6 +40,11 @@ product configuration/classification/lifecycle claims. Formal math, logic,
 acronym, stable definition quantifiers, and generic examples do not count by
 themselves.
 
+`anki_yagni` is a low-severity sanity check for synced Anki notes that may not
+be worth memorizing for the intended learner. It is not an automatic delete
+recommendation. Remediation pauses for learner judgment because specialized
+learners may need cards that look unnecessary outside their domain.
+
 ## How To Read Results
 
 - Use bucket and score to decide work order.

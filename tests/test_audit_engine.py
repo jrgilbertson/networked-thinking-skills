@@ -143,6 +143,122 @@ END
 
         self.assertFalse(row["factual_risk"])
 
+    def test_sampling_definition_quantifiers_do_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - simple random sample
+---
+
+# Simple Random Sample
+
+TARGET DECK: General
+
+START
+Basic
+What is a simple random sample?
+
+Back: Simple random sampling gives every population member and every same-size subset an equal chance of selection.
+
+Simple random sampling is like drawing names from a well-shuffled hat. No name or group of names gets a special path into the sample.
+
+For example, a school with 1,000 students could assign each student a number and use a random-number generator to select 100 students, giving every group of 100 students the same selection chance.
+<!--ID: 1-->
+END
+""",
+            stem="202601010208 Simple Random Sample",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", finding_codes(row))
+
+    def test_sampling_group_quantifier_without_number_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - stratified group sample
+---
+
+# Stratified Group Sample
+
+TARGET DECK: General
+
+START
+Basic
+What is a stratified group sample?
+
+Back: A stratified group sample selects groups from strata so each category is represented.
+
+Stratified group sampling is like choosing shelves from each aisle before checking the books on those shelves.
+
+For example, a school could sample classrooms from each grade, giving every group of students the same selection chance.
+<!--ID: 1-->
+END
+""",
+            stem="202601010218 Stratified Group Sample",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", finding_codes(row))
+
+    def test_sampling_direct_human_quantifier_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - student sampling chance
+---
+
+# Student Sampling Chance
+
+TARGET DECK: General
+
+START
+Basic
+What is equal selection chance?
+
+Back: Equal selection chance means each eligible unit has the same probability of being selected.
+
+Equal selection chance is like giving every ticket in a drawing the same weight.
+
+For example, every student receives the same selection chance.
+<!--ID: 1-->
+END
+""",
+            stem="202601010225 Student Sampling Chance",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", finding_codes(row))
+
+    def test_sampling_everyone_selection_chance_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - everyone sampling chance
+---
+
+# Everyone Sampling Chance
+
+TARGET DECK: General
+
+START
+Basic
+What is equal selection chance?
+
+Back: Equal selection chance means each eligible unit has the same probability of being selected.
+
+Equal selection chance is like giving every ticket in a drawing the same weight.
+
+For example, everyone receives the same selection chance.
+<!--ID: 1-->
+END
+""",
+            stem="202601010232 Everyone Sampling Chance",
+        )
+
+        self.assertFalse(row["factual_risk"])
+        self.assertNotIn("factual_risk", finding_codes(row))
+
     def test_named_product_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---
@@ -195,6 +311,32 @@ For example, in a clinical trial, the dependent variable could be the patient's 
 
         self.assertFalse(row["factual_risk"])
 
+    def test_domain_show_verb_does_not_trigger_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - class diagram
+---
+
+# Class Diagram
+
+## Definition
+
+A class diagram shows software classes and the structural relationships between them.
+
+## Analogy
+
+A class diagram is like an org chart for code: it shows the main units and how they relate without showing every runtime event.
+
+## Example
+
+For example, a payment service class diagram can show an InvoiceService depending on a PaymentGateway and InvoiceRepository.
+""",
+            stem="202601010212 Class Diagram",
+        )
+
+        self.assertFalse(row["factual_risk"])
+
     def test_quantified_research_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---
@@ -220,6 +362,506 @@ For example, research found that spaced repetition improved retention by 40% aft
         )
 
         self.assertTrue(row["factual_risk"])
+
+    def test_trial_result_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice effect
+---
+
+# Retrieval Practice Effect
+
+## Definition
+
+Retrieval practice is a study method that asks learners to recall information from memory.
+
+## Analogy
+
+It is like checking whether a trail is still visible by walking it again instead of looking at a map.
+
+## Example
+
+A classroom trial showed retrieval practice improved retention compared with restudying.
+""",
+            stem="202601010215 Retrieval Practice Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_plural_trial_show_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice evidence
+---
+
+# Retrieval Practice Evidence
+
+## Definition
+
+Retrieval practice evidence is a claim about how recall exercises affect later memory.
+
+## Analogy
+
+It is like checking a bridge by crossing it instead of only reading the blueprint.
+
+## Example
+
+Trials show retrieval practice improved retention compared with restudying.
+""",
+            stem="202601010216 Retrieval Practice Evidence",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_numeric_example_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - checkout completion rate
+---
+
+# Checkout Completion Rate
+
+## Definition
+
+A checkout completion rate measures the share of started checkout sessions that finish with an order.
+
+## Analogy
+
+It is like counting how many people who enter a checkout lane leave with a receipt.
+
+## Example
+
+For example, an A/B test had a 97% completion rate after the redesign.
+""",
+            stem="202601010214 Checkout Completion Rate",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_currency_example_claim_triggers_factual_risk(self):
+        examples = {
+            "202601010234 Monthly Tool Price": "For example, the tool costs $25 per month.",
+            "202601010235 Annual Tool Price": "For example, the tool costs $120 per year.",
+            "202601010236 Decimal Tool Price": "For example, the tool costs $12.50 per user.",
+        }
+        for stem, example in examples.items():
+            with self.subTest(stem=stem):
+                row = self.audit_single_note(
+                    f"""---
+aliases: []
+---
+
+# {stem[13:]}
+
+## Definition
+
+A tool price claim states the cost of a software service.
+
+## Analogy
+
+It is like reading a price tag before deciding whether to buy a tool.
+
+## Example
+
+{example}
+""",
+                    stem=stem,
+                )
+
+                self.assertTrue(row["factual_risk"])
+                self.assertIn("factual_risk", finding_codes(row))
+
+    def test_benchmark_attribution_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - cache benchmark claim
+---
+
+# Cache Benchmark Claim
+
+## Definition
+
+A cache benchmark claim states that a measured test supports a performance result.
+
+## Analogy
+
+It is like timing two routes before choosing the faster one.
+
+## Example
+
+A benchmark shows the cache improves latency.
+""",
+            stem="202601010237 Cache Benchmark Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_review_attribution_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice review claim
+---
+
+# Retrieval Practice Review Claim
+
+## Definition
+
+A retrieval practice review claim states that summarized evidence supports a retention result.
+
+## Analogy
+
+It is like reading a field report before deciding which study habit to use.
+
+## Example
+
+A systematic review shows retrieval practice improves retention.
+""",
+            stem="202601010240 Retrieval Practice Review Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_universal_human_example_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - emotional examples effect
+---
+
+# Emotional Examples Effect
+
+## Definition
+
+An emotional examples effect is a claim that a worked example's emotional tone affects learning.
+
+## Analogy
+
+It is like adding a brighter color to a sign: the change may alter how strongly someone notices it.
+
+## Example
+
+For example, all learners remember topics better when examples are emotional.
+""",
+            stem="202601010217 Emotional Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_human_example_with_following_absolute_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - repeated examples effect
+---
+
+# Repeated Examples Effect
+
+## Definition
+
+A repeated examples effect is a claim that repeated examples change recall behavior.
+
+## Analogy
+
+It is like hearing a chorus several times: repetition may change what someone remembers.
+
+## Example
+
+For example, learners always remember topics better when examples repeat the same emotion.
+""",
+            stem="202601010219 Repeated Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_human_example_with_auxiliary_absolute_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - hidden menu confusion
+---
+
+# Hidden Menu Confusion
+
+## Definition
+
+A hidden menu confusion effect is a claim that menu visibility changes user comprehension.
+
+## Analogy
+
+It is like hiding a door label: the missing cue may change how someone navigates.
+
+## Example
+
+For example, users are always confused by hidden menus.
+""",
+            stem="202601010226 Hidden Menu Confusion",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_human_example_with_of_the_quantifier_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - learner memory claim
+---
+
+# Learner Memory Claim
+
+## Definition
+
+A learner memory claim states that an example style changes recall.
+
+## Analogy
+
+It is like changing the color of a reminder: the cue may alter what people remember.
+
+## Example
+
+For example, all of the learners remember topics better when examples are emotional.
+""",
+            stem="202601010227 Learner Memory Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_multi_word_human_class_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - high school examples effect
+---
+
+# High School Examples Effect
+
+## Definition
+
+A high school examples effect claims that example wording changes student recall.
+
+## Analogy
+
+It is like changing the lighting in a classroom: the change may alter what students notice.
+
+## Example
+
+For example, all high school students remember topics better when examples are emotional.
+""",
+            stem="202601010238 High School Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_selection_chance_does_not_hide_separate_human_generalization(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - mixed sampling and memory claim
+---
+
+# Mixed Sampling And Memory Claim
+
+## Definition
+
+A mixed sampling and memory claim combines selection-chance wording with a learner outcome.
+
+## Analogy
+
+It is like drawing names fairly and then making a separate claim about what those people remember.
+
+## Example
+
+For example, every student receives the same selection chance, and all learners remember topics better when examples are emotional.
+""",
+            stem="202601010229 Mixed Sampling And Memory Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_human_generalization_before_selection_chance_still_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - memory then sampling claim
+---
+
+# Memory Then Sampling Claim
+
+## Definition
+
+A memory then sampling claim combines a learner outcome with selection-chance wording.
+
+## Analogy
+
+It is like making one claim about what people remember and another about how they are selected.
+
+## Example
+
+For example, all learners remember topics better, and every student receives the same selection chance.
+""",
+            stem="202601010233 Memory Then Sampling Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_selection_chance_followed_by_same_subject_outcome_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - sampling then memory claim
+---
+
+# Sampling Then Memory Claim
+
+## Definition
+
+A sampling then memory claim combines a fair-selection statement with a learner outcome.
+
+## Analogy
+
+It is like explaining who enters a study and then making a separate claim about what they learned.
+
+## Example
+
+For example, every student receives the same selection chance and remembers topics better after the lesson.
+""",
+            stem="202601010239 Sampling Then Memory Claim",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_singular_human_example_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - individual examples effect
+---
+
+# Individual Examples Effect
+
+## Definition
+
+An individual examples effect is a claim that example wording changes a learner's recall.
+
+## Analogy
+
+It is like changing one instruction on a sign: the new wording may change what someone does next.
+
+## Example
+
+For example, every learner remembers topics better when examples are emotional.
+""",
+            stem="202601010220 Individual Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_everyone_example_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - everyone examples effect
+---
+
+# Everyone Examples Effect
+
+## Definition
+
+An everyone examples effect is a claim that example wording affects recall across all readers.
+
+## Analogy
+
+It is like changing a sign for a crowd: the wording may alter how people respond.
+
+## Example
+
+For example, everyone remembers topics better when examples are emotional.
+""",
+            stem="202601010221 Everyone Examples Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_plural_human_example_with_modifier_word_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - shared recording pattern
+---
+
+# Shared Recording Pattern
+
+## Definition
+
+A shared recording pattern is a claim that people document information in the same way.
+
+## Analogy
+
+It is like giving a room one template: the template may shape what people write down.
+
+## Example
+
+For example, all users record notes in the same order.
+""",
+            stem="202601010224 Shared Recording Pattern",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_nonhuman_modifier_examples_do_not_trigger_factual_risk(self):
+        examples = {
+            "202601010222 Child Node Inheritance": "For example, all child nodes inherit the parent label.",
+            "202601010223 User Account Permissions": "For example, all user accounts receive default permissions.",
+            "202601010228 Customer Record Retention": "For example, all customer records inherit the retention label.",
+            "202601010230 Customer Order Retention": "For example, all customer orders inherit the retention label.",
+            "202601010231 User Event Inheritance": "For example, all user events inherit the parent label.",
+        }
+        for stem, example in examples.items():
+            with self.subTest(stem=stem):
+                row = self.audit_single_note(
+                    f"""---
+aliases: []
+---
+
+# {stem[13:]}
+
+## Definition
+
+This note describes a technical inheritance rule for a system object.
+
+## Analogy
+
+It is like copying a folder setting to the items stored inside that folder.
+
+## Example
+
+{example}
+""",
+                    stem=stem,
+                )
+
+                self.assertFalse(row["factual_risk"])
+                self.assertNotIn("factual_risk", finding_codes(row))
 
     def test_legal_universal_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
@@ -418,6 +1060,59 @@ END
         codes = {finding["code"] for finding in row["findings"]}
         self.assertIn("invalid_dae", codes)
         self.assertNotIn("multi_note", codes)
+
+    def test_duplicate_overlap_ignores_ordinary_prose(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - relational model
+---
+
+# Relational Model
+
+## Definition
+
+The relational model represents database information as named relations whose tuples can be queried with relational operations.
+
+## Analogy
+
+It is like standardized ledgers: each ledger keeps one kind of record, and shared identifiers connect related ledgers.
+
+## Example
+
+For example, a SQL database may permit duplicate rows even though formal relational theory treats relation bodies as sets of tuples.
+""",
+            stem="202601010212 Relational Model",
+        )
+
+        self.assertNotIn("duplicate_overlap", finding_codes(row))
+
+    def test_duplicate_overlap_ignores_domain_overlap_phrase(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - sequence race probability
+---
+
+# Pattern-Race Probability
+
+TARGET DECK: General
+
+START
+Basic
+Why can one coin-flip pattern beat another in a sequence race?
+
+Back: Pattern-race probability depends on how each target pattern overlaps with recent outcomes, so equally long patterns need not have equal chances of appearing first.
+
+Pattern-race probability is like watching for license-plate endings in traffic. A partial match can either help the same pattern continue or hand an advantage to a competing pattern.
+
+For example, in a fair-coin race between HH and TH, the HH player wins only when the first two flips are HH.
+END
+""",
+            stem="202601010213 Pattern-Race Probability",
+        )
+
+        self.assertNotIn("duplicate_overlap", finding_codes(row))
 
     def test_interview_template_is_misfiled_reference(self):
         row = self.audit_single_note(
