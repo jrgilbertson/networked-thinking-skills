@@ -7,7 +7,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from shared.scripts.finding_codes import ALLOWED_FINDING_CODES
+from shared.scripts.finding_codes import ALLOWED_FINDING_CODES, FINDING_RECOMMENDATION_MODES
 from shared.scripts.schema_validation import (
     ValidationError,
     validate_audit_row,
@@ -221,6 +221,16 @@ class SchemaValidationTest(unittest.TestCase):
 
         self.assertEqual(audit_schema["$defs"]["finding"]["properties"]["code"]["enum"], expected)
         self.assertEqual(model_schema["$defs"]["finding"]["properties"]["code"]["enum"], expected)
+
+    def test_remediation_plan_schema_modes_match_finding_recommendations(self):
+        schema = json.loads(
+            (REPO_ROOT / "shared" / "schemas" / "remediation-plan.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        expected = sorted(set(FINDING_RECOMMENDATION_MODES.values()))
+
+        self.assertEqual(sorted(schema["properties"]["mode"]["enum"]), expected)
 
     def test_valid_run_manifest_passes(self):
         validate_run_manifest(dict(VALID_MANIFEST))
