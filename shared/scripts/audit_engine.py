@@ -73,10 +73,61 @@ FACTUAL_RISK_PRODUCT_CLASS_RE = re.compile(
     r"\b(?:AP|CP|CA)\s+system\b|\bdefault configuration\b",
     re.IGNORECASE,
 )
-FACTUAL_RISK_HUMAN_GENERALIZATION_RE = re.compile(
-    r"\b(people|learners|employees|customers|users|humans|children|adults|patients|students)\b",
+FACTUAL_RISK_HUMAN_CLASS_PATTERN = (
+    r"(?:people|person|learners?|employees?|customers?|users?|humans?|children|child|adults?|patients?|students?)"
+)
+FACTUAL_RISK_ABSOLUTE_HUMAN_PREFIX_RE = re.compile(
+    rf"\b(?:all|every|none|only)\s+"
+    rf"(?:of\s+(?:the\s+)?)?"
+    rf"(?:\w+\s+)?(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\b",
     re.IGNORECASE,
 )
+FACTUAL_RISK_HUMAN_ABSOLUTE_SUFFIX_RE = re.compile(
+    rf"\b(?P<human>{FACTUAL_RISK_HUMAN_CLASS_PATTERN})\s+"
+    rf"(?:\w+\s+){{0,3}}(?:always|never|only)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_EVERYONE_RE = re.compile(r"\beveryone\b", re.IGNORECASE)
+FACTUAL_RISK_SELECTION_CHANCE_RE = re.compile(
+    r"\b(?:same|equal)\s+(?:selection chance|chance of selection)\b",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE = re.compile(
+    r"^(?:\s+|\b(?:receives?|gets?|has|have|had|is|are|was|were|be|being|been|given|assigned|allocated|granted|the|a|an|same|equal|of|to|with)\b)*$",
+    re.IGNORECASE,
+)
+FACTUAL_RISK_NONHUMAN_HEADS_AFTER_SINGULAR_HUMAN_TERM = {
+    "account",
+    "accounts",
+    "class",
+    "classes",
+    "element",
+    "elements",
+    "event",
+    "events",
+    "id",
+    "ids",
+    "input",
+    "inputs",
+    "interface",
+    "interfaces",
+    "node",
+    "nodes",
+    "object",
+    "objects",
+    "order",
+    "orders",
+    "permission",
+    "permissions",
+    "profile",
+    "profiles",
+    "record",
+    "records",
+    "role",
+    "roles",
+    "session",
+    "sessions",
+}
 FORMAL_DEFINITION_RE = re.compile(
     r"\b(is|are|means|refers to|is defined as|stands for|denotes|states that|can be written as|assigns|represents)\b",
     re.IGNORECASE,
@@ -315,7 +366,7 @@ def _factual_risk_sentence_score(sentence: str) -> int:
         score += 2
     if FACTUAL_RISK_CAUSAL_RE.search(sentence):
         score += 2
-    if FACTUAL_RISK_HUMAN_GENERALIZATION_RE.search(sentence) and absolute_count:
+    if _has_absolute_human_generalization(sentence):
         score += 2
     if _has_named_entity_claim(sentence):
         score += 3
@@ -352,8 +403,53 @@ def _has_non_generic_example_trigger(sentence: str) -> bool:
         or FACTUAL_RISK_SENSITIVE_RE.search(sentence)
         or FACTUAL_RISK_ATTRIBUTION_RE.search(sentence)
         or FACTUAL_RISK_CAUSAL_RE.search(sentence)
+        or _has_absolute_human_generalization(sentence)
         or _has_named_entity_claim(sentence)
     )
+
+
+def _has_absolute_human_generalization(sentence: str) -> bool:
+    for match in FACTUAL_RISK_EVERYONE_RE.finditer(sentence):
+        if not _is_selection_chance_after(sentence, match.end()):
+            return True
+    for pattern in (FACTUAL_RISK_ABSOLUTE_HUMAN_PREFIX_RE, FACTUAL_RISK_HUMAN_ABSOLUTE_SUFFIX_RE):
+        for match in pattern.finditer(sentence):
+            if not _is_nonhuman_human_modifier(sentence, match) and not _is_selection_chance_match(
+                sentence,
+                match,
+            ):
+                return True
+    return False
+
+
+def _is_selection_chance_match(sentence: str, match: re.Match[str]) -> bool:
+    return _is_selection_chance_after(sentence, match.end("human"))
+
+
+def _is_selection_chance_after(sentence: str, start: int) -> bool:
+    selection_match = FACTUAL_RISK_SELECTION_CHANCE_RE.search(sentence, start, start + 80)
+    if not selection_match:
+        return False
+    return FACTUAL_RISK_SELECTION_CHANCE_BRIDGE_RE.fullmatch(sentence[start : selection_match.start()]) is not None
+
+
+def _is_nonhuman_human_modifier(sentence: str, match: re.Match[str]) -> bool:
+    matched_term = match.group("human").lower()
+    if _is_plural_human_term(matched_term):
+        return False
+
+    tail = sentence[match.end("human") :]
+    if re.match(r"-[A-Za-z]+\b", tail):
+        return True
+    next_word_match = re.match(r"\s+([A-Za-z]+)\b", tail)
+    return bool(
+        next_word_match
+        and next_word_match.group(1).lower() in FACTUAL_RISK_NONHUMAN_HEADS_AFTER_SINGULAR_HUMAN_TERM
+    )
+
+
+def _is_plural_human_term(term: str) -> bool:
+    return term in {"children", "people"} or (term.endswith("s") and term != "person")
 
 
 def _contains_named_entity(sentence: str) -> bool:
