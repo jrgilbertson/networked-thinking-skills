@@ -141,6 +141,7 @@ class VerifyAnkiNotesTest(unittest.TestCase):
                         "modelName": "Basic",
                         "cards": [67890],
                         "fields": {
+                            "Front": {"value": "What is durability?"},
                             "Back": {
                                 "value": 'Durability is the <a href="obsidian://open">ACID</a> property'
                             },
@@ -164,6 +165,180 @@ class VerifyAnkiNotesTest(unittest.TestCase):
         self.assertEqual(
             result.failures,
             ["Atomic Notes/Linked.md: representative text missing: Durability is the ACID property"],
+        )
+
+    def test_verify_basic_note_rejects_empty_front(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Blank Front.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient(
+                notes=[
+                    {
+                        "noteId": 12345,
+                        "modelName": "Basic",
+                        "cards": [67890],
+                        "fields": {
+                            "Front": {"value": ""},
+                            "Back": {"value": "Visible answer text"},
+                        },
+                    }
+                ],
+                cards=[{"cardId": 67890, "deckName": "General"}],
+            )
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Blank Front.md",
+                        "representative_text": "Visible answer text",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(result.failures, ["Atomic Notes/Blank Front.md: Basic Front field is empty"])
+
+    def test_verify_basic_note_rejects_visually_empty_front_html(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Blank Front Html.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient(
+                notes=[
+                    {
+                        "noteId": 12345,
+                        "modelName": "Basic",
+                        "cards": [67890],
+                        "fields": {
+                            "Front": {"value": "<div><br></div>&nbsp;"},
+                            "Back": {"value": "Visible answer text"},
+                        },
+                    }
+                ],
+                cards=[{"cardId": 67890, "deckName": "General"}],
+            )
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Blank Front Html.md",
+                        "representative_text": "Visible answer text",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(result.failures, ["Atomic Notes/Blank Front Html.md: Basic Front field is empty"])
+
+    def test_verify_basic_note_rejects_empty_back(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Blank Back.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient(
+                notes=[
+                    {
+                        "noteId": 12345,
+                        "modelName": "Basic",
+                        "cards": [67890],
+                        "fields": {
+                            "Front": {"value": "Visible prompt text"},
+                            "Back": {"value": ""},
+                        },
+                    }
+                ],
+                cards=[{"cardId": 67890, "deckName": "General"}],
+            )
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Blank Back.md",
+                        "representative_text": "Visible prompt text",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(result.failures, ["Atomic Notes/Blank Back.md: Basic Back field is empty"])
+
+    def test_verify_rejects_absolute_note_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "vault"
+            vault.mkdir()
+            outside = Path(tmp) / "Outside.md"
+            outside.write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [{"note_path": str(outside)}],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(result.failures, [f"{outside}: note_path must stay inside vault"])
+        self.assertEqual(client.calls, [])
+
+    def test_verify_rejects_parent_relative_note_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            vault = root / "vault"
+            vault.mkdir()
+            (root / "Outside.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [{"note_path": "../Outside.md"}],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(result.failures, ["../Outside.md: note_path must stay inside vault"])
+        self.assertEqual(client.calls, [])
+
+    def test_verify_reports_missing_card_info(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Two Cards.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient(
+                notes=[
+                    {
+                        "noteId": 12345,
+                        "modelName": "Basic",
+                        "cards": [111, 222],
+                        "fields": {
+                            "Front": {"value": "Question"},
+                            "Back": {"value": "Answer"},
+                        },
+                    }
+                ],
+                cards=[{"cardId": 111, "deckName": "General"}],
+            )
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Two Cards.md",
+                        "expected_card_count": 2,
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Two Cards.md: missing cardsInfo for card IDs [222]"],
         )
 
 

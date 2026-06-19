@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -61,7 +62,7 @@ def resolve_obsidian_binary(binary: str = DEFAULT_OBSIDIAN_BINARY) -> str | None
         if not _looks_like_macos_gui_binary(resolved_candidate):
             return str(candidate)
 
-    if binary == DEFAULT_OBSIDIAN_BINARY and MACOS_OBSIDIAN_CLI_PATH.is_file():
+    if binary == DEFAULT_OBSIDIAN_BINARY and _is_executable_file(MACOS_OBSIDIAN_CLI_PATH):
         return str(MACOS_OBSIDIAN_CLI_PATH)
 
     return None
@@ -69,10 +70,24 @@ def resolve_obsidian_binary(binary: str = DEFAULT_OBSIDIAN_BINARY) -> str | None
 
 def _resolve_candidate(binary: str) -> Path | None:
     binary_path = Path(binary).expanduser()
-    if binary_path.is_file():
+    if _is_bare_command(binary):
+        found = shutil.which(binary)
+        return Path(found) if found else None
+    if _is_executable_file(binary_path):
         return binary_path
     found = shutil.which(binary)
-    return Path(found) if found else None
+    if found:
+        return Path(found)
+    return None
+
+
+def _is_bare_command(binary: str) -> bool:
+    binary_path = Path(binary)
+    return binary_path.parent == Path(".") and not binary_path.is_absolute() and not binary.startswith(("~", "."))
+
+
+def _is_executable_file(path: Path) -> bool:
+    return path.is_file() and os.access(path, os.X_OK)
 
 
 def _looks_like_macos_gui_binary(path: Path) -> bool:

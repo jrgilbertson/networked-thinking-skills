@@ -58,11 +58,11 @@ FACTUAL_RISK_SENSITIVE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_ATTRIBUTION_RE = re.compile(
-    r"\b(according to|found|finds|says|said|proves|(?:research|stud(?:y|ies)|paper|report|analysis)\s+(?:found|finds|showed|shows|said|says|reported))\b",
+    r"\b(according to|found|finds|says|said|proves|(?:research|stud(?:y|ies)|paper|report|analysis|(?:[a-z]+(?:-[a-z]+)?\s+){0,2}(?:trials?|surveys?|experiments?))\s+(?:found|finds|show|showed|shows|said|says|reported))\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CAUSAL_RE = re.compile(
-    r"\b(causes?|leads? to|results? in|reduces?|increases?|decreases?|improves?|boosts?|lowers?|raises?|prevents?|predicts?|correlates?|indicates?|suggests?|is associated with|more .* than|less .* than|better .* than|worse .* than)\b",
+    r"\b(causes?|caused|leads? to|led to|results? in|resulted in|reduc(?:e|es|ed)|increas(?:e|es|ed)|decreas(?:e|es|ed)|improv(?:e|es|ed)|boost(?:s|ed)?|lower(?:s|ed)?|rais(?:e|es|ed)|prevent(?:s|ed)?|predict(?:s|ed)?|correlat(?:e|es|ed)|indicat(?:e|es|ed)|suggest(?:s|ed)?|(?:is|was|were) associated with|more .* than|less .* than|better .* than|worse .* than)\b",
     re.IGNORECASE,
 )
 FACTUAL_RISK_EMPIRICAL_PREDICATE_RE = re.compile(

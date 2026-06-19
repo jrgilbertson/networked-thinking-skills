@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -85,7 +86,10 @@ def verify_entries(
     non_anki_count = 0
 
     for entry in normalized:
-        note_path = vault / entry["note_path"]
+        note_path = _resolve_note_path(vault, entry["note_path"])
+        if note_path is None:
+            failures.append(f"{entry['note_path']}: note_path must stay inside vault")
+            continue
         try:
             text = note_path.read_text(encoding="utf-8")
         except OSError as exc:
@@ -180,11 +184,16 @@ def _verify_note(
     if len(cards) != expected_card_count:
         failures.append(f"{path}: card_count={len(cards)}, expected={expected_card_count}")
 
+    missing_cards = [card for card in cards if card not in card_by_id]
+    if missing_cards:
+        failures.append(f"{path}: missing cardsInfo for card IDs {missing_cards}")
+
     decks = {card_by_id[card].get("deckName") for card in cards if card in card_by_id}
     if decks != {expected_deck}:
         failures.append(f"{path}: decks={sorted(decks)}, expected={[expected_deck]}")
 
-    fields = note.get("fields", {})
+    raw_fields = note.get("fields", {})
+    fields = raw_fields if isinstance(raw_fields, dict) else {}
     rendered_field_text = "\n".join(
         field.get("value", "")
         for field in fields.values()
@@ -192,12 +201,43 @@ def _verify_note(
     )
     if not rendered_field_text.strip():
         failures.append(f"{path}: rendered Anki fields are empty")
+    if expected_model == "Basic":
+        if not _visible_field_text(fields, "Front").strip():
+            failures.append(f"{path}: Basic Front field is empty")
+        if not _visible_field_text(fields, "Back").strip():
+            failures.append(f"{path}: Basic Back field is empty")
 
     for expected_text in entry["representative_text"]:
         if expected_text not in rendered_field_text:
             failures.append(f"{path}: representative text missing: {expected_text}")
 
     return failures
+
+
+def _resolve_note_path(vault: Path, note_path: str) -> Path | None:
+    parsed = PurePosixPath(note_path)
+    if parsed.is_absolute() or ".." in parsed.parts:
+        return None
+    vault_root = vault.resolve()
+    resolved = (vault_root / parsed.as_posix()).resolve()
+    try:
+        resolved.relative_to(vault_root)
+    except ValueError:
+        return None
+    return resolved
+
+
+def _field_text(fields: dict[str, Any], name: str) -> str:
+    field = fields.get(name)
+    if not isinstance(field, dict):
+        return ""
+    value = field.get("value", "")
+    return value if isinstance(value, str) else ""
+
+
+def _visible_field_text(fields: dict[str, Any], name: str) -> str:
+    text = html.unescape(_field_text(fields, name)).replace("\xa0", " ")
+    return re.sub(r"<[^>]*>", "", text)
 
 
 def _normalize_entry(entry: Any, index: int) -> dict[str, Any]:

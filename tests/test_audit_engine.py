@@ -276,6 +276,60 @@ For example, research found that spaced repetition improved retention by 40% aft
 
         self.assertTrue(row["factual_risk"])
 
+    def test_trial_result_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice effect
+---
+
+# Retrieval Practice Effect
+
+## Definition
+
+Retrieval practice is a study method that asks learners to recall information from memory.
+
+## Analogy
+
+It is like checking whether a trail is still visible by walking it again instead of looking at a map.
+
+## Example
+
+A classroom trial showed retrieval practice improved retention compared with restudying.
+""",
+            stem="202601010215 Retrieval Practice Effect",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
+    def test_plural_trial_show_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - retrieval practice evidence
+---
+
+# Retrieval Practice Evidence
+
+## Definition
+
+Retrieval practice evidence is a claim about how recall exercises affect later memory.
+
+## Analogy
+
+It is like checking a bridge by crossing it instead of only reading the blueprint.
+
+## Example
+
+Trials show retrieval practice improved retention compared with restudying.
+""",
+            stem="202601010216 Retrieval Practice Evidence",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
     def test_numeric_example_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---

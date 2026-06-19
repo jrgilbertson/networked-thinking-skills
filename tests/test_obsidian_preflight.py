@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import subprocess
 import sys
 import tempfile
@@ -78,12 +79,33 @@ class ObsidianPreflightTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             cli = Path(tmp) / "obsidian-cli"
             cli.write_text("", encoding="utf-8")
+            cli.chmod(0o755)
 
             with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=None):
                 with patch("shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH", cli):
                     resolved = resolve_obsidian_binary(DEFAULT_OBSIDIAN_BINARY)
 
         self.assertEqual(resolved, str(cli))
+
+    def test_resolver_uses_path_binary_when_local_shadow_is_not_executable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local_shadow = root / DEFAULT_OBSIDIAN_BINARY
+            local_shadow.write_text("", encoding="utf-8")
+            path_binary = root / "bin" / DEFAULT_OBSIDIAN_BINARY
+            path_binary.parent.mkdir()
+            path_binary.write_text("", encoding="utf-8")
+            path_binary.chmod(0o755)
+            previous_cwd = Path.cwd()
+
+            try:
+                os.chdir(root)
+                with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=str(path_binary)):
+                    resolved = resolve_obsidian_binary(DEFAULT_OBSIDIAN_BINARY)
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertEqual(resolved, str(path_binary))
 
     def test_resolver_refuses_macos_gui_binary(self):
         gui_binary = "/Applications/Obsidian.app/Contents/MacOS/obsidian"
