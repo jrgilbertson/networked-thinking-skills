@@ -530,6 +530,35 @@ class VerifyAnkiNotesTest(unittest.TestCase):
         )
         self.assertEqual(client.calls, [])
 
+    def test_verify_rejects_model_marker_outside_source_block(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Wrong Model.md").write_text(
+                "Basic\nTARGET DECK: General\nSTART\nCloze\nFront\nBack\nEND\n<!--ID: 12345-->\n",
+                encoding="utf-8",
+            )
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {
+                        "note_path": "Atomic Notes/Wrong Model.md",
+                        "expected_model": "Basic",
+                        "representative_text": "Answer",
+                    }
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Wrong Model.md: missing Obsidian-to-Anki Basic model marker"],
+        )
+        self.assertEqual(client.calls, [])
+
     def test_verify_requires_representative_text_for_anki_notes(self):
         with tempfile.TemporaryDirectory() as tmp:
             vault = Path(tmp)
@@ -543,6 +572,28 @@ class VerifyAnkiNotesTest(unittest.TestCase):
             ):
                 verify_entries(
                     [{"note_path": "Atomic Notes/Example.md"}],
+                    vault=vault,
+                    client=FakeAnkiClient(),
+                )
+
+    def test_verify_rejects_blank_representative_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Example.md").write_text(ANKI_BASIC_NOTE, encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "representative_text must be a string or string list",
+            ):
+                verify_entries(
+                    [
+                        {
+                            "note_path": "Atomic Notes/Example.md",
+                            "representative_text": "   ",
+                        }
+                    ],
                     vault=vault,
                     client=FakeAnkiClient(),
                 )

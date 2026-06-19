@@ -203,18 +203,25 @@ def _verify_anki_source_markers(
     lines = text.splitlines()
     start_indexes = [index for index, line in enumerate(lines) if line.strip() == "START"]
     end_indexes = [index for index, line in enumerate(lines) if line.strip() == "END"]
-    if len(start_indexes) != 1 or len(end_indexes) != 1 or start_indexes[0] >= end_indexes[0]:
+    has_single_ordered_block = (
+        len(start_indexes) == 1 and len(end_indexes) == 1 and start_indexes[0] < end_indexes[0]
+    )
+    if not has_single_ordered_block:
         failures.append(f"{path}: expected exactly one Obsidian-to-Anki START/END block")
 
-    model_marker_re = re.compile(rf"(?m)^\s*{re.escape(expected_model)}\s*$")
-    if not model_marker_re.search(text):
+    stripped_block_lines = (
+        [line.strip() for line in lines[start_indexes[0] + 1 : end_indexes[0]]]
+        if has_single_ordered_block
+        else []
+    )
+    model_lines = stripped_block_lines if has_single_ordered_block else [line.strip() for line in lines]
+    if expected_model not in model_lines:
         failures.append(f"{path}: missing Obsidian-to-Anki {expected_model} model marker")
-    elif len(start_indexes) == 1 and len(end_indexes) == 1 and start_indexes[0] < end_indexes[0]:
-        block_lines = lines[start_indexes[0] + 1 : end_indexes[0]]
+    elif has_single_ordered_block:
         content_lines = [
-            line.strip()
-            for line in block_lines
-            if line.strip() and line.strip() != expected_model
+            line
+            for line in stripped_block_lines
+            if line and line != expected_model
         ]
         if not content_lines:
             failures.append(f"{path}: missing local {expected_model} card content")
@@ -332,7 +339,7 @@ def _normalize_entry(entry: Any, index: int) -> dict[str, Any]:
         not isinstance(representative_text, list)
         or not representative_text
         or not all(
-            isinstance(item, str) and item for item in representative_text
+            isinstance(item, str) and item.strip() for item in representative_text
         )
     ):
         raise ValueError(f"{note_path}: representative_text must be a string or string list")
