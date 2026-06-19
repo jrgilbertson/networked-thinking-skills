@@ -56,8 +56,10 @@ class ObsidianAdapter:
 
 def resolve_obsidian_binary(binary: str = DEFAULT_OBSIDIAN_BINARY) -> str | None:
     candidate = _resolve_candidate(binary)
-    if candidate is not None and not _looks_like_macos_gui_binary(candidate):
-        return str(candidate)
+    if candidate is not None:
+        resolved_candidate = candidate.resolve()
+        if not _looks_like_macos_gui_binary(resolved_candidate):
+            return str(candidate)
 
     if binary == DEFAULT_OBSIDIAN_BINARY and MACOS_OBSIDIAN_CLI_PATH.is_file():
         return str(MACOS_OBSIDIAN_CLI_PATH)
@@ -74,4 +76,7 @@ def _resolve_candidate(binary: str) -> Path | None:
 
 
 def _looks_like_macos_gui_binary(path: Path) -> bool:
-    return path.name == "obsidian" and path.parent.as_posix().endswith("/Obsidian.app/Contents/MacOS")
+    return (
+        path.name.casefold() == "obsidian"
+        and path.parent.as_posix().endswith("/Obsidian.app/Contents/MacOS")
+    )

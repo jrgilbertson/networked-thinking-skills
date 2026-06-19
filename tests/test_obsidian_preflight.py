@@ -93,6 +93,21 @@ class ObsidianPreflightTest(unittest.TestCase):
 
         self.assertIsNone(resolved)
 
+    def test_resolver_refuses_symlink_to_macos_gui_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            app_binary = root / "Obsidian.app" / "Contents" / "MacOS" / "Obsidian"
+            app_binary.parent.mkdir(parents=True)
+            app_binary.write_text("", encoding="utf-8")
+            shim = root / "bin" / "obsidian"
+            shim.parent.mkdir()
+            shim.symlink_to(app_binary)
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=str(shim)):
+                resolved = resolve_obsidian_binary("obsidian")
+
+        self.assertIsNone(resolved)
+
     def test_require_cli_missing_binary_returns_3(self):
         with tempfile.TemporaryDirectory() as tmp:
             skills_root = Path(tmp)

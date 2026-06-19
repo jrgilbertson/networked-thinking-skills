@@ -46,7 +46,7 @@ FACTUAL_RISK_ABSOLUTE_RE = re.compile(
     re.IGNORECASE,
 )
 FACTUAL_RISK_NUMBER_RE = re.compile(
-    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d|\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))\b",
+    r"(?<!\w)(?:\d{4}|\d+(?:\.\d+)?%|\$\d|\d+(?:\.\d+)?\s*(?:x|times|percent|percentage points|days|weeks|months|years|seconds|minutes|hours))(?=\W|$)",
     re.IGNORECASE,
 )
 FACTUAL_RISK_CURRENT_RE = re.compile(
@@ -347,7 +347,8 @@ def _is_generic_example_sentence(sentence: str) -> bool:
 
 def _has_non_generic_example_trigger(sentence: str) -> bool:
     return bool(
-        FACTUAL_RISK_CURRENT_RE.search(sentence)
+        FACTUAL_RISK_NUMBER_RE.search(sentence)
+        or FACTUAL_RISK_CURRENT_RE.search(sentence)
         or FACTUAL_RISK_SENSITIVE_RE.search(sentence)
         or FACTUAL_RISK_ATTRIBUTION_RE.search(sentence)
         or FACTUAL_RISK_CAUSAL_RE.search(sentence)

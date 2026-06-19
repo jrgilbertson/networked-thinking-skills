@@ -12,6 +12,7 @@ from typing import Any
 
 
 ANKI_ID_RE = re.compile(r"<!--ID:\s*(\d+)-->")
+ANKI_CARD_MARKER_RE = re.compile(r"(?m)^\s*(?:TARGET DECK:.*|START|END|Basic|Cloze)\s*$")
 DEFAULT_ANKICONNECT_URLS = ("http://127.0.0.1:8765", "http://localhost:8765")
 
 
@@ -80,6 +81,7 @@ def verify_entries(
     normalized = [_normalize_entry(entry, index) for index, entry in enumerate(entries)]
     failures: list[str] = []
     anki_note_ids: dict[str, int] = {}
+    seen_anki_ids: dict[int, str] = {}
     non_anki_count = 0
 
     for entry in normalized:
@@ -95,6 +97,13 @@ def verify_entries(
             if note_id is None:
                 failures.append(f"{entry['note_path']}: missing Obsidian-to-Anki ID")
                 continue
+            if note_id in seen_anki_ids:
+                failures.append(
+                    f"{entry['note_path']}: duplicate Obsidian-to-Anki ID {note_id} "
+                    f"also appears in {seen_anki_ids[note_id]}"
+                )
+                continue
+            seen_anki_ids[note_id] = entry["note_path"]
             anki_note_ids[entry["note_path"]] = note_id
         else:
             non_anki_count += 1
@@ -102,8 +111,12 @@ def verify_entries(
                 failures.append(
                     f"{entry['note_path']}: expected no Obsidian-to-Anki ID, found {note_id}"
                 )
+            if ANKI_CARD_MARKER_RE.search(text):
+                failures.append(
+                    f"{entry['note_path']}: expected no Obsidian-to-Anki card markers"
+                )
 
-    if not anki_note_ids:
+    if failures or not anki_note_ids:
         return VerificationResult(0, non_anki_count, failures)
 
     notes = client.invoke("notesInfo", {"notes": list(anki_note_ids.values())})

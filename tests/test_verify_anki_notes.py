@@ -81,6 +81,53 @@ class VerifyAnkiNotesTest(unittest.TestCase):
         self.assertEqual(result.checked_non_anki_notes, 1)
         self.assertEqual(result.failures, [])
 
+    def test_verify_non_anki_note_rejects_remaining_card_block(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "Former Card.md").write_text(
+                "TARGET DECK: General\nSTART\nBasic\nFront\nBack\nEND\n",
+                encoding="utf-8",
+            )
+
+            result = verify_entries(
+                [{"note_path": "Atomic Notes/Former Card.md", "anki": False}],
+                vault=vault,
+                client=FakeAnkiClient(),
+            )
+
+        self.assertEqual(
+            result.failures,
+            ["Atomic Notes/Former Card.md: expected no Obsidian-to-Anki card markers"],
+        )
+
+    def test_verify_duplicate_anki_ids_fail_before_anki_lookup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            note = vault / "Atomic Notes"
+            note.mkdir()
+            (note / "First.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            (note / "Second.md").write_text("<!--ID: 12345-->\n", encoding="utf-8")
+            client = FakeAnkiClient()
+
+            result = verify_entries(
+                [
+                    {"note_path": "Atomic Notes/First.md"},
+                    {"note_path": "Atomic Notes/Second.md"},
+                ],
+                vault=vault,
+                client=client,
+            )
+
+        self.assertEqual(
+            result.failures,
+            [
+                "Atomic Notes/Second.md: duplicate Obsidian-to-Anki ID 12345 also appears in Atomic Notes/First.md"
+            ],
+        )
+        self.assertEqual(client.calls, [])
+
     def test_verify_reports_rendered_link_text_mismatch(self):
         with tempfile.TemporaryDirectory() as tmp:
             vault = Path(tmp)

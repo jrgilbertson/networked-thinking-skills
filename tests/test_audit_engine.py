@@ -276,6 +276,33 @@ For example, research found that spaced repetition improved retention by 40% aft
 
         self.assertTrue(row["factual_risk"])
 
+    def test_numeric_example_claim_triggers_factual_risk(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - checkout completion rate
+---
+
+# Checkout Completion Rate
+
+## Definition
+
+A checkout completion rate measures the share of started checkout sessions that finish with an order.
+
+## Analogy
+
+It is like counting how many people who enter a checkout lane leave with a receipt.
+
+## Example
+
+For example, an A/B test had a 97% completion rate after the redesign.
+""",
+            stem="202601010214 Checkout Completion Rate",
+        )
+
+        self.assertTrue(row["factual_risk"])
+        self.assertIn("factual_risk", finding_codes(row))
+
     def test_legal_universal_claim_triggers_factual_risk(self):
         row = self.audit_single_note(
             """---
