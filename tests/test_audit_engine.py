@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import sys
@@ -81,6 +82,23 @@ class AuditEngineTest(unittest.TestCase):
 
         self.assertTrue(row["clean"])
         self.assertGreaterEqual(row["score"], 90)
+
+    def test_content_hash_uses_normalized_note_text(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            atomic_folder = vault / "Atomic Notes"
+            structure_folder = vault / "Structure Notes"
+            atomic_folder.mkdir()
+            structure_folder.mkdir()
+            stem = "202601010201 CRLF Note"
+            note_path = atomic_folder / f"{stem}.md"
+            note_path.write_bytes(VALID_DAE_MARKDOWN.replace("\n", "\r\n").encode("utf-8"))
+            (structure_folder / "Atomic Note Quality.md").write_text(f"- [[{stem}]]\n", encoding="utf-8")
+
+            rows, _ = audit_vault(vault, run_id="crlf-test")
+            expected_hash = hashlib.sha256(note_path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+
+        self.assertEqual(rows[0]["content_hash"], expected_hash)
 
     def test_factual_risk_note_requires_fact_check(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")

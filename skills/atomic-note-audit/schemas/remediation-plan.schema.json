@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.dev/schemas/remediation-plan.schema.json",
+  "type": "object",
+  "required": [
+    "plan_version",
+    "audit_run_id",
+    "mode",
+    "operations"
+  ],
+  "properties": {
+    "plan_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "confirm-anki-utility",
+        "improve-in-place",
+        "split-multi-note",
+        "rehome-non-DAE",
+        "link-parent",
+        "mark-factual-risk",
+        "duplicate-overlap-review"
+      ]
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false
+}

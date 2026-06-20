@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Agent Skills for Networked Thinking atomic notes in Obsidian vaults.",
   "license": "MIT",
-  "repository": "https://github.com/networked-thinking/networked-thinking-skills",
+  "repository": "https://github.com/jrgilbertson/networked-thinking-skills",
   "keywords": ["agent-skills", "obsidian", "atomic-notes", "networked-thinking"],
   "skills": [
     { "path": "skills/atomic-note" },

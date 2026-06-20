@@ -224,6 +224,7 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
     def test_allow_missing_marks_unmatched_rows_pending(self):
         rows = load_fixture_rows()
         manifest = load_fixture_manifest()
+        rows[-1]["score"] = None
         judgments = [judgment_for(str(rows[0]["note_path"]))]
 
         merged_rows, merged_manifest = apply_model_judgments(
@@ -237,6 +238,7 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         pending = next(row for row in merged_rows if row["note_path"] == rows[-1]["note_path"])
         self.assertFalse(reviewed["pending_model"])
         self.assertTrue(pending["pending_model"])
+        self.assertIsNone(pending["score"])
         self.assertFalse(pending["clean"])
         validate_audit_run_pair(merged_rows, merged_manifest)
 

@@ -6,3 +6,5 @@ pre-commit:
       run: python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl
     install-docs:
       run: python3 -m shared.scripts.verify_install_commands docs/install.md
+    skill-artifacts:
+      run: python3 -m shared.scripts.sync_skill_artifacts --check

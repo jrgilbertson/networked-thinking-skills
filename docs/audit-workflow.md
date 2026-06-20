@@ -3,10 +3,11 @@
 Use audit workflows before remediation. These commands read notes and write audit
 artifacts; they do not mutate vault files.
 
-## Synthetic Fixture Check
+## Repo-Development Synthetic Fixture Validation
 
 Run the fixture workflow first when validating a fresh checkout or changing audit
-logic:
+logic in this repo. `make_fixture_vault` is repo-development-only and is not
+included in installed skills.
 
 ```bash
 python3 -m shared.scripts.make_fixture_vault /tmp/networked-thinking-fixture-vault
@@ -31,6 +32,8 @@ Expected command signals:
 Write outputs outside the vault unless the user explicitly wants generated files
 inside the vault.
 
+Run these commands from the installed `atomic-note-audit` skill root.
+
 When writing audit artifacts inside an Obsidian vault, create one run folder
 under the configured audit output folder using the vault timestamp style
 `YYYYMMDDHHMM`, for example a folder named `202606061035 Model Judgment`. Do
@@ -41,10 +44,10 @@ findings, and recommendations. Keep them outside this repo by default, do not
 commit them, and do not paste or publish them without explicit approval.
 
 ```bash
-python3 -m shared.scripts.audit_notes --vault /path/to/vault --run-id baseline-YYYYMMDDHHMM --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json
-python3 -m shared.scripts.validate_jsonl /tmp/networked-thinking-audit/baseline.jsonl
-python3 -m shared.scripts.generate_report --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --output /tmp/networked-thinking-audit/baseline-report.md
-python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/baseline.jsonl --output /tmp/networked-thinking-audit/baseline.base
+python3 scripts/audit_notes.py --vault /path/to/vault --run-id baseline-YYYYMMDDHHMM --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json
+python3 scripts/validate_jsonl.py /tmp/networked-thinking-audit/baseline.jsonl
+python3 scripts/generate_report.py --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --output /tmp/networked-thinking-audit/baseline-report.md
+python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/baseline.jsonl --output /tmp/networked-thinking-audit/baseline.base
 ```
 
 ## Deep Baseline Guidance
@@ -62,6 +65,8 @@ python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/ba
 
 ## Model Judgment
 
+Run these commands from the installed `atomic-note-audit` skill root.
+
 Model judgment assumes the user is already running an authenticated desktop or
 terminal agent in the vault, such as Claude Desktop, Claude Code, Codex CLI, or
 Codex Desktop. The audit skill does not own provider authentication, API keys, or
@@ -73,8 +78,8 @@ that provider/tool trust boundary before running exhaustive model judgment on
 private vault content.
 
 The deterministic audit remains the source input. A model-judgment pass should
-use `shared/references/model-judgment-prompt.md` and emit strict JSON matching
-`shared/schemas/model-judgment.schema.json`; validate those judgments before
+use `references/model-judgment-prompt.md` and emit strict JSON matching
+`schemas/model-judgment.schema.json`; validate those judgments before
 they affect scores, buckets, or reports. In default mode, review flagged or
 ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
 review every note.
@@ -83,13 +88,13 @@ Prepare single-note model requests with the generated prompt and exact
 vault-relative path:
 
 ```bash
-python3 -m shared.scripts.prepare_model_judgment --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
+python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
 
 For Codex CLI, collect exhaustive model judgments in validated batches:
 
 ```bash
-python3 -m shared.scripts.collect_model_judgments --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
+python3 scripts/collect_model_judgments.py --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
 ```
 
 The collector writes raw prompts and agent stdout/stderr to `--raw-dir`. Those
@@ -97,7 +102,7 @@ files contain private note content, so keep `--raw-dir` outside the vault unless
 the user explicitly wants private prompt logs stored there. The collector is
 resumable: if `model-judgments.jsonl` already contains valid judgments, it skips
 those note paths. It validates every model response against
-`shared/scripts/model_contract.py` before appending and splits a failed batch
+`scripts/model_contract.py` before appending and splits a failed batch
 into smaller retries when the model drifts from JSONL or the controlled finding
 vocabulary.
 
@@ -105,10 +110,10 @@ After model judgments have been collected into JSONL, apply them to the
 deterministic audit rows before generating review artifacts:
 
 ```bash
-python3 -m shared.scripts.apply_model_judgments --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
-python3 -m shared.scripts.validate_jsonl /tmp/networked-thinking-audit/model-applied.jsonl
-python3 -m shared.scripts.generate_report --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --manifest /tmp/networked-thinking-audit/model-applied-manifest.json --output /tmp/networked-thinking-audit/model-applied-report.md
-python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output /tmp/networked-thinking-audit/model-applied.base
+python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
+python3 scripts/validate_jsonl.py /tmp/networked-thinking-audit/model-applied.jsonl
+python3 scripts/generate_report.py --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --manifest /tmp/networked-thinking-audit/model-applied-manifest.json --output /tmp/networked-thinking-audit/model-applied-report.md
+python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output /tmp/networked-thinking-audit/model-applied.base
 ```
 
 `apply_model_judgments` requires one judgment per audit row by default. Use

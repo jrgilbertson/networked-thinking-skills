@@ -11,6 +11,7 @@ class RepoSmokeTest(unittest.TestCase):
         for path in [ROOT / ".codex-plugin/plugin.json", ROOT / ".claude-plugin/plugin.json"]:
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["name"], "networked-thinking-skills")
+            self.assertEqual(data["repository"], "https://github.com/jrgilbertson/networked-thinking-skills")
             self.assertEqual(len(data["skills"]), 2)
             for skill in data["skills"]:
                 skill_path = ROOT / skill["path"]
@@ -23,6 +24,7 @@ class RepoSmokeTest(unittest.TestCase):
         self.assertIn("python3 -m unittest discover -s tests", text)
         self.assertIn("python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl", text)
         self.assertIn("python3 -m shared.scripts.verify_install_commands docs/install.md", text)
+        self.assertIn("python3 -m shared.scripts.sync_skill_artifacts --check", text)
 
 
 if __name__ == "__main__":
