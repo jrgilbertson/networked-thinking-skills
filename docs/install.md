@@ -98,11 +98,10 @@ Source: [`skills` CLI docs](https://skills.sh/docs/cli)
 
 <!-- install-command
 runtime: codex-npx-local-clone
-status: blocked-with-reason
+status: verified-local
 source: https://skills.sh/docs/cli
 last_verified: 2026-06-20
-execution: not marked verified until local clean-home npx verification passes on this branch
-reason: changed self-contained npx install command is pending local clean-home verification
+execution: clean temp HOME local repo root npx install with self-contained skill artifacts
 -->
 ```bash
 npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
@@ -114,11 +113,10 @@ Source: [`skills` CLI docs](https://skills.sh/docs/cli)
 
 <!-- install-command
 runtime: claude-npx-local-clone
-status: blocked-with-reason
+status: verified-local
 source: https://skills.sh/docs/cli
 last_verified: 2026-06-20
-execution: not marked verified until local clean-home npx verification passes on this branch
-reason: changed self-contained npx install command is pending local clean-home verification
+execution: clean temp HOME local repo root npx install with self-contained skill artifacts
 -->
 ```bash
 npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --copy -y
