@@ -116,6 +116,47 @@ class SkillArtifactSyncTest(unittest.TestCase):
             )
             self.assertFalse((root / "skills/demo/references/doctrine.md").exists())
 
+    def test_sync_writes_bare_shared_directory_references_for_round_trip(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "shared/references").mkdir(parents=True)
+            (root / "shared/schemas").mkdir(parents=True)
+            (root / "shared/scripts").mkdir(parents=True)
+            (root / "skills/demo").mkdir(parents=True)
+            (root / "skills/demo/SKILL.md").write_text(
+                "---\nname: demo\ndescription: Use when testing.\n---\n",
+                encoding="utf-8",
+            )
+            (root / "shared/references/doctrine.md").write_text(
+                textwrap.dedent(
+                    """\
+                    Read shared/references before running checks.
+                    Run helpers from shared/scripts.
+                    Validate data with shared/schemas.
+                    """
+                ),
+                encoding="utf-8",
+            )
+            spec = {
+                "demo": SkillArtifactSpec(
+                    name="demo",
+                    references=("doctrine.md",),
+                    schemas=(),
+                    scripts=(),
+                )
+            }
+
+            errors = sync_artifacts(root=root, specs=spec, check=False)
+
+            self.assertEqual(errors, [])
+            generated_reference = root / "skills/demo/references/doctrine.md"
+            self.assertTrue(generated_reference.exists())
+            self.assertEqual(
+                find_stale_shared_references(generated_reference.read_text(encoding="utf-8")),
+                [],
+            )
+            self.assertEqual(sync_artifacts(root=root, specs=spec, check=True), [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -86,11 +86,14 @@ STALE_PATTERNS = (
 
 
 def render_markdown_text(text: str) -> str:
-    text = text.replace("../../shared/references/", "references/")
-    text = text.replace("../shared/references/", "references/")
-    text = text.replace("shared/references/", "references/")
-    text = text.replace("shared/scripts/", "scripts/")
-    text = text.replace("shared/schemas/", "schemas/")
+    for source, target in (
+        ("../../shared/references", "references"),
+        ("../shared/references", "references"),
+        ("shared/references", "references"),
+        ("shared/scripts", "scripts"),
+        ("shared/schemas", "schemas"),
+    ):
+        text = text.replace(source, target)
     return re.sub(
         r"python3 -m shared\.scripts\.([A-Za-z_][A-Za-z0-9_]*)",
         r"python3 scripts/\1.py",
@@ -172,7 +175,7 @@ def _sync_group(
     dest_dir = skill_dir / dest_name
     expected = set(filenames)
     if dest_dir.exists():
-        for existing in dest_dir.iterdir():
+        for existing in sorted(dest_dir.iterdir()):
             if existing.is_file() and existing.name not in expected:
                 rel = existing.relative_to(root)
                 if check:
@@ -206,7 +209,7 @@ def _validate_skill_files(errors: list[str], *, root: Path, skill_dir: Path) -> 
     for child in ("references", "schemas", "scripts"):
         child_dir = skill_dir / child
         if child_dir.exists():
-            paths.extend(path for path in child_dir.rglob("*") if path.is_file())
+            paths.extend(path for path in sorted(child_dir.rglob("*")) if path.is_file())
 
     for path in paths:
         text = path.read_text(encoding="utf-8")
