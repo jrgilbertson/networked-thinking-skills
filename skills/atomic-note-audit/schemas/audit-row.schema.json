@@ -1,0 +1,243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.local/schemas/audit-row.schema.json",
+  "title": "Atomic Note Audit Row",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "row_status",
+    "note_path",
+    "note_link",
+    "content_hash",
+    "modified_time",
+    "score",
+    "priority",
+    "clean",
+    "pending_model",
+    "dimensions",
+    "findings",
+    "recommendations",
+    "model_judgment",
+    "cache_status",
+    "factual_risk",
+    "fact_check_required",
+    "doctrine_version",
+    "rubric_version",
+    "prompt_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "row_status": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "reused_cache",
+        "error",
+        "skipped"
+      ]
+    },
+    "note_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note_link": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modified_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "score": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1,
+      "maximum": 100
+    },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3",
+        null
+      ]
+    },
+    "clean": {
+      "type": "boolean"
+    },
+    "pending_model": {
+      "type": "boolean"
+    },
+    "dimensions": {
+      "$ref": "#/$defs/dimensions"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/recommendation"
+      }
+    },
+    "cache_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "miss",
+        "hit",
+        "partial"
+      ]
+    },
+    "model_judgment": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "model-judgment.schema.json"
+        }
+      ]
+    },
+    "factual_risk": {
+      "type": "boolean"
+    },
+    "factual_risk_reason": {
+      "type": "string"
+    },
+    "fact_check_required": {
+      "type": "boolean"
+    },
+    "config_snapshot": {
+      "$ref": "config.schema.json"
+    },
+    "doctrine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rubric_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_version": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "structure",
+        "atomicity",
+        "dae_quality",
+        "clarity",
+        "connections",
+        "metadata_card_safety"
+      ],
+      "properties": {
+        "structure": {
+          "$ref": "#/$defs/score"
+        },
+        "atomicity": {
+          "$ref": "#/$defs/score"
+        },
+        "dae_quality": {
+          "$ref": "#/$defs/score"
+        },
+        "clarity": {
+          "$ref": "#/$defs/score"
+        },
+        "connections": {
+          "$ref": "#/$defs/score"
+        },
+        "metadata_card_safety": {
+          "$ref": "#/$defs/score"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "missing_frontmatter",
+            "invalid_dae",
+            "definition_too_long",
+            "missing_parent",
+            "malformed_anki",
+            "anki_yagni",
+            "multi_note",
+            "misfiled_reference",
+            "weak_dae",
+            "not_atomic",
+            "weak_definition",
+            "weak_analogy",
+            "weak_example",
+            "unclear",
+            "title_body_mismatch",
+            "duplicate_overlap",
+            "factual_risk"
+          ],
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "message"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "remediation-plan.schema.json#/properties/mode"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.local/schemas/config.schema.json",
+  "title": "Atomic Note Audit Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "atomic_notes_folder",
+    "structure_notes_folder",
+    "atomic_note_template",
+    "audit_output_folder"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "atomic_notes_folder": {
+      "type": "string",
+      "minLength": 1
+    },
+    "structure_notes_folder": {
+      "type": "string",
+      "minLength": 1
+    },
+    "atomic_note_template": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_output_folder": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

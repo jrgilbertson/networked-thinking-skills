@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.local/schemas/model-judgment.schema.json",
+  "title": "Atomic Note Model Judgment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "note_path",
+    "dimension_adjustments",
+    "findings",
+    "factual_risk",
+    "factual_risk_reason",
+    "fact_check_required",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dimension_adjustments": {
+      "$ref": "#/$defs/dimension_adjustments"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "factual_risk": {
+      "type": "boolean"
+    },
+    "factual_risk_reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "fact_check_required": {
+      "type": "boolean"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "factual_risk": {
+            "const": true
+          }
+        },
+        "required": [
+          "factual_risk"
+        ]
+      },
+      "then": {
+        "properties": {
+          "factual_risk_reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "adjustment": {
+      "type": "integer",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "dimension_adjustments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "atomicity": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "dae_quality": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "clarity": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "connections": {
+          "$ref": "#/$defs/adjustment"
+        },
+        "metadata_card_safety": {
+          "$ref": "#/$defs/adjustment"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "excerpt",
+        "reason"
+      ],
+      "properties": {
+        "excerpt": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "missing_frontmatter",
+            "invalid_dae",
+            "definition_too_long",
+            "missing_parent",
+            "malformed_anki",
+            "anki_yagni",
+            "multi_note",
+            "misfiled_reference",
+            "weak_dae",
+            "not_atomic",
+            "weak_definition",
+            "weak_analogy",
+            "weak_example",
+            "unclear",
+            "title_body_mismatch",
+            "duplicate_overlap",
+            "factual_risk"
+          ],
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    }
+  }
+}
