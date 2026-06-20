@@ -65,6 +65,8 @@ python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/baseline.
 
 ## Model Judgment
 
+Run these commands from the installed `atomic-note-audit` skill root.
+
 Model judgment assumes the user is already running an authenticated desktop or
 terminal agent in the vault, such as Claude Desktop, Claude Code, Codex CLI, or
 Codex Desktop. The audit skill does not own provider authentication, API keys, or

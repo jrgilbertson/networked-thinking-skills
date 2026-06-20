@@ -64,8 +64,8 @@ Codex user skills live under `$HOME/.agents/skills`. See the official Codex skil
 runtime: codex-raw-skills
 status: verified-local
 source: https://developers.openai.com/codex/skills
-last_verified: 2026-06-06
-execution: temp HOME raw copy
+last_verified: 2026-06-20
+execution: temp HOME raw copy with self-contained skill directories
 -->
 ```bash
 mkdir -p "$HOME/.agents/skills"
@@ -80,8 +80,8 @@ Claude Code personal skills live under `~/.claude/skills/<skill-name>/SKILL.md`.
 runtime: claude-raw-skills
 status: verified-local
 source: https://code.claude.com/docs/en/skills
-last_verified: 2026-06-06
-execution: temp HOME raw copy
+last_verified: 2026-06-20
+execution: temp HOME raw copy with self-contained skill directories
 -->
 ```bash
 mkdir -p "$HOME/.claude/skills"
@@ -98,10 +98,11 @@ Source: [`skills` CLI docs](https://skills.sh/docs/cli)
 
 <!-- install-command
 runtime: codex-npx-local-clone
-status: verified-local
+status: blocked-with-reason
 source: https://skills.sh/docs/cli
-last_verified: 2026-06-06
-execution: local repo root install into temp HOME
+last_verified: 2026-06-20
+execution: not marked verified until local clean-home npx verification passes on this branch
+reason: changed self-contained npx install command is pending local clean-home verification
 -->
 ```bash
 npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
@@ -113,10 +114,11 @@ Source: [`skills` CLI docs](https://skills.sh/docs/cli)
 
 <!-- install-command
 runtime: claude-npx-local-clone
-status: verified-local
+status: blocked-with-reason
 source: https://skills.sh/docs/cli
-last_verified: 2026-06-06
-execution: local repo root install into temp HOME
+last_verified: 2026-06-20
+execution: not marked verified until local clean-home npx verification passes on this branch
+reason: changed self-contained npx install command is pending local clean-home verification
 -->
 ```bash
 npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --copy -y
@@ -193,8 +195,8 @@ Use the `.agents`-compatible copy below, then point Hermes at that skill directo
 runtime: hermes-agents-external-dir-copy
 status: verified-local
 source: https://hermes-agent.nousresearch.com/docs/user-guide/features/skills
-last_verified: 2026-06-06
-execution: local file copy only; Hermes CLI not installed or run
+last_verified: 2026-06-20
+execution: local file copy of self-contained skill directories only; Hermes CLI not installed or run
 -->
 ```bash
 mkdir -p "$HOME/.agents/skills"

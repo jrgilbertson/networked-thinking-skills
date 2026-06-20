@@ -2,7 +2,8 @@
 
 Audit and remediation are separate phases. Audit recommendations do not mutate
 notes. For installed-skill use, load source context from
-`references/remediation-context.md` in the installed skill root.
+`references/remediation-context.md` in the installed `atomic-note-audit` skill
+root, and run the commands below from that root.
 
 ## Safety Gates
 
@@ -49,6 +50,12 @@ Run preflight before any vault mutation:
 
 ```bash
 python3 scripts/preflight_obsidian.py --require-cli
+```
+
+For Claude Code installs, point preflight at Claude's skill directory:
+
+```bash
+python3 scripts/preflight_obsidian.py --require-cli --skills-root "$HOME/.claude/skills"
 ```
 
 The default binary is `obsidian-cli`. Override only when the target environment
