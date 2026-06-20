@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -112,9 +113,8 @@ def find_stale_shared_references(text: str) -> list[str]:
 
 
 def sync_artifacts(
-    *,
     root: Path = ROOT,
-    specs: dict[str, SkillArtifactSpec] = ARTIFACT_SPECS,
+    specs: Mapping[str, SkillArtifactSpec] = ARTIFACT_SPECS,
     check: bool = False,
 ) -> list[str]:
     errors: list[str] = []
@@ -166,17 +166,10 @@ def _sync_group(
     source_dir: Path,
     dest_name: str,
     filenames: tuple[str, ...],
-    renderer,
+    renderer: Callable[[str], str],
     check: bool,
 ) -> None:
     dest_dir = skill_dir / dest_name
-    if not filenames:
-        if not check and dest_dir.exists():
-            shutil.rmtree(dest_dir)
-        return
-    if not check:
-        dest_dir.mkdir(parents=True, exist_ok=True)
-
     expected = set(filenames)
     if dest_dir.exists():
         for existing in dest_dir.iterdir():
@@ -186,6 +179,13 @@ def _sync_group(
                     errors.append(f"{rel} is not declared in artifact spec")
                 else:
                     existing.unlink()
+
+    if not filenames:
+        if not check and dest_dir.exists():
+            shutil.rmtree(dest_dir)
+        return
+    if not check:
+        dest_dir.mkdir(parents=True, exist_ok=True)
 
     for filename in filenames:
         source_path = source_dir / filename
@@ -216,7 +216,7 @@ def _validate_skill_files(errors: list[str], *, root: Path, skill_dir: Path) -> 
             errors.append(f"{rel} contains stale shared reference(s): {', '.join(findings)}")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail if generated artifacts are stale")
     args = parser.parse_args(argv)
