@@ -116,6 +116,9 @@ class SkillArtifactSyncTest(unittest.TestCase):
             )
             self.assertFalse((root / "skills/demo/references/doctrine.md").exists())
 
+    def test_checked_in_artifacts_are_in_sync(self):
+        self.assertEqual(sync_artifacts(root=ROOT, check=True), [])
+
     def test_sync_writes_bare_shared_directory_references_for_round_trip(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -155,6 +158,34 @@ class SkillArtifactSyncTest(unittest.TestCase):
                 find_stale_shared_references(generated_reference.read_text(encoding="utf-8")),
                 [],
             )
+            self.assertEqual(sync_artifacts(root=root, specs=spec, check=True), [])
+
+    def test_sync_check_ignores_python_cache_files_under_generated_scripts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "shared/scripts").mkdir(parents=True)
+            (root / "skills/demo").mkdir(parents=True)
+            (root / "skills/demo/SKILL.md").write_text(
+                "---\nname: demo\ndescription: Use when testing.\n---\n",
+                encoding="utf-8",
+            )
+            (root / "shared/scripts/tool.py").write_text(
+                "def main():\n    return 'ok'\n",
+                encoding="utf-8",
+            )
+            spec = {
+                "demo": SkillArtifactSpec(
+                    name="demo",
+                    references=(),
+                    schemas=(),
+                    scripts=("tool.py",),
+                )
+            }
+            self.assertEqual(sync_artifacts(root=root, specs=spec, check=False), [])
+            pycache = root / "skills/demo/scripts/__pycache__"
+            pycache.mkdir()
+            (pycache / "tool.cpython-314.pyc").write_bytes(b"\x80\x04\x95\x00\x00\x00")
+
             self.assertEqual(sync_artifacts(root=root, specs=spec, check=True), [])
 
 

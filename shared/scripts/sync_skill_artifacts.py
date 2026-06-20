@@ -84,6 +84,8 @@ STALE_PATTERNS = (
     ("import shared", re.compile(r"\bimport shared\b")),
 )
 
+TEXT_ARTIFACT_SUFFIXES = {".json", ".md", ".py"}
+
 
 def render_markdown_text(text: str) -> str:
     for source, target in (
@@ -209,7 +211,11 @@ def _validate_skill_files(errors: list[str], *, root: Path, skill_dir: Path) -> 
     for child in ("references", "schemas", "scripts"):
         child_dir = skill_dir / child
         if child_dir.exists():
-            paths.extend(path for path in sorted(child_dir.rglob("*")) if path.is_file())
+            paths.extend(
+                path
+                for path in sorted(child_dir.rglob("*"))
+                if path.is_file() and _is_text_artifact(path)
+            )
 
     for path in paths:
         text = path.read_text(encoding="utf-8")
@@ -217,6 +223,10 @@ def _validate_skill_files(errors: list[str], *, root: Path, skill_dir: Path) -> 
         if findings:
             rel = path.relative_to(root)
             errors.append(f"{rel} contains stale shared reference(s): {', '.join(findings)}")
+
+
+def _is_text_artifact(path: Path) -> bool:
+    return "__pycache__" not in path.parts and path.suffix in TEXT_ARTIFACT_SUFFIXES
 
 
 def main(argv: Sequence[str] | None = None) -> int:
