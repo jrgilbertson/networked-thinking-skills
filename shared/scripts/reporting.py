@@ -186,7 +186,9 @@ def _bucket_key(row: dict[str, object]) -> str:
     if priority is None:
         return NO_CHANGE_BUCKET
     text = str(priority)
-    return text if text in PRIORITY_ORDER else "P3"
+    if text not in PRIORITY_ORDER:
+        raise ValueError(f"Unexpected priority value: {text!r}")
+    return text
 
 
 def _has_finding(row: dict[str, object], code: str) -> bool:

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://networked-thinking.local/schemas/config.schema.json",
+  "$id": "https://networked-thinking.dev/schemas/config.schema.json",
   "title": "Atomic Note Audit Config",
   "type": "object",
   "additionalProperties": false,

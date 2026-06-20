@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://networked-thinking.local/schemas/run-manifest.schema.json",
+  "$id": "https://networked-thinking.dev/schemas/run-manifest.schema.json",
   "title": "Atomic Note Audit Run Manifest",
   "type": "object",
   "additionalProperties": false,

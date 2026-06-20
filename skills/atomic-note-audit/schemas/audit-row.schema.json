@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://networked-thinking.local/schemas/audit-row.schema.json",
+  "$id": "https://networked-thinking.dev/schemas/audit-row.schema.json",
   "title": "Atomic Note Audit Row",
   "type": "object",
   "additionalProperties": false,

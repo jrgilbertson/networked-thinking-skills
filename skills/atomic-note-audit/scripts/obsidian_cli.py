@@ -7,7 +7,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from obsidian_adapter import DEFAULT_OBSIDIAN_BINARY, ObsidianAdapter
+from obsidian_adapter import DEFAULT_OBSIDIAN_BINARY, CommandResult, ObsidianAdapter
 
 
 SANDBOX_HINT = (
@@ -47,7 +47,7 @@ def _parse_args(argv: list[str] | None) -> tuple[argparse.Namespace, list[str]]:
     return parser.parse_known_args(argv)
 
 
-def _is_attach_failure(result) -> bool:
+def _is_attach_failure(result: CommandResult) -> bool:
     text = f"{result.stdout}\n{result.stderr}".lower()
     return "unable to find obsidian" in text or "cli socket" in text
 

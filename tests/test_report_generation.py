@@ -59,6 +59,13 @@ class ReportGenerationTest(unittest.TestCase):
         self.assertNotIn("{'mode'", report)
         self.assertNotIn('"mode":', report)
 
+    def test_render_markdown_report_rejects_unknown_priority(self):
+        rows = load_fixture_rows()
+        rows[0]["priority"] = "P9"
+
+        with self.assertRaisesRegex(ValueError, "Unexpected priority value: 'P9'"):
+            render_markdown_report(rows, load_fixture_manifest())
+
     def test_report_lists_no_change_and_factual_risk_notes(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 

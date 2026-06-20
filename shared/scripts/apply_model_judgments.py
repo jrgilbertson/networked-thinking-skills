@@ -3,9 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -112,10 +113,15 @@ def _merge_row(row: dict[str, Any], judgment: dict[str, Any] | None) -> dict[str
     merged = deepcopy(row)
     if judgment is None:
         merged["pending_model"] = True
-        merged["clean"] = compute_clean(
-            int(merged["score"]),
-            pending_model=True,
-            fact_check_required=bool(merged["fact_check_required"]),
+        score = merged["score"]
+        merged["clean"] = (
+            compute_clean(
+                score,
+                pending_model=True,
+                fact_check_required=bool(merged["fact_check_required"]),
+            )
+            if score is not None
+            else False
         )
         return merged
 

@@ -215,7 +215,7 @@ def _audit_note(
         "row_status": "complete",
         "note_path": relative_path,
         "note_link": f"[[{path.stem}]]",
-        "content_hash": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
         "modified_time": modified_time,
         "score": score,
         "priority": bucket_for_score(score),

@@ -120,6 +120,7 @@ def find_stale_shared_references(text: str) -> list[str]:
 def sync_artifacts(
     root: Path = ROOT,
     specs: Mapping[str, SkillArtifactSpec] = ARTIFACT_SPECS,
+    *,
     check: bool = False,
 ) -> list[str]:
     errors: list[str] = []

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://networked-thinking.local/schemas/model-judgment.schema.json",
+  "$id": "https://networked-thinking.dev/schemas/model-judgment.schema.json",
   "title": "Atomic Note Model Judgment",
   "type": "object",
   "additionalProperties": false,

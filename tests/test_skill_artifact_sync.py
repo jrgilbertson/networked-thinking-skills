@@ -119,6 +119,10 @@ class SkillArtifactSyncTest(unittest.TestCase):
     def test_checked_in_artifacts_are_in_sync(self):
         self.assertEqual(sync_artifacts(root=ROOT, check=True), [])
 
+    def test_sync_artifacts_requires_keyword_check(self):
+        with self.assertRaises(TypeError):
+            sync_artifacts(ROOT, ARTIFACT_SPECS, True)
+
     def test_sync_writes_bare_shared_directory_references_for_round_trip(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
