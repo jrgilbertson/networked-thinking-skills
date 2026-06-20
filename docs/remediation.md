@@ -62,7 +62,7 @@ The default binary is `obsidian-cli`. Override only when the target environment
 uses a different executable for the official CLI:
 
 ```bash
-python3 scripts/preflight_obsidian.py --require-cli --obsidian-binary obsidian
+python3 scripts/preflight_obsidian.py --require-cli --obsidian-binary /path/to/verified-obsidian-cli
 ```
 
 Use the installed skill helper for app-context commands. It resolves the real
