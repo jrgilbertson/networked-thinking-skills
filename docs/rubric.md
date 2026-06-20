@@ -1,8 +1,11 @@
 # Rubric Companion
 
 This is the human-readable companion for the audit rubric. The source of truth
-is [`shared/scripts/finding_codes.py`](../shared/scripts/finding_codes.py).
-Change that module first when changing scoring doctrine.
+for installed-skill users is `scripts/finding_codes.py`.
+
+Maintainer note: in this repo, the canonical development source remains
+[`shared/scripts/finding_codes.py`](../shared/scripts/finding_codes.py); change
+that module first when changing scoring doctrine.
 
 ## Score
 

@@ -1,8 +1,8 @@
 # Remediation
 
 Audit and remediation are separate phases. Audit recommendations do not mutate
-notes. The source context is
-[`shared/references/remediation-context.md`](../shared/references/remediation-context.md).
+notes. For installed-skill use, load source context from
+`references/remediation-context.md` in the installed skill root.
 
 ## Safety Gates
 
@@ -18,7 +18,7 @@ notes. The source context is
 - Use dry-run manifests to validate a plan before execution:
 
 ```bash
-python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json --manifest /tmp/networked-thinking-remediation/dry-run-manifest.json
+python3 scripts/remediate_notes.py --plan /path/to/remediation-plan.json --manifest /tmp/networked-thinking-remediation/dry-run-manifest.json
 ```
 
 - Destructive operations are `split`, `delete`, `rename`, and `move`. They
@@ -29,7 +29,7 @@ python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json 
   manifest; it does not apply changes to the vault:
 
 ```bash
-python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json --manifest /tmp/networked-thinking-remediation/destructive-dry-run-manifest.json --destructive-allowed
+python3 scripts/remediate_notes.py --plan /path/to/remediation-plan.json --manifest /tmp/networked-thinking-remediation/destructive-dry-run-manifest.json --destructive-allowed
 ```
 
 - Split operations must include `delete_original: true` and approved
@@ -48,30 +48,30 @@ python3 -m shared.scripts.remediate_notes --plan /path/to/remediation-plan.json 
 Run preflight before any vault mutation:
 
 ```bash
-python3 -m shared.scripts.preflight_obsidian --require-cli
+python3 scripts/preflight_obsidian.py --require-cli
 ```
 
 The default binary is `obsidian-cli`. Override only when the target environment
 uses a different executable for the official CLI:
 
 ```bash
-python3 -m shared.scripts.preflight_obsidian --require-cli --obsidian-binary obsidian
+python3 scripts/preflight_obsidian.py --require-cli --obsidian-binary obsidian
 ```
 
-Use the repo helper for app-context commands. It resolves the real CLI binary,
-falls back to the app-bundled macOS `obsidian-cli`, and refuses the macOS GUI
-binary when `obsidian` resolves to the wrong executable:
+Use the installed skill helper for app-context commands. It resolves the real
+CLI binary, falls back to the app-bundled macOS `obsidian-cli`, and refuses the
+macOS GUI binary when `obsidian` resolves to the wrong executable:
 
 ```bash
-python3 -m shared.scripts.obsidian_cli vault="My Vault" eval code="app.vault.getFiles().length"
+python3 scripts/obsidian_cli.py vault="My Vault" eval code="app.vault.getFiles().length"
 ```
 
 Verify the chosen binary against the running Obsidian app before relying on it:
 
 ```bash
 type -a obsidian obsidian-cli
-python3 -m shared.scripts.obsidian_cli help
-python3 -m shared.scripts.obsidian_cli vault info=name
+python3 scripts/obsidian_cli.py help
+python3 scripts/obsidian_cli.py vault info=name
 ```
 
 If `obsidian` resolves to the GUI app binary, use `obsidian-cli` or a verified
@@ -174,7 +174,7 @@ summary and get explicit approval. The dry run must include:
   ```
 
   ```bash
-  python3 -m shared.scripts.verify_anki_notes --vault /path/to/vault --spec /tmp/anki-verify.json
+  python3 scripts/verify_anki_notes.py --vault /path/to/vault --spec /tmp/anki-verify.json
   ```
 - Current backlinks from `obsidian-cli backlinks path="..." format=json`.
 - Intended Obsidian CLI command. Deletes default to Obsidian's configured
@@ -183,11 +183,11 @@ summary and get explicit approval. The dry run must include:
   trash, Obsidian `.trash`, or permanent deletion:
 
 ```bash
-python3 -m shared.scripts.obsidian_cli eval code='app.vault.getConfig("trashOption")'
+python3 scripts/obsidian_cli.py eval code='app.vault.getConfig("trashOption")'
 ```
 
 ```bash
-python3 -m shared.scripts.obsidian_cli delete path="Atomic Notes/Example.md"
+python3 scripts/obsidian_cli.py delete path="Atomic Notes/Example.md"
 ```
 
 - Link cleanup plan for each backlink that should change. Use Obsidian-aware

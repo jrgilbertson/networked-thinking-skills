@@ -7,7 +7,7 @@ This repo packages two skills:
 - `skills/atomic-note`
 - `skills/atomic-note-audit`
 
-Both skills load shared references through paths such as `../../shared/references/doctrine.md`. Any install that copies only the skill folders is incomplete. The runtime layout must include both `<runtime-home>/skills/<skill>` and `<runtime-home>/shared/references`.
+Each published skill directory is self-contained. npx skills add copies the selected skill directory, including skill-local references, schemas, and helper scripts. No separate shared/ copy step is required.
 
 ## Prerequisite: Official Obsidian Skills
 
@@ -18,9 +18,9 @@ current macOS installs this is often `obsidian-cli`; `obsidian` may launch the
 GUI binary instead of the CLI. See [remediation.md](remediation.md) for the
 preflight command and destructive-operation runbook. In Codex CLI, Obsidian
 CLI commands may also need approved unsandboxed execution because the CLI talks
-to the running app through a local Unix socket. This repo includes
-`python3 -m shared.scripts.obsidian_cli` as the preferred wrapper for
-app-context commands.
+to the running app through a local Unix socket. Installed skills include
+`python3 scripts/obsidian_cli.py` as the preferred wrapper for app-context
+commands; run it from the installed skill root.
 
 ### Codex
 
@@ -54,7 +54,7 @@ npx skills add https://github.com/kepano/obsidian-skills --agent claude-code -g 
 
 ## Primary Raw Installs
 
-Use these commands from a clone of this repo. They preserve the shared-reference layout required by both skills.
+Use these commands from a clone of this repo. Each copied skill directory includes its runtime references, schemas, and helper scripts.
 
 ### Codex Raw Skills
 
@@ -68,9 +68,8 @@ last_verified: 2026-06-06
 execution: temp HOME raw copy
 -->
 ```bash
-mkdir -p "$HOME/.agents/skills" "$HOME/.agents/shared"
+mkdir -p "$HOME/.agents/skills"
 cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.agents/skills/"
-cp -R shared/references "$HOME/.agents/shared/"
 ```
 
 ### Claude Code Raw Skills
@@ -85,14 +84,13 @@ last_verified: 2026-06-06
 execution: temp HOME raw copy
 -->
 ```bash
-mkdir -p "$HOME/.claude/skills" "$HOME/.claude/shared"
+mkdir -p "$HOME/.claude/skills"
 cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.claude/skills/"
-cp -R shared/references "$HOME/.claude/shared/"
 ```
 
 ## `npx skills` From This Clone
 
-`npx skills` can copy selected skills from the cloned repo root. The shared-reference copy is still required; a plain `npx skills add . ...` install is broken for this package.
+`npx skills` can copy selected self-contained skills from the cloned repo root.
 
 ### Codex
 
@@ -103,12 +101,10 @@ runtime: codex-npx-local-clone
 status: verified-local
 source: https://skills.sh/docs/cli
 last_verified: 2026-06-06
-execution: local repo root install into temp HOME, followed by shared-reference copy
+execution: local repo root install into temp HOME
 -->
 ```bash
 npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
-mkdir -p "$HOME/.agents/shared"
-cp -R shared/references "$HOME/.agents/shared/"
 ```
 
 ### Claude Code
@@ -120,12 +116,23 @@ runtime: claude-npx-local-clone
 status: verified-local
 source: https://skills.sh/docs/cli
 last_verified: 2026-06-06
-execution: local repo root install into temp HOME, followed by shared-reference copy
+execution: local repo root install into temp HOME
 -->
 ```bash
 npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --copy -y
-mkdir -p "$HOME/.claude/shared"
-cp -R shared/references "$HOME/.claude/shared/"
+```
+
+## Public GitHub Installs
+
+After these self-contained skill manifests are merged to `main`, these are the
+public install forms users can run without cloning the repo first:
+
+```bash
+npx skills add jrgilbertson/networked-thinking-skills --list
+npx skills add jrgilbertson/networked-thinking-skills --agent codex -g --skill '*' --copy -y
+npx skills add jrgilbertson/networked-thinking-skills --agent codex -g --skill atomic-note --copy -y
+npx skills add https://github.com/jrgilbertson/networked-thinking-skills --list
+npx skills add https://github.com/jrgilbertson/networked-thinking-skills/tree/main/skills/atomic-note --list
 ```
 
 ## Plugin Marketplace Installs
@@ -178,9 +185,8 @@ last_verified: 2026-06-06
 execution: local file copy only; Hermes CLI not installed or run
 -->
 ```bash
-mkdir -p "$HOME/.agents/skills" "$HOME/.agents/shared"
+mkdir -p "$HOME/.agents/skills"
 cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.agents/skills/"
-cp -R shared/references "$HOME/.agents/shared/"
 ```
 
 Add this to `~/.hermes/config.yaml`:
