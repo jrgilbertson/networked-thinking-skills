@@ -7,7 +7,7 @@ This repo packages two skills:
 - `skills/atomic-note`
 - `skills/atomic-note-audit`
 
-Each published skill directory is self-contained. npx skills add copies the selected skill directory, including skill-local references, schemas, and helper scripts. No separate shared/ copy step is required.
+Each published skill directory is self-contained. `npx skills add` copies the selected skill directory, including skill-local references, schemas, and helper scripts. No separate `shared/` copy step is required.
 
 ## Prerequisite: Official Obsidian Skills
 
@@ -129,9 +129,21 @@ public install forms users can run without cloning the repo first:
 
 ```bash
 npx skills add jrgilbertson/networked-thinking-skills --list
+```
+
+```bash
 npx skills add jrgilbertson/networked-thinking-skills --agent codex -g --skill '*' --copy -y
+```
+
+```bash
 npx skills add jrgilbertson/networked-thinking-skills --agent codex -g --skill atomic-note --copy -y
+```
+
+```bash
 npx skills add https://github.com/jrgilbertson/networked-thinking-skills --list
+```
+
+```bash
 npx skills add https://github.com/jrgilbertson/networked-thinking-skills/tree/main/skills/atomic-note --list
 ```
 
