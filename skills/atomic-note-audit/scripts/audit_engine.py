@@ -149,6 +149,9 @@ FORMAL_MARKER_RE = re.compile(
 SOURCE_SECTION_RE = re.compile(
     r"(?ims)^(?:#{1,6}[ \t]+)?sources?:?[ \t]*\r?\n.*\Z"
 )
+REFERENCE_SECTION_RE = re.compile(
+    r"(?ims)^(?:#{1,6}[ \t]+)?references?:?[ \t]*\r?\n.*\Z"
+)
 FENCED_BLOCK_RE = re.compile(r"(?ms)^[ \t]{0,3}(`{3,}|~{3,}).*?^[ \t]{0,3}\1[ \t]*$")
 DISPLAY_MATH_RE = re.compile(r"(?ms)^\$\$.*?^\$\$")
 INLINE_MATH_RE = re.compile(r"\$[^$\r\n]+\$")
@@ -477,7 +480,8 @@ def _is_formal_definition_sentence(sentence: str) -> bool:
 
 
 def _factual_risk_sentences(body: str) -> list[str]:
-    text = SOURCE_SECTION_RE.sub("", body)
+    text = REFERENCE_SECTION_RE.sub("", body)
+    text = SOURCE_SECTION_RE.sub("", text)
     text = FENCED_BLOCK_RE.sub(" ", text)
     text = DISPLAY_MATH_RE.sub(" ", text)
     text = INLINE_MATH_RE.sub(" ", text)

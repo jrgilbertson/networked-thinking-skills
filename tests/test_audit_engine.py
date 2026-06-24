@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from shared.scripts.audit_engine import audit_vault
+from shared.scripts.audit_engine import audit_vault, _factual_risk_sentences
 from shared.scripts.schema_validation import validate_audit_row
 
 
@@ -1240,6 +1240,36 @@ Use situation, task, action, and result.
             capture_output=True,
             text=True,
         )
+
+    def test_factual_risk_skips_reference_and_sources_sections(self):
+        body = (
+            "A concept is one clear idea stated plainly.\n\n"
+            "Reference:\n"
+            "- The Earth formed about 4.5 billion years ago.\n\n"
+            "Sources:\n"
+            "1. A source claiming the Great Wall is visible from orbit.\n"
+        )
+        joined = " ".join(_factual_risk_sentences(body))
+        self.assertNotIn("4.5 billion", joined)   # Reference: content stripped
+        self.assertNotIn("Great Wall", joined)    # Sources: content stripped
+
+    def test_basic_card_dae_with_reference_and_sources_is_valid(self):
+        content = (
+            "---\naliases:\n  - concept\ntags:\n  - atomic-note\n---\n\n"
+            "# Concept\n\n"
+            "TARGET DECK: General\n\nSTART\n\nBasic\n\n"
+            "What is the concept?\n\n"
+            "Back: A concept is one clear idea stated plainly so it can be tested.\n\n"
+            "It is like one labeled jar in a pantry.\n\n"
+            "For example, a note names the idea and shows a concrete case.\n\n"
+            "END\n\n"
+            "Reference:\n- Related: [[Atomic Note Quality]].\n\n"
+            "Sources:\n1. Synthetic source.\n"
+        )
+        row = self.audit_single_note(content, stem="202601010110 Reference and sources note")
+        codes = {finding["code"] for finding in row["findings"]}
+        self.assertNotIn("invalid_dae", codes)
+        self.assertNotIn("misfiled_reference", codes)
 
     def audit_single_note(self, content: str, *, stem: str, parent: bool = True) -> dict[str, object]:
         with tempfile.TemporaryDirectory() as tmp:

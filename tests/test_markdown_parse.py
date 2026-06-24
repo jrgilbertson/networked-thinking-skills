@@ -266,6 +266,21 @@ class MarkdownParseTest(unittest.TestCase):
         markdown = "## Definition ##\n\n## Analogy ##\n\n## Example ##\n"
         self.assertTrue(has_dae_sections(markdown))
 
+    def test_analyze_dae_accepts_reference_and_sources_sections(self):
+        content = (
+            "# Concept\n\n"
+            "TARGET DECK: General\n\nSTART\n\nBasic\n\n"
+            "What is the concept?\n\n"
+            "Back: A concept is one clear idea stated plainly so it can be tested.\n\n"
+            "It is like one labeled jar in a pantry.\n\n"
+            "For example, a note names the idea and shows a concrete case.\n\n"
+            "END\n\n"
+            "Reference:\n- Related: [[Atomic Note Quality]].\n\n"
+            "Sources:\n1. Synthetic source.\n"
+        )
+        analysis = analyze_dae(content)
+        self.assertTrue(analysis.present)
+
     def test_analyze_dae_accepts_basic_card_shape(self):
         markdown = """---
 title: Stateless Protocol
