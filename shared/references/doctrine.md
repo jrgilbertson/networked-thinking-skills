@@ -9,13 +9,14 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 - Frontmatter with `title` and `aliases`.
 - Clear Definition, Analogy, and Example content.
 - At least one useful connection to a structure note or related concept.
-- Sources when the idea came from external material; write source sections as numbered lists.
+- `Sources:` (plural label, numbered list) when the idea came from external material; provenance for later verification.
 - Agent-access source lines, such as `Codex 5.5 last accessed [[YYYY-MM-DD]]`,
   use the actual local date when the note is created or edited, not a copied
   example date from prior work.
-- Optional compact reference material can appear after the Anki `END` block and
-  before `Sources:` when the concept has formulas, lookup tables, commands, or
-  other exact artifacts worth preserving but not worth testing directly.
+- Optional `Reference:` section (singular label, bulleted) after the Anki `END`
+  block and before `Sources:`, for links to related atomic notes, figures, and
+  compact reference material (formulas, lookup tables, commands) worth
+  preserving but not worth testing directly.
 
 ## DAE Rules
 
@@ -124,10 +125,11 @@ Do not use a `DELETE` marker for this repair, because there is no existing Anki
 note to delete.
 
 Reference material that should be available in Obsidian but not tested in Anki
-belongs outside the Anki block, after `END` and before `Sources:`. Keep it
-compact and exact. Typical uses are formulas, lookup tables, worked-example
-calculations, syntax snippets, and commands that support the concept but would
-make a poor flashcard.
+belongs in the `Reference:` section, outside the Anki block, after `END` and
+before `Sources:`. Write it as a bulleted list and keep it compact and exact.
+Typical uses are links to related atomic notes, figures, formulas, lookup
+tables, worked-example calculations, syntax snippets, and commands that support
+the concept but would make a poor flashcard.
 
 ## Misfiled Notes
 
