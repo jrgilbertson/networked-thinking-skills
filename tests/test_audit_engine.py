@@ -44,8 +44,8 @@ class AuditEngineTest(unittest.TestCase):
     def test_audit_vault_scores_every_atomic_note(self):
         rows, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
-        self.assertEqual(len(rows), 9)
-        self.assertEqual(manifest["total_notes"], 9)
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(manifest["total_notes"], 10)
         for row in rows:
             validate_audit_row(row, default_scan=True)
             self.assertEqual(row["row_status"], "complete")
@@ -931,7 +931,7 @@ For example, GDPR requires every company to delete user data within 30 days.
                 text=True,
             )
             self.assertEqual(audit_result.returncode, 0, audit_result.stderr)
-            self.assertEqual(audit_result.stdout.strip(), "rows=9")
+            self.assertEqual(audit_result.stdout.strip(), "rows=10")
 
             validation_result = subprocess.run(
                 [sys.executable, "-m", "shared.scripts.validate_jsonl", str(jsonl_path)],
@@ -940,7 +940,7 @@ For example, GDPR requires every company to delete user data within 30 days.
                 text=True,
             )
             self.assertEqual(validation_result.returncode, 0, validation_result.stderr)
-            self.assertEqual(validation_result.stdout.strip(), "valid_rows=9")
+            self.assertEqual(validation_result.stdout.strip(), "valid_rows=10")
 
     def test_manifest_includes_all_count_keys(self):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")

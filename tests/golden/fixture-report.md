@@ -3,10 +3,10 @@
 ## Summary
 
 - Run ID: fixture-run
-- Total notes: 9
-- Average score: 70.3 / 100
-- No-change notes: 2 / 9 (22.2%)
-- Bucket counts: P0 2, P1 1, P2 2, P3 2, No changes 2
+- Total notes: 10
+- Average score: 73.3 / 100
+- No-change notes: 3 / 10 (30.0%)
+- Bucket counts: P0 2, P1 1, P2 2, P3 2, No changes 3
 - Model judgment: not run; deterministic audit complete
 
 ## P0 Critical Remediation
@@ -42,6 +42,7 @@
 |---|---:|:---:|---|---|
 | [[202601010101 Clean DAE note]] | 100 | yes | none | none |
 | [[202601010107 Optional Anki note]] | 100 | yes | none | none |
+| [[202601010110 Reference and sources note]] | 100 | yes | none | none |
 
 ## Factual-Risk Notes
 
@@ -61,6 +62,6 @@
 - Work P1 high-impact remediation next: 1 note.
 - Review P2 improvements after blockers are clear: 2 notes.
 - Keep P3 polish as low-risk cleanup: 2 notes.
-- Leave no-change notes alone unless a later audit finds new issues: 2 notes.
+- Leave no-change notes alone unless a later audit finds new issues: 3 notes.
 - Fact-check factual-risk notes before relying on them: 1 note.
 - Review duplicate or overlap candidates before rewriting related notes: 1 note.
