@@ -1253,6 +1253,17 @@ Use situation, task, action, and result.
         self.assertNotIn("4.5 billion", joined)   # Reference: content stripped
         self.assertNotIn("Great Wall", joined)    # Sources: content stripped
 
+    def test_early_reference_label_does_not_strip_later_prose(self):
+        # Bug 2: an early Reference: label followed by later sentence prose must
+        # NOT cause the later prose to be stripped from factual-risk analysis.
+        body = (
+            "Reference:\n"
+            "- This is a bibliographic entry.\n\n"
+            "The system always guarantees consistency across nodes.\n"
+        )
+        sentences = " ".join(_factual_risk_sentences(body))
+        self.assertIn("always guarantees consistency", sentences)
+
     def test_basic_card_dae_with_reference_and_sources_is_valid(self):
         content = (
             "---\naliases:\n  - concept\ntags:\n  - atomic-note\n---\n\n"

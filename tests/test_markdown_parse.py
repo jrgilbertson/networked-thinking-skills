@@ -8,6 +8,7 @@ from shared.scripts.markdown_parse import (
     extract_headings,
     extract_wikilinks,
     has_dae_sections,
+    _dae_heading_sections,
 )
 
 
@@ -550,6 +551,28 @@ Example.
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
         self.assertEqual(extract_wikilinks(markdown), ["Parent Note"])
         self.assertTrue(has_dae_sections(markdown))
+
+
+class DaeHeadingSectionsTest(unittest.TestCase):
+    def test_trailing_reference_and_sources_labels_excluded_from_example_section(self):
+        # Bug 1: Reference:/Sources: plain labels (not ## headings) must NOT be
+        # included in the example section word count; they are trailing markers.
+        md = (
+            "---\ntags:\n  - atomic-note\n---\n\n"
+            "# My Note\n\n"
+            "## Definition\n\n"
+            "A concept is one clear idea.\n\n"
+            "## Analogy\n\n"
+            "It is like a labeled jar.\n\n"
+            "## Example\n\n"
+            "For example, a concept applies here.\n\n"
+            "Reference:\n"
+            "- [[Related]]\n\n"
+            "Sources:\n"
+            "1. A source.\n"
+        )
+        sections = _dae_heading_sections(md)
+        self.assertEqual(sections.get("example"), "For example, a concept applies here.")
 
 
 if __name__ == "__main__":
