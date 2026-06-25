@@ -17,6 +17,12 @@ CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
 TIMESTAMP_PREFIX_RE = re.compile(r"^\d{12}\s+")
 BACK_LINE_RE = re.compile(r"^[ \t]*Back:[ \t]*(.*)$", re.IGNORECASE)
 EXTRA_LINE_RE = re.compile(r"^[ \t]*Extra:[ \t]*(.*)$", re.IGNORECASE)
+# Matches a plain trailing Reference:/Sources: label line (not a ## heading section).
+# Used to clamp DAE section boundaries so label content is not counted as DAE text.
+TRAILING_LABEL_LINE_RE = re.compile(
+    r"^(?:#{1,6}[ \t]+)?(?:reference|source)s?:?[ \t]*$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -498,6 +504,13 @@ def _dae_heading_sections(markdown: str) -> dict[str, str]:
         (line_number, level, heading.casefold())
         for line_number, level, heading in extract_structural_heading_lines(markdown)
     ]
+    # Pre-compute the first trailing-label line index so each section can be
+    # clamped to exclude Reference:/Sources: plain labels (not ## headings).
+    first_trailing_label: int = len(body_lines)
+    for i, line in enumerate(body_lines):
+        if TRAILING_LABEL_LINE_RE.match(line):
+            first_trailing_label = i
+            break
     sections: dict[str, str] = {}
     for index, (line_number, level, heading) in enumerate(heading_lines):
         if heading not in {"definition", "analogy", "example"}:
@@ -507,6 +520,10 @@ def _dae_heading_sections(markdown: str) -> dict[str, str]:
             if next_level <= level:
                 end_line = next_line
                 break
+        # Clamp so plain trailing labels are never included in the section body.
+        # Only apply when the trailing label is within (not before) this section.
+        if first_trailing_label > line_number:
+            end_line = min(end_line, first_trailing_label)
         sections[heading] = "\n".join(body_lines[line_number + 1:end_line]).strip()
     return sections
 

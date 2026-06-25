@@ -149,6 +149,25 @@ FORMAL_MARKER_RE = re.compile(
 SOURCE_SECTION_RE = re.compile(
     r"(?ims)^(?:#{1,6}[ \t]+)?sources?:?[ \t]*\r?\n.*\Z"
 )
+REFERENCE_SECTION_RE = re.compile(
+    r"(?ims)^(?:#{1,6}[ \t]+)?references?:?[ \t]*\r?\n.*\Z"
+)
+# Matches a Reference:/Sources: label line (with or without heading markers).
+_TRAILING_LABEL_RE = re.compile(
+    r"^(?:#{1,6}[ \t]+)?(?:reference|source)s?:?[ \t]*$",
+    re.IGNORECASE,
+)
+# Matches lines that are permissible inside a trailing reference/sources block:
+# list items (-, *, N.), image embeds, wikilinks, blank lines, indented lines.
+_TRAILING_BODY_LINE_RE = re.compile(
+    r"^(?:\s*$"                        # blank or whitespace-only
+    r"|[ \t]+"                         # indented continuation
+    r"|[-*+]\s"                        # unordered list item
+    r"|\d+[.)]\s"                      # ordered list item
+    r"|!\[\["                          # image embed
+    r"|\[\["                           # wikilink
+    r")",
+)
 FENCED_BLOCK_RE = re.compile(r"(?ms)^[ \t]{0,3}(`{3,}|~{3,}).*?^[ \t]{0,3}\1[ \t]*$")
 DISPLAY_MATH_RE = re.compile(r"(?ms)^\$\$.*?^\$\$")
 INLINE_MATH_RE = re.compile(r"\$[^$\r\n]+\$")
@@ -476,8 +495,45 @@ def _is_formal_definition_sentence(sentence: str) -> bool:
     return bool(FORMAL_DEFINITION_RE.search(sentence) and FORMAL_MARKER_RE.search(sentence))
 
 
+def strip_trailing_reference_sections(body: str) -> str:
+    """Strip only the contiguous trailing block of Reference:/Sources: sections.
+
+    Scans from the last line upward to find the earliest label line (matching
+    ``_TRAILING_LABEL_RE``) from which every line to EOF is either another label,
+    a permissible list/embed/link body line, or a blank/indented line.  A label
+    followed by free-form prose does NOT start the trailing region.
+
+    Well-formed trailing sections (the normal case) are stripped entirely; an
+    early Reference: label whose content includes sentence prose is left intact.
+    """
+    lines = body.splitlines(keepends=True)
+    n = len(lines)
+    # Walk backwards to find the start of the trailing region.
+    trailing_start: int = n  # exclusive upper bound → nothing stripped by default
+    saw_label: bool = False
+    i = n - 1
+    while i >= 0:
+        stripped = lines[i].rstrip("\r\n")
+        if _TRAILING_LABEL_RE.match(stripped):
+            # This line is a label; extend the trailing region upward.
+            saw_label = True
+            trailing_start = i
+            i -= 1
+        elif _TRAILING_BODY_LINE_RE.match(stripped):
+            # Permissible body line; extend the trailing region upward.
+            trailing_start = i
+            i -= 1
+        else:
+            # Non-permissible line — trailing region cannot extend past here.
+            break
+    if not saw_label:
+        # No Reference:/Sources: label found in the trailing region — nothing to strip.
+        return body
+    return "".join(lines[:trailing_start])
+
+
 def _factual_risk_sentences(body: str) -> list[str]:
-    text = SOURCE_SECTION_RE.sub("", body)
+    text = strip_trailing_reference_sections(body)
     text = FENCED_BLOCK_RE.sub(" ", text)
     text = DISPLAY_MATH_RE.sub(" ", text)
     text = INLINE_MATH_RE.sub(" ", text)
@@ -518,6 +574,10 @@ def _dae_section_word_counts(body: str) -> dict[str, int]:
         if heading_match:
             heading = heading_match.group(2).strip().casefold()
             active_section = heading if heading in sections else None
+            continue
+        if _TRAILING_LABEL_RE.match(line.rstrip()):
+            # Plain Reference:/Sources: label — stop accumulating into any DAE section.
+            active_section = None
             continue
         if active_section:
             sections[active_section].append(line)

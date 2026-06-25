@@ -6,7 +6,12 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from shared.scripts.audit_engine import audit_vault
+from shared.scripts.audit_engine import (
+    audit_vault,
+    _dae_section_word_counts,
+    _factual_risk_sentences,
+    strip_trailing_reference_sections,
+)
 from shared.scripts.schema_validation import validate_audit_row
 
 
@@ -44,8 +49,8 @@ class AuditEngineTest(unittest.TestCase):
     def test_audit_vault_scores_every_atomic_note(self):
         rows, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
-        self.assertEqual(len(rows), 9)
-        self.assertEqual(manifest["total_notes"], 9)
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(manifest["total_notes"], 10)
         for row in rows:
             validate_audit_row(row, default_scan=True)
             self.assertEqual(row["row_status"], "complete")
@@ -931,7 +936,7 @@ For example, GDPR requires every company to delete user data within 30 days.
                 text=True,
             )
             self.assertEqual(audit_result.returncode, 0, audit_result.stderr)
-            self.assertEqual(audit_result.stdout.strip(), "rows=9")
+            self.assertEqual(audit_result.stdout.strip(), "rows=10")
 
             validation_result = subprocess.run(
                 [sys.executable, "-m", "shared.scripts.validate_jsonl", str(jsonl_path)],
@@ -940,7 +945,7 @@ For example, GDPR requires every company to delete user data within 30 days.
                 text=True,
             )
             self.assertEqual(validation_result.returncode, 0, validation_result.stderr)
-            self.assertEqual(validation_result.stdout.strip(), "valid_rows=9")
+            self.assertEqual(validation_result.stdout.strip(), "valid_rows=10")
 
     def test_manifest_includes_all_count_keys(self):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
@@ -1239,6 +1244,92 @@ Use situation, task, action, and result.
             cwd=REPO_ROOT,
             capture_output=True,
             text=True,
+        )
+
+    def test_factual_risk_skips_reference_and_sources_sections(self):
+        body = (
+            "A concept is one clear idea stated plainly.\n\n"
+            "Reference:\n"
+            "- The Earth formed about 4.5 billion years ago.\n\n"
+            "Sources:\n"
+            "1. A source claiming the Great Wall is visible from orbit.\n"
+        )
+        joined = " ".join(_factual_risk_sentences(body))
+        self.assertNotIn("4.5 billion", joined)   # Reference: content stripped
+        self.assertNotIn("Great Wall", joined)    # Sources: content stripped
+
+    def test_early_reference_label_does_not_strip_later_prose(self):
+        # Bug 2: an early Reference: label followed by later sentence prose must
+        # NOT cause the later prose to be stripped from factual-risk analysis.
+        body = (
+            "Reference:\n"
+            "- This is a bibliographic entry.\n\n"
+            "The system always guarantees consistency across nodes.\n"
+        )
+        sentences = " ".join(_factual_risk_sentences(body))
+        self.assertIn("always guarantees consistency", sentences)
+
+    def test_basic_card_dae_with_reference_and_sources_is_valid(self):
+        content = (
+            "---\naliases:\n  - concept\ntags:\n  - atomic-note\n---\n\n"
+            "# Concept\n\n"
+            "TARGET DECK: General\n\nSTART\n\nBasic\n\n"
+            "What is the concept?\n\n"
+            "Back: A concept is one clear idea stated plainly so it can be tested.\n\n"
+            "It is like one labeled jar in a pantry.\n\n"
+            "For example, a note names the idea and shows a concrete case.\n\n"
+            "END\n\n"
+            "Reference:\n- Related: [[Atomic Note Quality]].\n\n"
+            "Sources:\n1. Synthetic source.\n"
+        )
+        row = self.audit_single_note(content, stem="202601010110 Reference and sources note")
+        codes = {finding["code"] for finding in row["findings"]}
+        self.assertNotIn("invalid_dae", codes)
+        self.assertNotIn("misfiled_reference", codes)
+
+    # --- BUG A: _dae_section_word_counts must not count trailing Reference:/Sources: ---
+
+    def test_dae_section_word_counts_excludes_trailing_reference_and_sources(self):
+        """BUG A: trailing Reference:/Sources: lines must not inflate example word count."""
+        body = (
+            "## Example\n\n"
+            "For example, alpha beta gamma.\n\n"
+            "Reference:\n"
+            "- delta epsilon zeta eta theta\n\n"
+            "Sources:\n"
+            "1. iota kappa lambda mu nu\n"
+        )
+        counts = _dae_section_word_counts(body)
+        example_count = counts.get("example", 0)
+        # The example prose has exactly 5 words: alpha beta gamma (3) +
+        # "For example," counts too → count_rendered_words will give us the true number.
+        # What we assert is that the trailing-label words are NOT included.
+        # The trailing content adds 10 extra words (delta epsilon zeta eta theta
+        # iota kappa lambda mu nu).  If the bug is present the count will be ≥ 15;
+        # the correct count should be ≤ 5 (just the example prose).
+        self.assertLessEqual(
+            example_count,
+            5,
+            f"Expected example word count ≤ 5 (prose only), got {example_count}; "
+            "trailing Reference:/Sources: content is being counted.",
+        )
+
+    # --- BUG B: strip_trailing_reference_sections must not strip plain trailing lists ---
+
+    def test_strip_trailing_reference_sections_does_not_strip_plain_trailing_list(self):
+        """BUG B: a note ending in a bulleted list with no Reference:/Sources: label
+        must NOT have that list stripped by strip_trailing_reference_sections."""
+        body = (
+            "A definition.\n\n"
+            "For example, the moon orbits earth.\n\n"
+            "- first point\n"
+            "- the sun is 93 million miles away\n"
+        )
+        sentences = " ".join(_factual_risk_sentences(body))
+        self.assertIn(
+            "93 million",
+            sentences,
+            "Plain trailing bulleted list was wrongly stripped; '93 million' should be present.",
         )
 
     def audit_single_note(self, content: str, *, stem: str, parent: bool = True) -> dict[str, object]:

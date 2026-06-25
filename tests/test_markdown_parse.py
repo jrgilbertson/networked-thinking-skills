@@ -8,6 +8,7 @@ from shared.scripts.markdown_parse import (
     extract_headings,
     extract_wikilinks,
     has_dae_sections,
+    _dae_heading_sections,
 )
 
 
@@ -265,6 +266,21 @@ class MarkdownParseTest(unittest.TestCase):
     def test_has_dae_sections_supports_closing_hashes(self):
         markdown = "## Definition ##\n\n## Analogy ##\n\n## Example ##\n"
         self.assertTrue(has_dae_sections(markdown))
+
+    def test_analyze_dae_accepts_reference_and_sources_sections(self):
+        content = (
+            "# Concept\n\n"
+            "TARGET DECK: General\n\nSTART\n\nBasic\n\n"
+            "What is the concept?\n\n"
+            "Back: A concept is one clear idea stated plainly so it can be tested.\n\n"
+            "It is like one labeled jar in a pantry.\n\n"
+            "For example, a note names the idea and shows a concrete case.\n\n"
+            "END\n\n"
+            "Reference:\n- Related: [[Atomic Note Quality]].\n\n"
+            "Sources:\n1. Synthetic source.\n"
+        )
+        analysis = analyze_dae(content)
+        self.assertTrue(analysis.present)
 
     def test_analyze_dae_accepts_basic_card_shape(self):
         markdown = """---
@@ -535,6 +551,28 @@ Example.
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
         self.assertEqual(extract_wikilinks(markdown), ["Parent Note"])
         self.assertTrue(has_dae_sections(markdown))
+
+
+class DaeHeadingSectionsTest(unittest.TestCase):
+    def test_trailing_reference_and_sources_labels_excluded_from_example_section(self):
+        # Bug 1: Reference:/Sources: plain labels (not ## headings) must NOT be
+        # included in the example section word count; they are trailing markers.
+        md = (
+            "---\ntags:\n  - atomic-note\n---\n\n"
+            "# My Note\n\n"
+            "## Definition\n\n"
+            "A concept is one clear idea.\n\n"
+            "## Analogy\n\n"
+            "It is like a labeled jar.\n\n"
+            "## Example\n\n"
+            "For example, a concept applies here.\n\n"
+            "Reference:\n"
+            "- [[Related]]\n\n"
+            "Sources:\n"
+            "1. A source.\n"
+        )
+        sections = _dae_heading_sections(md)
+        self.assertEqual(sections.get("example"), "For example, a concept applies here.")
 
 
 if __name__ == "__main__":

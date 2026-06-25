@@ -18,6 +18,7 @@ class FixtureVaultTest(unittest.TestCase):
             names = {note.name for note in notes}
             self.assertIn("202601010101 Clean DAE note.md", names)
             self.assertIn("202601010103 Multi note bundle.md", names)
+            self.assertIn("202601010110 Reference and sources note.md", names)
 
     def test_main_accepts_target_and_prints_root(self):
         with tempfile.TemporaryDirectory() as tmp:

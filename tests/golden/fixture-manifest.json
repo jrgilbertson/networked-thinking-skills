@@ -17,10 +17,10 @@
     "P1": 1,
     "P2": 2,
     "P3": 2,
-    "no_change": 2
+    "no_change": 3
   },
   "row_status_counts": {
-    "complete": 9,
+    "complete": 10,
     "error": 0,
     "reused_cache": 0,
     "skipped": 0
@@ -28,6 +28,6 @@
   "run_id": "fixture-run",
   "schema_version": "1.0.0",
   "started_at": "2000-01-01T00:00:00Z",
-  "total_notes": 9,
+  "total_notes": 10,
   "validation_status": "not_run"
 }

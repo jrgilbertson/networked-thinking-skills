@@ -20,6 +20,7 @@ views:
         - 'file.path == "Atomic Notes/202601010107 Optional Anki note.md"'
         - 'file.path == "Atomic Notes/202601010108 Malformed Anki note.md"'
         - 'file.path == "Atomic Notes/202601010109 Duplicate candidate note.md"'
+        - 'file.path == "Atomic Notes/202601010110 Reference and sources note.md"'
     order:
       - file.name
       - file.path
@@ -69,6 +70,7 @@ views:
       or:
         - 'file.path == "Atomic Notes/202601010101 Clean DAE note.md"'
         - 'file.path == "Atomic Notes/202601010107 Optional Anki note.md"'
+        - 'file.path == "Atomic Notes/202601010110 Reference and sources note.md"'
     order:
       - file.name
       - file.path
