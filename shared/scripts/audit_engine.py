@@ -510,11 +510,13 @@ def strip_trailing_reference_sections(body: str) -> str:
     n = len(lines)
     # Walk backwards to find the start of the trailing region.
     trailing_start: int = n  # exclusive upper bound → nothing stripped by default
+    saw_label: bool = False
     i = n - 1
     while i >= 0:
         stripped = lines[i].rstrip("\r\n")
         if _TRAILING_LABEL_RE.match(stripped):
             # This line is a label; extend the trailing region upward.
+            saw_label = True
             trailing_start = i
             i -= 1
         elif _TRAILING_BODY_LINE_RE.match(stripped):
@@ -524,6 +526,9 @@ def strip_trailing_reference_sections(body: str) -> str:
         else:
             # Non-permissible line — trailing region cannot extend past here.
             break
+    if not saw_label:
+        # No Reference:/Sources: label found in the trailing region — nothing to strip.
+        return body
     return "".join(lines[:trailing_start])
 
 
@@ -569,6 +574,10 @@ def _dae_section_word_counts(body: str) -> dict[str, int]:
         if heading_match:
             heading = heading_match.group(2).strip().casefold()
             active_section = heading if heading in sections else None
+            continue
+        if _TRAILING_LABEL_RE.match(line.rstrip()):
+            # Plain Reference:/Sources: label — stop accumulating into any DAE section.
+            active_section = None
             continue
         if active_section:
             sections[active_section].append(line)

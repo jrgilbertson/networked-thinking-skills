@@ -6,7 +6,12 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from shared.scripts.audit_engine import audit_vault, _factual_risk_sentences
+from shared.scripts.audit_engine import (
+    audit_vault,
+    _dae_section_word_counts,
+    _factual_risk_sentences,
+    strip_trailing_reference_sections,
+)
 from shared.scripts.schema_validation import validate_audit_row
 
 
@@ -1281,6 +1286,51 @@ Use situation, task, action, and result.
         codes = {finding["code"] for finding in row["findings"]}
         self.assertNotIn("invalid_dae", codes)
         self.assertNotIn("misfiled_reference", codes)
+
+    # --- BUG A: _dae_section_word_counts must not count trailing Reference:/Sources: ---
+
+    def test_dae_section_word_counts_excludes_trailing_reference_and_sources(self):
+        """BUG A: trailing Reference:/Sources: lines must not inflate example word count."""
+        body = (
+            "## Example\n\n"
+            "For example, alpha beta gamma.\n\n"
+            "Reference:\n"
+            "- delta epsilon zeta eta theta\n\n"
+            "Sources:\n"
+            "1. iota kappa lambda mu nu\n"
+        )
+        counts = _dae_section_word_counts(body)
+        example_count = counts.get("example", 0)
+        # The example prose has exactly 5 words: alpha beta gamma (3) +
+        # "For example," counts too → count_rendered_words will give us the true number.
+        # What we assert is that the trailing-label words are NOT included.
+        # The trailing content adds 10 extra words (delta epsilon zeta eta theta
+        # iota kappa lambda mu nu).  If the bug is present the count will be ≥ 15;
+        # the correct count should be ≤ 5 (just the example prose).
+        self.assertLessEqual(
+            example_count,
+            5,
+            f"Expected example word count ≤ 5 (prose only), got {example_count}; "
+            "trailing Reference:/Sources: content is being counted.",
+        )
+
+    # --- BUG B: strip_trailing_reference_sections must not strip plain trailing lists ---
+
+    def test_strip_trailing_reference_sections_does_not_strip_plain_trailing_list(self):
+        """BUG B: a note ending in a bulleted list with no Reference:/Sources: label
+        must NOT have that list stripped by strip_trailing_reference_sections."""
+        body = (
+            "A definition.\n\n"
+            "For example, the moon orbits earth.\n\n"
+            "- first point\n"
+            "- the sun is 93 million miles away\n"
+        )
+        sentences = " ".join(_factual_risk_sentences(body))
+        self.assertIn(
+            "93 million",
+            sentences,
+            "Plain trailing bulleted list was wrongly stripped; '93 million' should be present.",
+        )
 
     def audit_single_note(self, content: str, *, stem: str, parent: bool = True) -> dict[str, object]:
         with tempfile.TemporaryDirectory() as tmp:
