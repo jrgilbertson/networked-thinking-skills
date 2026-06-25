@@ -8,7 +8,7 @@ Two self-contained skills:
 
 ### [`atomic-note`](skills/atomic-note/)
 
-Create or improve a single atomic note in DAE (Define, Apply, Extend) format. Handles note creation, editing, link resolution, and vault-aware file operations through Obsidian CLI.
+Create or improve a single atomic note in DAE (Definition, Analogy, Example) format. Handles note creation, editing, link resolution, and vault-aware file operations through Obsidian CLI.
 
 ### [`atomic-note-audit`](skills/atomic-note-audit/)
 
@@ -20,17 +20,16 @@ Audit every Markdown file in a configured Atomic Notes folder. Produces vault-he
 
 Install the official Obsidian skills first — remediation hard-fails without them:
 
-- [Codex](https://github.com/kepano/obsidian-skills)
-- [Claude Code](https://github.com/kepano/obsidian-skills)
-- [OpenCode](https://github.com/kepano/obsidian-skills)
+- `obsidian-cli`
+- `obsidian-markdown`
+- `obsidian-bases`
 
 See [docs/install.md](docs/install.md) for detailed instructions.
 
 ### Install the Skills
 
 ```bash
-npx skills add atomic-note
-npx skills add atomic-note-audit
+npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
 ```
 
 Each skill is self-contained — `npx skills add` copies references, schemas, and helper scripts. No separate `shared/` step needed.
