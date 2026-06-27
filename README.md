@@ -61,6 +61,7 @@ In Codex CLI or similar sandboxed environments, Obsidian CLI commands may need a
 - [Remediation runbook](docs/remediation.md)
 - [Rubric and scoring](docs/rubric.md)
 - [Contributor guide](docs/contributor-guide.md)
+- [Changelog](CHANGELOG.md)
 
 ## Contributing
 
