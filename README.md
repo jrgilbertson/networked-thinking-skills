@@ -28,8 +28,16 @@ See [docs/install.md](docs/install.md) for detailed instructions.
 
 ### Install the Skills
 
+Run these from a clone of this repo.
+
+**Codex**
 ```bash
 npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
+```
+
+**Claude Code**
+```bash
+npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --copy -y
 ```
 
 Each skill is self-contained — `npx skills add` copies references, schemas, and helper scripts. No separate `shared/` step needed.
@@ -52,7 +60,7 @@ Always run a read-only audit before making changes:
 
 ### Sandboxed Agents
 
-In Codex CLI or similar sandboxed environments, Obsidian CLI commands may need approved unsandboxed execution because the CLI talks to the running app through a local Unix socket. Each skill includes `python3 scripts/obsidian_cli.py` as the preferred wrapper.
+In Codex CLI or similar sandboxed environments, Obsidian CLI commands may need approved unsandboxed execution because the CLI talks to the running app through a local Unix socket. Each skill includes `python3 scripts/obsidian_cli.py` as the preferred wrapper; run it from the installed skill root.
 
 ## Docs
 
