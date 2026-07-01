@@ -1,0 +1,51 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    # Run once when a PR is opened or promoted from draft; never on follow-up commits.
+    types: [opened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  claude-review:
+    if: ${{ github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write # Required for Claude Code Action GitHub App token exchange.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@fad22eb3fa582b7357fc0ea48af6645851b884fd # v1.0.161
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
+          plugins: "code-review@claude-code-plugins"
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment
+
+            After completing the review, post your findings IMMEDIATELY in this
+            session, and do not rely on post-session comment capture:
+
+            1. For each actionable inline finding, call
+               mcp__github_inline_comment__create_inline_comment with
+               confirmed: true so it posts at once rather than buffering.
+            2. Always end by posting a single summary comment via
+               `gh pr comment ${{ github.event.pull_request.number }} --body "..."`,
+               including a brief verdict even when no actionable findings exist
+               so reviewers see the run completed.
+          claude_args: |
+            --setting-sources user
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git fetch:*),Bash(git diff:*)"
