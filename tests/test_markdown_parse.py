@@ -293,6 +293,8 @@ For example, a note about atomic-note quality defines the quality, compares it t
         self.assertTrue(analysis.present)
         self.assertEqual(analysis.shape, "plain-prose")
         self.assertEqual(analysis.definition_word_count, 18)
+        self.assertEqual(analysis.analogy_word_count, 19)
+        self.assertEqual(analysis.example_word_count, 21)
 
     def test_analyze_dae_plain_prose_requires_analogy(self):
         markdown = """# Plain Prose Note
@@ -323,6 +325,19 @@ One note about atomic-note quality defines the quality, compares it to a familia
         self.assertFalse(analysis.present)
         self.assertTrue(analysis.has_analogy)
         self.assertFalse(analysis.has_example)
+
+    def test_analyze_dae_plain_prose_requires_distinct_analogy_and_example_paragraphs(self):
+        markdown = """# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+For example, a plain prose note is like a labeled jar with one kind of ingredient.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertFalse(analysis.has_analogy)
+        self.assertTrue(analysis.has_example)
 
     def test_analyze_dae_flags_overlong_plain_prose_definition(self):
         markdown = """# Replication
@@ -389,6 +404,29 @@ For example, a note about atomic-note quality defines the quality, compares it t
         analysis = analyze_dae(markdown)
 
         self.assertTrue(analysis.present)
+
+    def test_analyze_dae_plain_prose_skips_target_deck_before_definition(self):
+        markdown = """# Optional Card Note
+
+TARGET DECK: General
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+
+START
+Basic
+What does the note show?
+Back: It shows one idea.
+END
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
+        self.assertEqual(analysis.shape, "plain-prose")
+        self.assertEqual(analysis.definition_word_count, 18)
 
     def test_analyze_dae_accepts_reference_and_sources_sections(self):
         content = (

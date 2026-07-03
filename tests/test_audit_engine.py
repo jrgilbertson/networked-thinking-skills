@@ -1059,6 +1059,58 @@ For example, a note about atomic-note quality defines the quality, compares it t
 
         self.assertNotIn("invalid_dae", finding_codes(row))
 
+    def test_plain_prose_dae_skips_target_deck_before_optional_card(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - optional card note
+---
+
+# Optional Card Note
+
+TARGET DECK: General
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+
+START
+Basic
+What does the note show?
+Back: It shows one idea.
+END
+""",
+            stem="202601010246 Optional Card Note",
+        )
+
+        codes = finding_codes(row)
+        self.assertNotIn("invalid_dae", codes)
+        self.assertNotIn("malformed_anki", codes)
+
+    def test_weak_plain_prose_dae_gets_weak_dae_finding(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - weak plain prose note
+---
+
+# Weak Plain Prose Note
+
+A compact note explains one idea clearly enough for later review.
+
+It is like a label.
+
+For example, a parser accepts it.
+""",
+            stem="202601010247 Weak Plain Prose Note",
+        )
+
+        codes = finding_codes(row)
+        self.assertNotIn("invalid_dae", codes)
+        self.assertIn("weak_dae", codes)
+
     def test_heading_only_non_anki_dae_is_invalid(self):
         row = self.audit_single_note(
             """---

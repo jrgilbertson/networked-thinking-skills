@@ -8,6 +8,7 @@ from typing import Iterable
 
 from config import resolve_config
 from markdown_parse import (
+    DaeAnalysis,
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
@@ -290,7 +291,7 @@ def _findings_for_note(
         finding_codes.append("multi_note")
     if _looks_like_reference_note(frontmatter, body, has_dae):
         finding_codes.append("misfiled_reference")
-    if _looks_like_weak_dae(body, has_dae, dae_analysis.definition_too_long):
+    if _looks_like_weak_dae(body, dae_analysis):
         finding_codes.append("weak_dae")
     if _contains_factual_risk(body):
         finding_codes.append("factual_risk")
@@ -358,11 +359,20 @@ def _looks_like_reference_note(frontmatter: str | None, body: str, has_dae: bool
     return has_highlights or has_source_frontmatter or is_interview_template
 
 
-def _looks_like_weak_dae(body: str, has_dae: bool, definition_too_long: bool) -> bool:
-    if definition_too_long:
+def _looks_like_weak_dae(body: str, dae_analysis: DaeAnalysis) -> bool:
+    if dae_analysis.definition_too_long:
         return False
-    if not has_dae:
+    if not dae_analysis.present:
         return _word_count(body) < 80
+    if dae_analysis.shape == "plain-prose":
+        component_counts = [
+            dae_analysis.definition_word_count,
+            dae_analysis.analogy_word_count,
+            dae_analysis.example_word_count,
+        ]
+        if all(count is not None for count in component_counts):
+            counts = [int(count) for count in component_counts]
+            return min(counts) < 6 or sum(counts) < 30
     section_counts = _dae_section_word_counts(body)
     if not section_counts:
         return False
