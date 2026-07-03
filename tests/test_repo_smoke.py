@@ -26,6 +26,11 @@ class RepoSmokeTest(unittest.TestCase):
         self.assertIn("python3 -m shared.scripts.verify_install_commands docs/install.md", text)
         self.assertIn("python3 -m shared.scripts.sync_skill_artifacts --check", text)
 
+    def test_uv_lock_is_ignored_as_local_runner_output(self):
+        text = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+        self.assertIn("uv.lock", text)
+
 
 if __name__ == "__main__":
     unittest.main()

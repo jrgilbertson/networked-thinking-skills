@@ -10,6 +10,9 @@ fixtures only.
 - Update docs when behavior, schemas, prompts, or install paths change.
 - Keep generated fixture outputs deterministic when they are committed.
 - Stage only intentional files. Ignore local caches such as `__pycache__`.
+- `uv.lock` is ignored intentionally. Use the documented `lefthook`/`python3`
+  checks as the repo validation contract; ad hoc `uv run` commands may create
+  a local lockfile.
 
 ## Required Checks
 
