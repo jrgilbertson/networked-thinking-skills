@@ -52,8 +52,16 @@ class MarkdownParseTest(unittest.TestCase):
     def test_extract_headings_includes_definition(self):
         self.assertIn("Definition", extract_headings(BASE_MARKDOWN))
 
-    def test_has_dae_sections_returns_true_for_definition_analogy_example(self):
-        self.assertTrue(has_dae_sections(BASE_MARKDOWN))
+    def test_has_dae_sections_returns_true_for_plain_prose_dae(self):
+        markdown = """# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+"""
+        self.assertTrue(has_dae_sections(markdown))
 
     def test_count_anki_blocks_returns_start_and_end_counts(self):
         self.assertEqual(count_anki_blocks(BASE_MARKDOWN), {"START": 1, "END": 1})
@@ -257,15 +265,130 @@ class MarkdownParseTest(unittest.TestCase):
     def test_extract_headings_supports_crlf_line_endings(self):
         markdown = "## Definition\r\n## Analogy\r\n## Example\r\n"
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
 
-    def test_has_dae_sections_is_case_insensitive(self):
+    def test_heading_only_dae_is_not_an_accepted_dae_shape(self):
         markdown = "## definition\n\n## ANALOGY\n\n## Example\n"
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
 
-    def test_has_dae_sections_supports_closing_hashes(self):
+    def test_heading_only_dae_with_closing_hashes_is_not_an_accepted_dae_shape(self):
         markdown = "## Definition ##\n\n## Analogy ##\n\n## Example ##\n"
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
+
+    def test_analyze_dae_accepts_plain_prose_note_shape(self):
+        markdown = """---
+title: Plain Prose Note
+---
+
+# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
+        self.assertEqual(analysis.shape, "plain-prose")
+        self.assertEqual(analysis.definition_word_count, 18)
+
+    def test_analyze_dae_plain_prose_requires_analogy(self):
+        markdown = """# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+This paragraph describes the concept again without mapping it to a familiar concrete referent.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertFalse(analysis.has_analogy)
+        self.assertTrue(analysis.has_example)
+
+    def test_analyze_dae_plain_prose_requires_for_example_prefix(self):
+        markdown = """# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+One note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertTrue(analysis.has_analogy)
+        self.assertFalse(analysis.has_example)
+
+    def test_analyze_dae_flags_overlong_plain_prose_definition(self):
+        markdown = """# Replication
+
+Replication keeps matching copies of data across multiple machines, storage systems, or regions so a service can keep serving readers, survive hardware failure, place information closer to users, recover from disasters, compare versions during repair, continue operating while individual replicas are unavailable, and rebuild safely after an outage damages local storage.
+
+Replication is like keeping the same emergency manual in several offices: each office can use its copy while updates spread.
+
+For example, a streaming service can store a popular video in several regions so viewers can fetch it nearby.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertTrue(analysis.definition_too_long)
+
+    def test_analyze_dae_rejects_heading_only_non_anki_shape(self):
+        markdown = """# Heading DAE Note
+
+## Definition
+
+A heading note explains one durable idea with DAE headings that are no longer the accepted non-Anki shape.
+
+## Analogy
+
+A heading note is like a labeled jar with dividers inside it: the labels are visible, but the prose shape is not plain.
+
+## Example
+
+For example, this note has all three headings but should still fail non-Anki DAE validation.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+
+    def test_analyze_dae_plain_prose_stops_before_trailing_labels(self):
+        markdown = """# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+Reference:
+
+For example, this trailing reference prose should not count as the DAE example paragraph.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertFalse(analysis.present)
+        self.assertFalse(analysis.has_example)
+
+    def test_analyze_dae_plain_prose_ignores_start_inside_code_block(self):
+        markdown = """# Plain Prose Note
+
+```text
+START
+```
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+"""
+        analysis = analyze_dae(markdown)
+
+        self.assertTrue(analysis.present)
 
     def test_analyze_dae_accepts_reference_and_sources_sections(self):
         content = (
@@ -378,7 +501,7 @@ END
     def test_indented_atx_headings_up_to_three_spaces_are_supported(self):
         markdown = "   ## Definition\n   ## Analogy\n   ## Example\n"
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
 
     def test_four_space_indented_atx_markers_are_not_headings(self):
         markdown = "    ## Definition\n    ## Analogy\n    ## Example\n"
@@ -447,7 +570,7 @@ END
 [[After Closer]]
 """
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
         self.assertEqual(extract_wikilinks(markdown), ["Outside Fence", "After Closer"])
 
     def test_fence_inside_html_comment_does_not_hide_later_structure(self):
@@ -517,7 +640,7 @@ Analogy text.
 ## Example
 Example text.
 """
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
         self.assertEqual(extract_wikilinks(markdown), ["Body Note"])
 
     def test_extract_wikilinks_ignores_inline_code_spans(self):
@@ -550,7 +673,7 @@ Example.
 """
         self.assertEqual(extract_headings(markdown), ["Definition", "Analogy", "Example"])
         self.assertEqual(extract_wikilinks(markdown), ["Parent Note"])
-        self.assertTrue(has_dae_sections(markdown))
+        self.assertFalse(has_dae_sections(markdown))
 
 
 class DaeHeadingSectionsTest(unittest.TestCase):

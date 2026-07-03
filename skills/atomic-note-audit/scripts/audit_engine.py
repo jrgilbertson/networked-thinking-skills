@@ -19,7 +19,10 @@ from finding_codes import FINDING_MESSAGES, FINDING_RECOMMENDATION_MODES
 from scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_clean, compute_final_score
 
 
-VERSION = "1.0.0"
+SCHEMA_VERSION = "1.0.0"
+DOCTRINE_VERSION = "1.0.1"
+RUBRIC_VERSION = "1.0.0"
+PROMPT_VERSION = "1.0.0"
 DETERMINISTIC_FIXTURE_TIMESTAMP = "2000-01-01T00:00:00Z"
 DIMENSION_NAMES = (
     "structure",
@@ -229,7 +232,7 @@ def _audit_note(
     score = compute_final_score(findings)
 
     row: dict[str, object] = {
-        "schema_version": VERSION,
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "row_status": "complete",
         "note_path": relative_path,
@@ -252,9 +255,9 @@ def _audit_note(
         "factual_risk": fact_check_required,
         "fact_check_required": fact_check_required,
         "config_snapshot": dict(config),
-        "doctrine_version": VERSION,
-        "rubric_version": VERSION,
-        "prompt_version": VERSION,
+        "doctrine_version": DOCTRINE_VERSION,
+        "rubric_version": RUBRIC_VERSION,
+        "prompt_version": PROMPT_VERSION,
     }
     if fact_check_required:
         row["factual_risk_reason"] = "Contains empirical, current, attributed, or sensitive-domain claims that need verification."
@@ -625,7 +628,7 @@ def _build_manifest(
         priority = row["priority"] if row["priority"] is not None else NO_CHANGE_BUCKET
         priority_counts[str(priority)] += 1
     return {
-        "schema_version": VERSION,
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "started_at": started_at,
         "ended_at": ended_at,

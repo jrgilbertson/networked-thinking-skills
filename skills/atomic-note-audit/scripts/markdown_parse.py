@@ -17,10 +17,10 @@ CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
 TIMESTAMP_PREFIX_RE = re.compile(r"^\d{12}\s+")
 BACK_LINE_RE = re.compile(r"^[ \t]*Back:[ \t]*(.*)$", re.IGNORECASE)
 EXTRA_LINE_RE = re.compile(r"^[ \t]*Extra:[ \t]*(.*)$", re.IGNORECASE)
-# Matches a plain trailing Reference:/Sources: label line (not a ## heading section).
-# Used to clamp DAE section boundaries so label content is not counted as DAE text.
+# Matches a plain trailing Reference:/Sources: label line.
+# Used to clamp DAE boundaries so label content is not counted as DAE text.
 TRAILING_LABEL_LINE_RE = re.compile(
-    r"^(?:#{1,6}[ \t]+)?(?:reference|source)s?:?[ \t]*$",
+    r"^(?:reference|source)s?:?[ \t]*$",
     re.IGNORECASE,
 )
 
@@ -375,17 +375,11 @@ def extract_headings(markdown: str) -> list[str]:
 
 
 def has_dae_sections(markdown: str) -> bool:
-    headings = {heading.casefold() for heading in extract_headings(markdown)}
-    if {"definition", "analogy", "example"}.issubset(headings):
-        return True
-    return any(
-        analysis.has_definition and analysis.has_analogy and analysis.has_example
-        for analysis in (_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
-    )
+    return analyze_dae(markdown).present
 
 
 def analyze_dae(markdown: str) -> DaeAnalysis:
-    analyses = [_analyze_heading_dae(markdown)]
+    analyses = [_analyze_plain_prose_dae(markdown)]
     analyses.extend(_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
     return max(analyses, key=_analysis_rank)
 
@@ -414,16 +408,33 @@ def _analysis_rank(analysis: DaeAnalysis) -> tuple[int, int, int, int]:
     )
 
 
-def _analyze_heading_dae(markdown: str) -> DaeAnalysis:
-    sections = _dae_heading_sections(markdown)
-    if not {"definition", "analogy", "example"}.issubset(sections):
-        return DaeAnalysis(present=False, shape="headings")
+def _analyze_plain_prose_dae(markdown: str) -> DaeAnalysis:
+    paragraphs = _prose_paragraphs(_plain_prose_dae_region(markdown))
+    if not paragraphs:
+        return DaeAnalysis(present=False, shape="plain-prose")
     return _build_dae_analysis(
-        "headings",
-        definition=sections["definition"],
-        analogy_paragraphs=_prose_paragraphs(sections["analogy"]),
-        example_paragraphs=_prose_paragraphs(sections["example"]),
+        "plain-prose",
+        definition=paragraphs[0],
+        analogy_paragraphs=paragraphs[1:],
+        example_paragraphs=paragraphs[1:],
     )
+
+
+def _plain_prose_dae_region(markdown: str) -> str:
+    _, body = extract_frontmatter(markdown)
+    body_lines = body.splitlines()
+    structural_lines = _structural_markdown(markdown).splitlines()
+    start_line = 0
+    for line_number, level, _ in extract_structural_heading_lines(markdown):
+        if level == 1:
+            start_line = line_number + 1
+            break
+    end_line = len(body_lines)
+    for index, line in enumerate(structural_lines[start_line:], start=start_line):
+        if line.strip() == "START" or TRAILING_LABEL_LINE_RE.match(line):
+            end_line = index
+            break
+    return "\n".join(body_lines[start_line:end_line]).strip()
 
 
 def _analyze_anki_card_dae(card_text: str) -> DaeAnalysis:
@@ -505,7 +516,7 @@ def _dae_heading_sections(markdown: str) -> dict[str, str]:
         for line_number, level, heading in extract_structural_heading_lines(markdown)
     ]
     # Pre-compute the first trailing-label line index so each section can be
-    # clamped to exclude Reference:/Sources: plain labels (not ## headings).
+    # clamped to exclude plain trailing Reference:/Sources: label content.
     first_trailing_label: int = len(body_lines)
     for i, line in enumerate(body_lines):
         if TRAILING_LABEL_LINE_RE.match(line):

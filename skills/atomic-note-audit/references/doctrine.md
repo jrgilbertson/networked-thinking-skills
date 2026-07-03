@@ -13,10 +13,11 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 - Agent-access source lines, such as `Codex 5.5 last accessed [[YYYY-MM-DD]]`,
   use the actual local date when the note is created or edited, not a copied
   example date from prior work.
-- Optional `Reference:` section (singular label, bulleted) after the Anki `END`
-  block and before `Sources:`, for links to related atomic notes, figures, and
-  compact reference material (formulas, lookup tables, commands) worth
-  preserving but not worth testing directly.
+- Optional `Reference:` section (singular label, bulleted) after the DAE prose,
+  or after the Anki `END` block when Anki is present, and before `Sources:`,
+  for links to related atomic notes, figures, and compact reference material
+  (formulas, lookup tables, commands) worth preserving but not worth testing
+  directly.
 
 ## DAE Rules
 
@@ -50,10 +51,11 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 ## Anki
 
 Anki cards are optional. A non-Anki atomic note still needs DAE. Write non-Anki
-atomic notes with explicit `## Definition`, `## Analogy`, and `## Example`
-headings so the structure is readable and deterministic audits can verify it.
-When Anki markers are present, `START` and `END` blocks must be balanced and
-scoped to the note's concept.
+atomic notes as plain prose after the H1: first a Definition paragraph, then an
+Analogy paragraph, then an Example paragraph that starts with `For example,`.
+Do not add `## Definition`, `## Analogy`, or `## Example` headings solely to
+mark DAE in non-Anki notes. When Anki markers are present, `START` and `END`
+blocks must be balanced and scoped to the note's concept.
 
 `Basic` cards can store the Definition, Analogy, and Example in the `Back:`
 content. `Cloze` cards can store the Definition in the cloze body and keep the
@@ -125,8 +127,9 @@ Do not use a `DELETE` marker for this repair, because there is no existing Anki
 note to delete.
 
 Reference material that should be available in Obsidian but not tested in Anki
-belongs in the `Reference:` section, outside the Anki block, after `END` and
-before `Sources:`. Write it as a bulleted list and keep it compact and exact.
+belongs in the `Reference:` section after the DAE prose, or outside the Anki
+block after `END` when Anki is present, and before `Sources:`. Write it as a
+bulleted list and keep it compact and exact.
 Typical uses are links to related atomic notes, figures, formulas, lookup
 tables, worked-example calculations, syntax snippets, and commands that support
 the concept but would make a poor flashcard.

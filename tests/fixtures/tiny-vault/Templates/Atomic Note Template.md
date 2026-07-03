@@ -6,22 +6,16 @@ tags:
 
 # {{title}}
 
-## Definition
-
 State the single idea clearly.
-
-## Analogy
 
 Compare the idea to a familiar situation.
 
-## Example
-
 Show the idea in a concrete case.
 
-## Links
+Reference:
 
 - [[Related note]]
 
-## Sources
+Sources:
 
 - Source title.

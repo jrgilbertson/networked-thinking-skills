@@ -14,26 +14,20 @@ tags:
 
 # Clean DAE note
 
-## Definition
-
 A clean atomic note explains one durable idea in plain language and keeps the
 claim small enough to test against examples.
-
-## Analogy
 
 It is like labeling one jar in a pantry instead of writing a recipe across every
 container.
 
-## Example
-
 For example, a note about "good atomic note quality" names the quality, shows a
 useful contrast, and links to [[Atomic Note Quality]] for review context.
 
-## Links
+Reference:
 
 - [[Atomic Note Quality]]
 
-## Sources
+Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
@@ -101,21 +95,15 @@ tags:
 
 # Missing parent note
 
-## Definition
-
 An unparented atomic note has a focused idea but no link to a structure note
 that explains where the idea belongs.
 
-## Analogy
-
 It is like a labeled folder left on a desk instead of filed in a cabinet.
-
-## Example
 
 For example, this note defines a review concern and gives a concrete case, but
 it omits any structure-note parent link.
 
-## Sources
+Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
@@ -127,24 +115,18 @@ tags:
 
 # Factual risk note
 
-## Definition
-
 All memory techniques always work for every learner in every learning context.
 
-## Analogy
-
 This is like claiming one pair of shoes fits every person in every race.
-
-## Example
 
 For example, a learner who improves with spaced repetition proves that every
 learner will improve with any memory technique.
 
-## Links
+Reference:
 
 - [[Atomic Note Quality]]
 
-## Sources
+Sources:
 
 1. Synthetic fixture claim log, 2026.
 """,
@@ -157,16 +139,10 @@ tags:
 
 # Optional Anki note
 
-## Definition
-
 Optional Anki cards can reinforce an atomic note when the prompt tests the
 central claim instead of repeating the heading.
 
-## Analogy
-
 It is like a smoke alarm for memory: useful when it checks the right risk.
-
-## Example
 
 For example, an optional Anki card can ask which claim the note is testing
 without exposing the answer inside the prompt.
@@ -177,11 +153,11 @@ What should an optional Anki card test?
 Back: The central claim of the note.
 END
 
-## Links
+Reference:
 
 - [[Atomic Note Quality]]
 
-## Sources
+Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
@@ -193,15 +169,9 @@ tags:
 
 # Malformed Anki note
 
-## Definition
-
 A malformed Anki note contains a card boundary that never closes.
 
-## Analogy
-
 It is like opening a quotation mark and forgetting to close it.
-
-## Example
 
 For example, this note opens an Anki card block and never writes the matching
 END marker.
@@ -211,11 +181,11 @@ Basic
 What is wrong with this card?
 Back: It starts but never ends.
 
-## Links
+Reference:
 
 - [[Atomic Note Quality]]
 
-## Sources
+Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
@@ -228,25 +198,19 @@ tags:
 
 # Duplicate candidate note
 
-## Definition
-
 Atomic-note quality improves when one note explains one durable idea with a
 definition, analogy, example, links, and sources.
 
-## Analogy
-
 It is like checking a single ingredient before adding it to a recipe.
-
-## Example
 
 For example, this is an overlap candidate for the quality criteria collected in
 [[Atomic Note Quality]] and may duplicate the clean DAE example.
 
-## Links
+Reference:
 
 - [[Atomic Note Quality]]
 
-## Sources
+Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
@@ -259,17 +223,11 @@ tags:
 
 # Reference and sources note
 
-## Definition
-
 A source-backed atomic note keeps one durable idea in DAE form and adds optional
 trailing sections for connections and provenance.
 
-## Analogy
-
 It is like a museum placard: the caption explains the piece while a small line
 beneath it credits where the piece came from.
-
-## Example
 
 For example, a note defines a concept, links to a sibling note under Reference,
 and lists its origin under Sources.
@@ -311,23 +269,17 @@ tags:
 
 # {{title}}
 
-## Definition
-
 State the single idea clearly.
-
-## Analogy
 
 Compare the idea to a familiar situation.
 
-## Example
-
 Show the idea in a concrete case.
 
-## Links
+Reference:
 
 - [[Related note]]
 
-## Sources
+Sources:
 
 - Source title.
 """,

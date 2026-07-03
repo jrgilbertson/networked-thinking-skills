@@ -66,6 +66,13 @@ pre-commit check before handoff.
 
 ## Documentation And Contracts
 
+- `docs/solutions/` is the searchable knowledge store for documented fixes,
+  conventions, workflow patterns, and decisions, organized by category with
+  YAML frontmatter (`module`, `tags`, `problem_type`); relevant when
+  implementing or debugging in documented areas.
+- `CONCEPTS.md` defines shared project vocabulary for Networked Thinking
+  entities, named processes, and status concepts; relevant when orienting to
+  domain language.
 - Update docs when behavior, schemas, prompts, install paths, or user workflows
   change.
 - Use SemVer for package and contract versions.
