@@ -57,6 +57,19 @@ class AuditEngineTest(unittest.TestCase):
             self.assertFalse(row["pending_model"])
             self.assertIsNone(row["model_judgment"])
 
+    def test_audit_versions_are_contract_specific(self):
+        row = self.audit_single_note(
+            VALID_DAE_MARKDOWN,
+            stem="202601010112 Versioned Test Note",
+        )
+        _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
+
+        self.assertEqual(row["schema_version"], "1.0.0")
+        self.assertEqual(row["doctrine_version"], "1.0.1")
+        self.assertEqual(row["rubric_version"], "1.0.0")
+        self.assertEqual(row["prompt_version"], "1.0.0")
+        self.assertEqual(manifest["schema_version"], "1.0.0")
+
     def test_structure_parent_match_preserves_periods_in_note_title(self):
         row = self.audit_single_note(
             VALID_DAE_MARKDOWN,
@@ -1025,6 +1038,154 @@ END
         )
 
         self.assertNotIn("invalid_dae", {finding["code"] for finding in row["findings"]})
+
+    def test_plain_prose_non_anki_dae_is_valid(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - plain prose note
+---
+
+# Plain Prose Note
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+""",
+            stem="202601010241 Plain Prose Note",
+        )
+
+        self.assertNotIn("invalid_dae", finding_codes(row))
+
+    def test_plain_prose_dae_skips_target_deck_before_optional_card(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - optional card note
+---
+
+# Optional Card Note
+
+TARGET DECK: General
+
+A plain prose note explains one durable idea in visible paragraphs so deterministic review can inspect the concept.
+
+A plain prose note is like a labeled jar in a pantry: one container holds one kind of ingredient.
+
+For example, a note about atomic-note quality defines the quality, compares it to a familiar label, and links a review hub.
+
+START
+Basic
+What does the note show?
+Back: It shows one idea.
+END
+""",
+            stem="202601010246 Optional Card Note",
+        )
+
+        codes = finding_codes(row)
+        self.assertNotIn("invalid_dae", codes)
+        self.assertNotIn("malformed_anki", codes)
+
+    def test_weak_plain_prose_dae_gets_weak_dae_finding(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - weak plain prose note
+---
+
+# Weak Plain Prose Note
+
+A compact note explains one idea clearly enough for later review.
+
+It is like a label.
+
+For example, a parser accepts it.
+""",
+            stem="202601010247 Weak Plain Prose Note",
+        )
+
+        codes = finding_codes(row)
+        self.assertNotIn("invalid_dae", codes)
+        self.assertIn("weak_dae", codes)
+
+    def test_heading_only_non_anki_dae_is_invalid(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - heading dae note
+---
+
+# Heading DAE Note
+
+## Definition
+
+A heading DAE note explains one durable idea with headings that no longer define the accepted non-Anki shape.
+
+## Analogy
+
+A heading DAE note is like a jar with dividers: the labels are visible, but the note is not plain prose.
+
+## Example
+
+For example, this note has all three DAE headings but should still fail non-Anki DAE validation.
+""",
+            stem="202601010242 Heading DAE Note",
+        )
+
+        self.assertIn("invalid_dae", finding_codes(row))
+
+    def test_overlong_plain_prose_definition_gets_specific_finding(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - replication
+---
+
+# Replication
+
+Replication keeps matching copies of data across multiple machines, storage systems, or regions so a service can keep serving readers, survive hardware failure, place information closer to users, recover from disasters, compare versions during repair, continue operating while individual replicas are unavailable, and rebuild safely after an outage damages local storage.
+
+Replication is like keeping the same emergency manual in several offices: each office can use its copy while updates spread.
+
+For example, a streaming service can store a popular video in several regions so viewers can fetch it nearby.
+""",
+            stem="202601010243 Replication Plain Prose",
+        )
+
+        codes = finding_codes(row)
+        self.assertIn("definition_too_long", codes)
+        self.assertNotIn("invalid_dae", codes)
+
+    def test_plain_prose_dae_ignores_trailing_reference_and_sources(self):
+        row = self.audit_single_note(
+            """---
+aliases:
+  - reference and sources example
+---
+
+# Reference and Sources Example
+
+A reference-backed note keeps one durable idea in visible DAE paragraphs before optional supporting material.
+
+A reference-backed note is like a museum placard: the caption explains the piece before the credit line.
+
+For example, a note can define a concept, link a sibling under Reference, and list an origin under Sources.
+
+Reference:
+
+- Related: [[Atomic Note Quality]].
+
+Sources:
+
+1. Synthetic source.
+""",
+            stem="202601010244 Reference and Sources Example",
+        )
+
+        self.assertNotIn("invalid_dae", finding_codes(row))
 
     def test_overlong_definition_gets_specific_finding(self):
         row = self.audit_single_note(

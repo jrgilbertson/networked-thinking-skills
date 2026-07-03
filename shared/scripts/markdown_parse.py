@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 import re
@@ -17,12 +18,13 @@ CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
 TIMESTAMP_PREFIX_RE = re.compile(r"^\d{12}\s+")
 BACK_LINE_RE = re.compile(r"^[ \t]*Back:[ \t]*(.*)$", re.IGNORECASE)
 EXTRA_LINE_RE = re.compile(r"^[ \t]*Extra:[ \t]*(.*)$", re.IGNORECASE)
-# Matches a plain trailing Reference:/Sources: label line (not a ## heading section).
-# Used to clamp DAE section boundaries so label content is not counted as DAE text.
+# Matches a plain trailing Reference:/Sources: label line.
+# Used to clamp DAE boundaries so label content is not counted as DAE text.
 TRAILING_LABEL_LINE_RE = re.compile(
-    r"^(?:#{1,6}[ \t]+)?(?:reference|source)s?:?[ \t]*$",
+    r"^(?:reference|source)s?:?[ \t]*$",
     re.IGNORECASE,
 )
+TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,8 @@ class DaeAnalysis:
     present: bool
     shape: str | None = None
     definition_word_count: int | None = None
+    analogy_word_count: int | None = None
+    example_word_count: int | None = None
     definition_too_short: bool = False
     definition_too_long: bool = False
     has_definition: bool = False
@@ -375,17 +379,11 @@ def extract_headings(markdown: str) -> list[str]:
 
 
 def has_dae_sections(markdown: str) -> bool:
-    headings = {heading.casefold() for heading in extract_headings(markdown)}
-    if {"definition", "analogy", "example"}.issubset(headings):
-        return True
-    return any(
-        analysis.has_definition and analysis.has_analogy and analysis.has_example
-        for analysis in (_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
-    )
+    return analyze_dae(markdown).present
 
 
 def analyze_dae(markdown: str) -> DaeAnalysis:
-    analyses = [_analyze_heading_dae(markdown)]
+    analyses = [_analyze_plain_prose_dae(markdown)]
     analyses.extend(_analyze_anki_card_dae(card) for card in _extract_anki_card_texts(markdown))
     return max(analyses, key=_analysis_rank)
 
@@ -414,15 +412,55 @@ def _analysis_rank(analysis: DaeAnalysis) -> tuple[int, int, int, int]:
     )
 
 
-def _analyze_heading_dae(markdown: str) -> DaeAnalysis:
-    sections = _dae_heading_sections(markdown)
-    if not {"definition", "analogy", "example"}.issubset(sections):
-        return DaeAnalysis(present=False, shape="headings")
-    return _build_dae_analysis(
-        "headings",
-        definition=sections["definition"],
-        analogy_paragraphs=_prose_paragraphs(sections["analogy"]),
-        example_paragraphs=_prose_paragraphs(sections["example"]),
+def _analyze_plain_prose_dae(markdown: str) -> DaeAnalysis:
+    paragraphs = _prose_paragraphs(_plain_prose_dae_region(markdown))
+    if not paragraphs:
+        return DaeAnalysis(present=False, shape="plain-prose")
+    return _build_plain_prose_dae_analysis(paragraphs)
+
+
+def _plain_prose_dae_region(markdown: str) -> str:
+    _, body = extract_frontmatter(markdown)
+    body_lines = body.splitlines()
+    structural_lines = _structural_markdown(markdown).splitlines()
+    start_line = 0
+    for line_number, level, _ in extract_structural_heading_lines(markdown):
+        if level == 1:
+            start_line = line_number + 1
+            break
+    end_line = len(body_lines)
+    for index, line in enumerate(structural_lines[start_line:], start=start_line):
+        if line.strip() == "START" or TRAILING_LABEL_LINE_RE.match(line):
+            end_line = index
+            break
+    region_lines = []
+    for line, structural_line in zip(
+        body_lines[start_line:end_line],
+        structural_lines[start_line:end_line],
+    ):
+        if TARGET_DECK_LINE_RE.match(structural_line):
+            continue
+        region_lines.append(line)
+    return "\n".join(region_lines).strip()
+
+
+def _build_plain_prose_dae_analysis(paragraphs: list[str]) -> DaeAnalysis:
+    component_paragraphs = paragraphs[1:]
+    analogy_index = _first_matching_index(
+        component_paragraphs,
+        lambda paragraph: _looks_like_analogy(paragraph) and not _starts_with_example(paragraph),
+    )
+    min_example_index = 0 if analogy_index is None else analogy_index + 1
+    example_index = _first_matching_index(
+        component_paragraphs,
+        _starts_with_example,
+        start=min_example_index,
+    )
+    return _dae_analysis_from_components(
+        "plain-prose",
+        definition=paragraphs[0],
+        analogy=component_paragraphs[analogy_index] if analogy_index is not None else None,
+        example=component_paragraphs[example_index] if example_index is not None else None,
     )
 
 
@@ -473,10 +511,29 @@ def _build_dae_analysis(
     analogy_paragraphs: list[str],
     example_paragraphs: list[str],
 ) -> DaeAnalysis:
+    analogy = _first_matching_paragraph(analogy_paragraphs, _looks_like_analogy)
+    example = _first_matching_paragraph(example_paragraphs, _starts_with_example)
+    return _dae_analysis_from_components(
+        shape,
+        definition=definition,
+        analogy=analogy,
+        example=example,
+    )
+
+
+def _dae_analysis_from_components(
+    shape: str,
+    *,
+    definition: str,
+    analogy: str | None,
+    example: str | None,
+) -> DaeAnalysis:
     definition_word_count = count_rendered_words(definition)
     has_definition = definition_word_count > 0
-    has_analogy = any(_looks_like_analogy(paragraph) for paragraph in analogy_paragraphs)
-    has_example = any(_starts_with_example(paragraph) for paragraph in example_paragraphs)
+    analogy_word_count = count_rendered_words(analogy) if analogy is not None else None
+    example_word_count = count_rendered_words(example) if example is not None else None
+    has_analogy = analogy_word_count is not None and analogy_word_count > 0
+    has_example = example_word_count is not None and example_word_count > 0
     definition_too_short = has_definition and definition_word_count < 10
     definition_too_long = definition_word_count > 50
     return DaeAnalysis(
@@ -489,6 +546,8 @@ def _build_dae_analysis(
         ),
         shape=shape,
         definition_word_count=definition_word_count if has_definition else None,
+        analogy_word_count=analogy_word_count,
+        example_word_count=example_word_count,
         definition_too_short=definition_too_short,
         definition_too_long=definition_too_long,
         has_definition=has_definition,
@@ -505,7 +564,7 @@ def _dae_heading_sections(markdown: str) -> dict[str, str]:
         for line_number, level, heading in extract_structural_heading_lines(markdown)
     ]
     # Pre-compute the first trailing-label line index so each section can be
-    # clamped to exclude Reference:/Sources: plain labels (not ## headings).
+    # clamped to exclude plain trailing Reference:/Sources: label content.
     first_trailing_label: int = len(body_lines)
     for i, line in enumerate(body_lines):
         if TRAILING_LABEL_LINE_RE.match(line):
@@ -609,6 +668,26 @@ def _looks_like_analogy(paragraph: str) -> bool:
 
 def _starts_with_example(paragraph: str) -> bool:
     return re.match(r"^[ \t]*(?:[-*+][ \t]+)?For example,(?:\s|$)", paragraph, re.IGNORECASE) is not None
+
+
+def _first_matching_paragraph(
+    paragraphs: list[str],
+    predicate: Callable[[str], bool],
+) -> str | None:
+    index = _first_matching_index(paragraphs, predicate)
+    return paragraphs[index] if index is not None else None
+
+
+def _first_matching_index(
+    paragraphs: list[str],
+    predicate: Callable[[str], bool],
+    *,
+    start: int = 0,
+) -> int | None:
+    for index, paragraph in enumerate(paragraphs[start:], start=start):
+        if predicate(paragraph):
+            return index
+    return None
 
 
 def _render_wikilinks_for_word_count(markdown: str) -> str:

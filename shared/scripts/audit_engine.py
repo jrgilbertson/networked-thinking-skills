@@ -8,6 +8,7 @@ from typing import Iterable
 
 from shared.scripts.config import resolve_config
 from shared.scripts.markdown_parse import (
+    DaeAnalysis,
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
@@ -19,7 +20,10 @@ from shared.scripts.finding_codes import FINDING_MESSAGES, FINDING_RECOMMENDATIO
 from shared.scripts.scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_clean, compute_final_score
 
 
-VERSION = "1.0.0"
+SCHEMA_VERSION = "1.0.0"
+DOCTRINE_VERSION = "1.0.1"
+RUBRIC_VERSION = "1.0.0"
+PROMPT_VERSION = "1.0.0"
 DETERMINISTIC_FIXTURE_TIMESTAMP = "2000-01-01T00:00:00Z"
 DIMENSION_NAMES = (
     "structure",
@@ -229,7 +233,7 @@ def _audit_note(
     score = compute_final_score(findings)
 
     row: dict[str, object] = {
-        "schema_version": VERSION,
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "row_status": "complete",
         "note_path": relative_path,
@@ -252,9 +256,9 @@ def _audit_note(
         "factual_risk": fact_check_required,
         "fact_check_required": fact_check_required,
         "config_snapshot": dict(config),
-        "doctrine_version": VERSION,
-        "rubric_version": VERSION,
-        "prompt_version": VERSION,
+        "doctrine_version": DOCTRINE_VERSION,
+        "rubric_version": RUBRIC_VERSION,
+        "prompt_version": PROMPT_VERSION,
     }
     if fact_check_required:
         row["factual_risk_reason"] = "Contains empirical, current, attributed, or sensitive-domain claims that need verification."
@@ -287,7 +291,7 @@ def _findings_for_note(
         finding_codes.append("multi_note")
     if _looks_like_reference_note(frontmatter, body, has_dae):
         finding_codes.append("misfiled_reference")
-    if _looks_like_weak_dae(body, has_dae, dae_analysis.definition_too_long):
+    if _looks_like_weak_dae(body, dae_analysis):
         finding_codes.append("weak_dae")
     if _contains_factual_risk(body):
         finding_codes.append("factual_risk")
@@ -355,11 +359,20 @@ def _looks_like_reference_note(frontmatter: str | None, body: str, has_dae: bool
     return has_highlights or has_source_frontmatter or is_interview_template
 
 
-def _looks_like_weak_dae(body: str, has_dae: bool, definition_too_long: bool) -> bool:
-    if definition_too_long:
+def _looks_like_weak_dae(body: str, dae_analysis: DaeAnalysis) -> bool:
+    if dae_analysis.definition_too_long:
         return False
-    if not has_dae:
+    if not dae_analysis.present:
         return _word_count(body) < 80
+    if dae_analysis.shape == "plain-prose":
+        component_counts = [
+            dae_analysis.definition_word_count,
+            dae_analysis.analogy_word_count,
+            dae_analysis.example_word_count,
+        ]
+        if all(count is not None for count in component_counts):
+            counts = [int(count) for count in component_counts]
+            return min(counts) < 6 or sum(counts) < 30
     section_counts = _dae_section_word_counts(body)
     if not section_counts:
         return False
@@ -625,7 +638,7 @@ def _build_manifest(
         priority = row["priority"] if row["priority"] is not None else NO_CHANGE_BUCKET
         priority_counts[str(priority)] += 1
     return {
-        "schema_version": VERSION,
+        "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
         "started_at": started_at,
         "ended_at": ended_at,
