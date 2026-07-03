@@ -76,6 +76,9 @@ pre-commit check before handoff.
 
 - Prefer `rg`/`rg --files` for searching.
 - Stage only intentional files. Ignore local caches such as `__pycache__`.
+- `uv.lock` is ignored intentionally: repo validation uses the documented
+  `python3`/`lefthook` commands, and `uv run` may create a local project
+  lockfile when used ad hoc.
 - Keep changes small and preserve deterministic outputs.
 
 <!-- BEGIN COMPOUND CODEX TOOL MAP -->
