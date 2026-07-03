@@ -1,6 +1,7 @@
 ---
 title: Plain-Prose DAE Contract Migrations Need Parser, Fixture, and Version Alignment
 date: 2026-07-03
+last_updated: 2026-07-03
 category: docs/solutions/conventions
 module: networked-thinking atomic-note audit
 problem_type: convention
@@ -29,7 +30,11 @@ Start from the canonical shared source for generated runtime artifacts. Update s
 
 Keep the deterministic parser contract narrow and explicit. For the plain-prose DAE migration, `has_dae_sections()` became a thin wrapper around `analyze_dae()`, and `analyze_dae()` evaluates accepted shapes rather than raw heading presence. Heading-only DAE can still be extracted by legacy helper tests, but it is no longer a valid non-Anki analysis candidate.
 
-Use existing parser primitives before adding new semantics. The plain-prose candidate reuses the same rendered-word count, paragraph extraction, analogy detection, and `For example,` prefix check that Basic-card parsing already uses. Its body window starts after the H1 and stops before structural Anki `START` or plain trailing `Reference:` / `Sources:` labels, using structural markdown so code-block markers do not terminate the region.
+Use existing parser primitives before adding new semantics. The plain-prose candidate reuses the same rendered-word count, paragraph extraction, analogy detection, and `For example,` prefix check that Basic-card parsing already uses. Its body window starts after the H1, skips structural `TARGET DECK:` metadata, and stops before structural Anki `START` or plain trailing `Reference:` / `Sources:` labels, using structural markdown so code-block markers do not terminate the region.
+
+Keep component selection paragraph-aware. A plain-prose note needs separate Definition, Analogy, and Example paragraphs in that order. The same `For example,` paragraph should not satisfy both the analogy detector and the example detector, even if it contains wording like `is like`.
+
+Keep quality heuristics shape-aware. Headingless prose cannot reuse `## Definition` / `## Analogy` / `## Example` section word counts, so the DAE analysis should carry the selected component word counts forward. The audit can then preserve `weak_dae` findings for short plain-prose Analogy or Example paragraphs without changing Basic or Cloze card behavior.
 
 Keep version bumps contract-specific. A doctrine-only behavior change should bump the doctrine contract version while leaving schema, rubric, and prompt versions unchanged. Tests should assert those fields separately so future migrations do not collapse them back into one version constant.
 
@@ -67,7 +72,7 @@ def has_dae_sections(markdown: str) -> bool:
     return analyze_dae(markdown).present
 ```
 
-A complete implementation also needs audit-level tests, not just parser unit tests. Parser tests prove the shape decision; audit tests prove the user-facing finding behavior, such as valid plain-prose notes avoiding `invalid_dae` and overlong plain-prose definitions receiving `definition_too_long`.
+A complete implementation also needs audit-level tests, not just parser unit tests. Parser tests prove the shape decision; audit tests prove the user-facing finding behavior, such as valid plain-prose notes avoiding `invalid_dae`, overlong plain-prose definitions receiving `definition_too_long`, short component paragraphs receiving `weak_dae`, and optional Anki metadata not being mistaken for the visible Definition.
 
 ## Related
 
