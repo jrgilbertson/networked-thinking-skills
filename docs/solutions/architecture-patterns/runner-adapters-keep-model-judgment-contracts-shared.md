@@ -55,10 +55,12 @@ retryable because splitting the batch can recover useful model output. Local
 runner launch failures, nonzero command exits, and invalid command templates
 should surface as invocation failures without recursive batch splitting.
 
-Keep adapter-specific options local to the selected adapter. Codex flags such as
-model, sandbox, binary path, and user-config loading should not be accepted on a
-generic command runner path. This prevents a runner-first CLI from becoming a
-Codex-shaped command with a non-Codex escape hatch.
+Keep adapter-specific options local to the selected adapter in both directions.
+Codex flags such as model, sandbox, binary path, and user-config loading should
+not be accepted on a generic command runner path, and command templates should
+not be accepted on the Codex runner path. This prevents a runner-first CLI from
+becoming a Codex-shaped command with a non-Codex escape hatch or silently
+ignoring a local command the operator meant to run.
 
 Be explicit about filesystem coordinates across process boundaries. The generic
 command runner executes with the vault as its working directory so local agents
@@ -131,6 +133,13 @@ The final response is either stdout or the file path supplied as `{output_path}`
 If a command template needs literal braces, operators escape them as doubled
 braces; if it includes path placeholders, docs should show those placeholders
 quoted because raw directories may contain spaces.
+
+Reject ambiguous adapter configuration before invocation. A supplied
+`--command` without `--runner command` should fail at the CLI boundary instead
+of falling back to the Codex compatibility path. Malformed templates should also
+collapse into one invocation-failure contract: catch missing names, positional
+placeholders, attribute placeholders, and format syntax errors before the runner
+starts, then report an invalid command template without batch splitting.
 
 Tests should cover both adapter dispatch and shared collector behavior:
 
