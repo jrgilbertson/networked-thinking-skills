@@ -27,5 +27,11 @@ The project-specific contract for valid Atomic Note shape, authoring rules, Anki
 ### Deterministic Audit
 The non-model review path that evaluates Atomic Notes from structural and textual rules before any model judgment is involved.
 
+### Model Judgment Runner
+A local agent invocation path for model judgment collection that executes the shared audit prompt and returns validated model judgment objects without changing downstream JSONL contracts.
+
+### Runner Adapter
+The runner-specific boundary that owns prompt handoff, agent command invocation, final response capture, raw logs, and safety flags while leaving batching, parsing, validation, and retry behavior to the shared collector.
+
 ### Generated Skill Artifact
 A checked-in installable skill copy of a canonical shared reference or helper that must stay synchronized with its shared source.

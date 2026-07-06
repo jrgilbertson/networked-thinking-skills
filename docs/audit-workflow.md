@@ -91,13 +91,27 @@ vault-relative path:
 python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
 
-For Codex CLI, collect exhaustive model judgments in validated batches:
+Collect exhaustive model judgments in validated batches by selecting a local
+agent runner. Codex CLI remains supported as one runner:
 
 ```bash
-python3 scripts/collect_model_judgments.py --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
+python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
 ```
 
-The collector writes raw prompts and agent stdout/stderr to `--raw-dir`. Those
+For local agent CLIs that accept the prompt on stdin and write the final response
+to stdout or a file, use the generic command runner:
+
+```bash
+python3 scripts/collect_model_judgments.py --runner command --command 'local-agent --write-final-response "{output_path}"' --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw
+```
+
+The command runner sends the prompt on stdin. If the command writes the final
+JSONL response to stdout, stdout is parsed. If it writes to `{output_path}`, that
+file is parsed instead. Quote path placeholders such as `{output_path}`,
+`{stdout_path}`, and `{stderr_path}` in command templates when paths may contain
+spaces. Use doubled braces for literal `{` or `}` characters. The collector
+writes raw prompts and runner stdout/stderr
+to `--raw-dir`. Those
 files contain private note content, so keep `--raw-dir` outside the vault unless
 the user explicitly wants private prompt logs stored there. The collector is
 resumable: if `model-judgments.jsonl` already contains valid judgments, it skips
