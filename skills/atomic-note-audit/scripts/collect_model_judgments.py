@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -30,7 +31,11 @@ class Batch:
     rows: list[dict[str, Any]]
 
 
-RETRYABLE_BATCH_ERRORS = (ValidationError, RuntimeError, subprocess.TimeoutExpired)
+class RunnerInvocationError(RuntimeError):
+    """Raised when a local runner command fails before usable model output exists."""
+
+
+RETRYABLE_BATCH_ERRORS = (ValidationError, subprocess.TimeoutExpired)
 
 
 @dataclass(frozen=True)
@@ -69,7 +74,50 @@ class CodexRunner:
         stdout_path.write_text(result.stdout, encoding="utf-8")
         stderr_path.write_text(result.stderr, encoding="utf-8")
         if result.returncode != 0:
-            raise RuntimeError(f"codex exit {result.returncode}; stderr={result.stderr[-500:]}")
+            raise RunnerInvocationError(f"codex exit {result.returncode}; stderr={result.stderr[-500:]}")
+
+
+@dataclass(frozen=True)
+class CommandRunner:
+    vault_root: Path
+    command_template: str
+    timeout_seconds: int
+
+    def run(self, prompt: str, *, output_path: Path, stdout_path: Path, stderr_path: Path) -> None:
+        try:
+            formatted = self.command_template.format(
+                output_path=str(output_path),
+                stdout_path=str(stdout_path),
+                stderr_path=str(stderr_path),
+                vault=str(self.vault_root),
+                vault_root=str(self.vault_root),
+            )
+            command = shlex.split(formatted)
+        except (AttributeError, IndexError, KeyError, ValueError) as exc:
+            raise RunnerInvocationError(f"invalid command template: {exc}") from exc
+        if not command:
+            raise RunnerInvocationError("command runner template produced an empty command")
+
+        try:
+            result = subprocess.run(
+                command,
+                input=prompt,
+                text=True,
+                capture_output=True,
+                timeout=self.timeout_seconds,
+                cwd=self.vault_root,
+            )
+        except OSError as exc:
+            raise RunnerInvocationError(f"command runner failed to start: {exc}") from exc
+
+        stdout_path.write_text(result.stdout, encoding="utf-8")
+        stderr_path.write_text(result.stderr, encoding="utf-8")
+        if result.returncode != 0:
+            raise RunnerInvocationError(
+                f"command runner exit {result.returncode}; stderr={result.stderr[-500:]}"
+            )
+        if not output_path.exists():
+            output_path.write_text(result.stdout, encoding="utf-8")
 
 
 def collect_model_judgments(
@@ -84,6 +132,7 @@ def collect_model_judgments(
     runner: AgentRunner,
 ) -> int:
     vault_root = vault_root.resolve()
+    raw_dir = raw_dir.resolve()
     rows = _read_audit_rows(audit_jsonl)
     if limit is not None:
         rows = rows[:limit]
@@ -126,14 +175,7 @@ def collect_model_judgments(
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
-        runner = CodexRunner(
-            vault_root=args.vault.resolve(),
-            codex_bin=args.codex_bin,
-            model=args.model,
-            sandbox=args.codex_sandbox,
-            timeout_seconds=args.timeout_seconds,
-            ignore_user_config=not args.load_user_config,
-        )
+        runner = _build_runner(args)
         collect_model_judgments(
             vault_root=args.vault,
             audit_jsonl=args.audit_jsonl,
@@ -144,14 +186,22 @@ def main(argv: list[str] | None = None) -> int:
             limit=args.limit,
             runner=runner,
         )
-    except (ValidationError, OSError, json.JSONDecodeError, subprocess.TimeoutExpired, RuntimeError) as exc:
+    except (
+        ValidationError,
+        OSError,
+        json.JSONDecodeError,
+        subprocess.TimeoutExpired,
+        RunnerInvocationError,
+    ) as exc:
         print(str(exc), file=sys.stderr)
         return 1
     return 0
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Collect model judgments for audit rows with Codex CLI.")
+    parser = argparse.ArgumentParser(
+        description="Collect model judgments for audit rows through a local agent runner."
+    )
     parser.add_argument("--vault", type=Path, required=True)
     parser.add_argument("--audit-jsonl", type=Path, required=True)
     parser.add_argument("--output-jsonl", type=Path, required=True)
@@ -159,21 +209,84 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--raw-dir",
         type=Path,
         required=True,
-        help="Directory for raw prompts and Codex logs. Keep this outside the vault unless the user wants private prompt logs there.",
+        help="Directory for raw prompts and runner logs. Keep this outside the vault unless the user wants private prompt logs there.",
     )
     parser.add_argument("--limit", type=int)
     parser.add_argument("--max-notes", type=int, default=20)
     parser.add_argument("--max-chars", type=int, default=50_000)
     parser.add_argument("--timeout-seconds", type=int, default=900)
-    parser.add_argument("--codex-bin", default="codex")
-    parser.add_argument("--model", default="gpt-5.5")
-    parser.add_argument("--codex-sandbox", default="read-only")
+    parser.add_argument(
+        "--runner",
+        choices=("codex", "command"),
+        help="Local agent runner adapter. Omit only for legacy Codex compatibility; prefer --runner codex or --runner command.",
+    )
+    parser.add_argument(
+        "--command",
+        dest="command_template",
+        help=(
+            "Command template for --runner command. The prompt is sent on stdin. "
+            "If the command writes the final response to stdout, stdout is parsed. "
+            "If it writes to {output_path}, that file is parsed instead. "
+            "Quote path placeholders in the template when paths may contain spaces."
+        ),
+    )
+    parser.add_argument("--codex-bin")
+    parser.add_argument("--model")
+    parser.add_argument("--codex-sandbox")
     parser.add_argument(
         "--load-user-config",
         action="store_true",
         help="Load the user's Codex config. By default the script ignores user config to avoid unrelated MCP startup failures.",
     )
     return parser.parse_args(argv)
+
+
+def _build_runner(args: argparse.Namespace) -> AgentRunner:
+    runner_name = args.runner or "codex"
+    if args.runner is None:
+        print(
+            "runner not specified; using codex compatibility path. Prefer --runner codex.",
+            file=sys.stderr,
+        )
+    if runner_name == "codex":
+        if args.command_template:
+            raise ValidationError("--command requires --runner command")
+        return CodexRunner(
+            vault_root=args.vault.resolve(),
+            codex_bin=args.codex_bin or "codex",
+            model=args.model or "gpt-5.5",
+            sandbox=args.codex_sandbox or "read-only",
+            timeout_seconds=args.timeout_seconds,
+            ignore_user_config=not args.load_user_config,
+        )
+    if runner_name == "command":
+        _reject_codex_options_for_command_runner(args)
+        if not args.command_template:
+            raise ValidationError("--command is required when --runner command")
+        return CommandRunner(
+            vault_root=args.vault.resolve(),
+            command_template=args.command_template,
+            timeout_seconds=args.timeout_seconds,
+        )
+    raise ValidationError(f"unsupported runner: {runner_name}")
+
+
+def _reject_codex_options_for_command_runner(args: argparse.Namespace) -> None:
+    used_options = [
+        flag
+        for name, flag in (
+            ("codex_bin", "--codex-bin"),
+            ("model", "--model"),
+            ("codex_sandbox", "--codex-sandbox"),
+        )
+        if getattr(args, name)
+    ]
+    if args.load_user_config:
+        used_options.append("--load-user-config")
+    if used_options:
+        raise ValidationError(
+            f"{', '.join(used_options)} can only be used with --runner codex"
+        )
 
 
 def _run_batch_with_split(
@@ -230,6 +343,9 @@ def _run_batch(
     stdout_path = raw_dir / f"batch-{batch.index:05d}-stdout.log"
     stderr_path = raw_dir / f"batch-{batch.index:05d}-stderr.log"
     prompt_path.write_text(prompt, encoding="utf-8")
+    output_path.unlink(missing_ok=True)
+    stdout_path.unlink(missing_ok=True)
+    stderr_path.unlink(missing_ok=True)
 
     runner.run(prompt, output_path=output_path, stdout_path=stdout_path, stderr_path=stderr_path)
 
