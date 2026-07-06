@@ -160,6 +160,28 @@ class CollectModelJudgmentsTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             _build_runner(args)
 
+    def test_build_runner_rejects_command_template_for_codex_runner(self):
+        for runner_option in ([], ["--runner", "codex"]):
+            with self.subTest(runner_option=runner_option):
+                args = _parse_args(
+                    [
+                        *runner_option,
+                        "--command",
+                        "fake-agent",
+                        "--vault",
+                        str(FIXTURE_VAULT),
+                        "--audit-jsonl",
+                        str(AUDIT_JSONL),
+                        "--output-jsonl",
+                        "/tmp/model-judgments.jsonl",
+                        "--raw-dir",
+                        "/tmp/model-raw",
+                    ]
+                )
+
+                with self.assertRaisesRegex(ValidationError, "--command requires --runner command"):
+                    _build_runner(args)
+
     def test_build_runner_rejects_codex_options_for_command_runner(self):
         codex_only_options = [
             ("--codex-bin", "codex-test"),
@@ -260,6 +282,30 @@ class CollectModelJudgmentsTest(unittest.TestCase):
 
             self.assertFalse(output_path.exists())
             self.assertIn("synthetic failure", stderr_path.read_text(encoding="utf-8"))
+
+    def test_command_runner_format_errors_raise_invocation_error(self):
+        invalid_templates = [
+            "fake-agent {}",
+            "fake-agent {output_path.name}",
+        ]
+
+        for command_template in invalid_templates:
+            with self.subTest(command_template=command_template):
+                runner = CommandRunner(
+                    vault_root=FIXTURE_VAULT,
+                    command_template=command_template,
+                    timeout_seconds=10,
+                )
+                with tempfile.TemporaryDirectory() as tmp:
+                    tmp_path = Path(tmp)
+
+                    with self.assertRaisesRegex(RunnerInvocationError, "invalid command template"):
+                        runner.run(
+                            "prompt",
+                            output_path=tmp_path / "last-message.jsonl",
+                            stdout_path=tmp_path / "stdout.log",
+                            stderr_path=tmp_path / "stderr.log",
+                        )
 
     def test_collect_model_judgments_with_command_runner_stdout(self):
         with tempfile.TemporaryDirectory() as tmp:

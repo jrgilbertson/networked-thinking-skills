@@ -93,7 +93,7 @@ class CommandRunner:
                 vault_root=str(self.vault_root),
             )
             command = shlex.split(formatted)
-        except (KeyError, ValueError) as exc:
+        except (AttributeError, IndexError, KeyError, ValueError) as exc:
             raise RunnerInvocationError(f"invalid command template: {exc}") from exc
         if not command:
             raise RunnerInvocationError("command runner template produced an empty command")
@@ -249,6 +249,8 @@ def _build_runner(args: argparse.Namespace) -> AgentRunner:
             file=sys.stderr,
         )
     if runner_name == "codex":
+        if args.command_template:
+            raise ValidationError("--command requires --runner command")
         return CodexRunner(
             vault_root=args.vault.resolve(),
             codex_bin=args.codex_bin or "codex",
