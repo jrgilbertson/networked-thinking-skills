@@ -5,19 +5,34 @@
 
 Agent Skills and deterministic helper scripts for creating, auditing, and improving Networked Thinking atomic notes in Obsidian vaults.
 
-## What this is
+## Purpose
 
-Networked Thinking is a practical system for turning saved articles, highlights, and notes into usable context for writing, decisions, and work. This repo ships the agent-side tooling for the system described in the forthcoming book by Jason Gilbertson and Terri Yeh. The `atomic-note` skill creates and improves single-concept notes in DAE format, and `atomic-note-audit` scores existing notes against the system's rubric with deterministic checks before any agent judgment. The [companion vault](https://github.com/jrgilbertson/networked-thinking) shows the full system these skills operate on. Learn more and join the waitlist at [networkedthinking.ai](https://networkedthinking.ai/).
+Networked Thinking is a book and practical system for turning saved articles, highlights, and notes into usable context for writing, decisions, and work. This repo ships the agent-side tooling for the system, from the forthcoming book by Jason Gilbertson and Terri Yeh. The [companion vault](https://github.com/jrgilbertson/networked-thinking) shows the full system these skills operate on. Learn more and join the waitlist at [networkedthinking.ai](https://networkedthinking.ai/).
+
+## Skills
+
+| Skill | What it does |
+|---|---|
+| `atomic-note` | Create or improve a single-concept note in DAE format. |
+| `atomic-note-audit` | Score existing notes against the system's rubric, deterministic checks first, agent judgment second. |
+
+More skills will land here as the book's workflows do; each installs independently.
 
 ## Quickstart
 
-Install both skills into Claude Code:
+Install every skill globally, symlinked into all of your agent harnesses from one location:
 
 ```bash
-npx skills add jrgilbertson/networked-thinking-skills --agent claude-code -g --skill '*' --copy -y
+npx skills add jrgilbertson/networked-thinking-skills -g --agent '*'
 ```
 
-Swap `--agent codex` for Codex. Remediation workflows also require the official Obsidian skills (`obsidian-cli`, `obsidian-markdown`, `obsidian-bases`); install those first. [docs/install.md](docs/install.md) covers per-skill installs and sandboxed-agent caveats.
+Or install a single skill:
+
+```bash
+npx skills add jrgilbertson/networked-thinking-skills -g --skill atomic-note
+```
+
+Remediation workflows also require the official Obsidian skills (`obsidian-cli`, `obsidian-markdown`, `obsidian-bases`); install those first. [docs/install.md](docs/install.md) covers per-agent installs, copied (non-symlink) installs, and sandboxed-agent caveats.
 
 ## Usage
 
