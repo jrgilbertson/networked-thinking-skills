@@ -65,7 +65,7 @@ class AuditEngineTest(unittest.TestCase):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
         self.assertEqual(row["schema_version"], "1.0.0")
-        self.assertEqual(row["doctrine_version"], "1.0.1")
+        self.assertEqual(row["doctrine_version"], "1.0.2")
         self.assertEqual(row["rubric_version"], "1.0.0")
         self.assertEqual(row["prompt_version"], "1.0.0")
         self.assertEqual(manifest["schema_version"], "1.0.0")
@@ -96,10 +96,28 @@ class AuditEngineTest(unittest.TestCase):
 
     def test_clean_dae_note_is_clean(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
-        row = rows_by_stem(rows)["202601010101 Clean DAE note"]
+        row = rows_by_stem(rows)[
+            "202601010101 A clean atomic note explains one durable idea in plain language "
+            "and keeps the claim small enough to test against examples"
+        ]
 
         self.assertTrue(row["clean"])
         self.assertGreaterEqual(row["score"], 90)
+
+    def test_clean_fixture_filenames_match_definition_first_sentences(self):
+        rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
+
+        for row in rows:
+            if not row["clean"]:
+                continue
+            note_path = FIXTURE_VAULT / row["note_path"]
+            body = note_path.read_text(encoding="utf-8").split("---", 2)[2].strip()
+            definition = body.partition("\n")[2].strip().split("\n\n", 1)[0]
+            definition_sentence = " ".join(definition.splitlines()).removesuffix(".")
+            filename_text = note_path.stem[13:]
+
+            with self.subTest(note_path=row["note_path"]):
+                self.assertEqual(filename_text, definition_sentence)
 
     def test_content_hash_uses_normalized_note_text(self):
         with tempfile.TemporaryDirectory() as tmp:

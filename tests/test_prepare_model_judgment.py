@@ -10,7 +10,10 @@ from shared.scripts.prepare_model_judgment import render_model_judgment_request
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_VAULT = REPO_ROOT / "tests" / "fixtures" / "tiny-vault"
-NOTE_PATH = "Atomic Notes/202601010101 Clean DAE note.md"
+NOTE_PATH = (
+    "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language "
+    "and keeps the claim small enough to test against examples.md"
+)
 
 
 class PrepareModelJudgmentTest(unittest.TestCase):

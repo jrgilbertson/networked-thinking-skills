@@ -70,8 +70,16 @@ class ReportGenerationTest(unittest.TestCase):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
         self.assertIn("## No Changes\n\n| Note | Score | Clean | Findings | Recommendations |", report)
-        self.assertIn("| [[202601010101 Clean DAE note]] | 100 | yes | none | none |", report)
-        self.assertIn("| [[202601010107 Optional Anki note]] | 100 | yes | none | none |", report)
+        self.assertIn(
+            "| [[202601010101 A clean atomic note explains one durable idea in plain language "
+            "and keeps the claim small enough to test against examples]] | 100 | yes | none | none |",
+            report,
+        )
+        self.assertIn(
+            "| [[202601010107 Optional Anki cards can reinforce an atomic note when the prompt "
+            "tests the central claim instead of repeating the heading]] | 100 | yes | none | none |",
+            report,
+        )
         self.assertIn("| [[202601010106 Factual risk note]] | 84 | no |", report)
         self.assertIn("mark-factual-risk: Mark empirical, current, attributed, or sensitive-domain claims for fact checking.", report)
 

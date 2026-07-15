@@ -40,9 +40,9 @@
 
 | Note | Score | Clean | Findings | Recommendations |
 |---|---:|:---:|---|---|
-| [[202601010101 Clean DAE note]] | 100 | yes | none | none |
-| [[202601010107 Optional Anki note]] | 100 | yes | none | none |
-| [[202601010110 Reference and sources note]] | 100 | yes | none | none |
+| [[202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples]] | 100 | yes | none | none |
+| [[202601010107 Optional Anki cards can reinforce an atomic note when the prompt tests the central claim instead of repeating the heading]] | 100 | yes | none | none |
+| [[202601010110 A source-backed atomic note keeps one durable idea in DAE form and adds optional trailing sections for connections and provenance]] | 100 | yes | none | none |
 
 ## Factual-Risk Notes
 
