@@ -28,11 +28,26 @@ filesystem writes. When working from an installed skill, prefer
 3. Draft one DAE note: Definition paragraph, Analogy paragraph, Example
    paragraph. For non-Anki notes, write the DAE as plain prose after the H1
    without `## Definition`, `## Analogy`, or `## Example` headings.
-4. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
-5. Add Anki only when memorization is useful. For synced `Cloze` notes, preserve useful cloze ordinals and put the Analogy plus Example behind `Extra:`; the Example must be a separate paragraph beginning `For example,`.
-6. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
-7. Preview the note before writing when working in a user's vault.
-8. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes through direct filesystem path writes. Use quote-safe content transport for app-context writes.
+4. Apply the two naming pairs: the timestamp-prefixed filename uses the
+   Definition's first sentence without its final period, while the YAML `title`
+   and H1 use the same short concept name. Preserve all other reader-visible
+   wording, capitalization, punctuation, and word order in the filename. If the
+   Definition sentence is not valid as one filename component in the target
+   vault and platform, redraft it with the learner instead of silently changing
+   characters.
+5. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
+6. Add Anki only when memorization is useful. For synced `Cloze` notes, preserve useful cloze ordinals and put the Analogy plus Example behind `Extra:`; the Example must be a separate paragraph beginning `For example,`.
+7. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
+8. Preview the note and both naming pairs before writing when working in a
+   user's vault. If an improved Definition's first sentence changes, preview
+   the corresponding filename and follow the remediation context's explicit
+   approval, automatic-link-update preflight, and official CLI `rename` or
+   `move` workflow. If approval is denied, do not write a first-sentence change
+   that would leave the filename stale.
+9. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes or rename them through direct filesystem path writes. Use quote-safe content transport for app-context writes.
+10. After writing, verify the final filename against the Definition's first
+    sentence, the YAML `title` against the H1 short concept name, and any path or
+    link changes caused by a rename.
 
 ## Quality Bar
 

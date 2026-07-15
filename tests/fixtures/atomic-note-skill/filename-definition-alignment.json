@@ -1,0 +1,39 @@
+{
+  "id": "atomic-note-filename-definition-alignment",
+  "description": "An invented atomic note reproduces a stale filename and a mismatched short title without using private vault content.",
+  "request": "Improve the Definition so it explains the role of timely feedback, then make the note follow the two naming rules.",
+  "before": {
+    "path": "Atomic Notes/202607151230 Focused repetition builds durable skill.md",
+    "yaml_title": "Practice Cycle",
+    "h1": "Deliberate Practice",
+    "definition_first_sentence": "Focused practice improves performance through repetition."
+  },
+  "expected": {
+    "path": "Atomic Notes/202607151230 Deliberate practice improves performance through focused repetition and timely feedback.md",
+    "yaml_title": "Deliberate Practice",
+    "h1": "Deliberate Practice",
+    "definition_first_sentence": "Deliberate practice improves performance through focused repetition and timely feedback.",
+    "required_steps": [
+      "preview_both_matching_pairs",
+      "confirm_automatic_internal_link_updates",
+      "request_rename_approval",
+      "rename_with_official_obsidian_cli",
+      "verify_path_and_affected_links"
+    ]
+  },
+  "rename_denied": {
+    "source_scenario": "An initially aligned note receives a proposed first-sentence improvement, but the learner declines the corresponding filename change.",
+    "path": "Atomic Notes/202607151230 Focused repetition builds durable skill.md",
+    "yaml_title": "Deliberate Practice",
+    "h1": "Deliberate Practice",
+    "definition_first_sentence": "Focused repetition builds durable skill.",
+    "rejected_definition_first_sentence": "Deliberate practice improves performance through focused repetition and timely feedback.",
+    "definition_first_sentence_changed": false,
+    "required_result": "Keep the original first sentence and filename aligned; do not apply the rejected sentence change by itself."
+  },
+  "invalid_filename": {
+    "definition_first_sentence": "Deliberate practice uses feedback/error cycles to improve a specific skill.",
+    "forbidden_silent_filename": "Deliberate practice uses feedback-error cycles to improve a specific skill",
+    "required_action": "redraft_first_sentence_with_learner"
+  }
+}

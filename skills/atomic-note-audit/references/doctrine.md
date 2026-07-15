@@ -48,6 +48,26 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   than larger digits` unless the note is intentionally making a check-worthy
   empirical claim.
 
+## Naming Alignment
+
+Atomic notes use two separate matching pairs:
+
+- The timestamp-prefixed filename uses the reader-visible wording of the
+  Definition's first sentence without its final period. The timestamp, `.md`
+  extension, and Markdown wrappers are not part of that comparison. All other
+  visible words, capitalization, punctuation, and word order must match.
+  Before writing, confirm that the resulting text is valid as one filename
+  component in the target vault and platform. If it is not, redraft the first
+  sentence with the learner so the sentence and filename can still match;
+  never silently remove or substitute characters.
+- The YAML `title` and H1 use the same short concept name. That short concept
+  name does not need to repeat the full Definition sentence.
+
+Check both pairs when creating a note and when improving an existing note. If
+an improvement changes the Definition's first sentence, reconcile the filename
+through the approved rename flow in the remediation context rather than leaving
+the old filename in place.
+
 ## Anki
 
 Anki cards are optional. A non-Anki atomic note still needs DAE. Write non-Anki

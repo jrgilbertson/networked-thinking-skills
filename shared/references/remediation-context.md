@@ -36,6 +36,33 @@ control characters so corrupted formulas do not sync into Anki.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
+Before previewing an improvement, compare the timestamp-stripped filename with
+the reader-visible wording of the Definition's first sentence without its final
+period, and compare the YAML `title` with the H1 short concept name.
+
+If the proposed improvement changes the Definition's first sentence, derive the
+corresponding filename and preview the content change and filename change
+together. Before requesting approval, confirm that the derived text is valid as
+one filename component in the target vault and platform. If it is not, redraft
+the first sentence with the learner; do not silently strip or substitute
+characters. Obtain explicit rename approval before either change is applied.
+If rename approval is denied, do not write the proposed first-sentence change;
+keep the original sentence or redraft without changing it.
+
+Before an approved rename, confirm in Obsidian's **Files and links** settings
+that **Automatically update internal links** is enabled. If it is disabled,
+stop before mutation and ask the learner to enable it. Inspect the setting
+through Obsidian app context when the available interface exposes it; otherwise
+ask the learner to inspect the setting and explicitly confirm its state. Record
+a representative set of links or backlinks before mutation. Perform the
+filename change with the official CLI `rename` or `move` command through the
+verified Obsidian CLI resolver. Never rename an atomic-note file through the
+raw filesystem. After the content and filename changes, verify both naming
+pairs, the final path, and the same representative links or backlinks. If a
+mutation fails, do not report success with a partially aligned note; restore
+the prior state through Obsidian-aware tooling or stop and report the exact
+state that needs recovery.
+
 When fixing a missing parent link, insert the backlink into the relevant
 structure note with line-aware logic that preserves the surrounding list nesting
 and numbering. Verify the rendered source text after the write; do not rely on a

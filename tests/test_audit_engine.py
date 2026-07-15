@@ -65,7 +65,7 @@ class AuditEngineTest(unittest.TestCase):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
         self.assertEqual(row["schema_version"], "1.0.0")
-        self.assertEqual(row["doctrine_version"], "1.0.1")
+        self.assertEqual(row["doctrine_version"], "1.0.2")
         self.assertEqual(row["rubric_version"], "1.0.0")
         self.assertEqual(row["prompt_version"], "1.0.0")
         self.assertEqual(manifest["schema_version"], "1.0.0")
