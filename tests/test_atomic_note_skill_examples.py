@@ -38,6 +38,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
 
     def test_remediation_requires_cli_rename_and_link_verification(self):
         remediation = normalized_text(ROOT / "shared/references/remediation-context.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         self.assertIn("Automatically update internal links", remediation)
         self.assertIn("official CLI `rename` or `move`", remediation)
@@ -47,10 +48,14 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("valid as one filename component", remediation)
         self.assertIn("do not silently strip or substitute characters", remediation)
         self.assertIn("preview the content change and filename change together", remediation)
-        self.assertIn("explicit rename approval before either change is applied", remediation)
+        self.assertIn("existing filename/Definition mismatch", remediation)
+        self.assertIn("even when the Definition's first sentence is unchanged", remediation)
+        self.assertIn("approval is required before either change is applied", remediation)
         self.assertIn("If it is disabled, stop before mutation", remediation)
         self.assertIn("explicitly confirm its state", remediation)
         self.assertIn("the same representative links or backlinks", remediation)
+        self.assertIn("existing filename/Definition mismatch", skill)
+        self.assertIn("report an unchanged pre-existing mismatch", skill)
 
     def test_fake_regression_example_covers_both_mismatches(self):
         before = self.fixture["before"]
@@ -90,6 +95,20 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
             denied["definition_first_sentence"],
             denied["rejected_definition_first_sentence"],
         )
+
+    def test_fake_regression_repairs_stale_filename_when_definition_is_unchanged(self):
+        stale = self.fixture["stale_filename_unchanged"]
+        self.assertNotEqual(
+            filename_definition_text(stale["path"]),
+            definition_filename_text(stale["definition_first_sentence"]),
+        )
+        self.assertFalse(stale["definition_first_sentence_changed"])
+        steps = stale["required_steps"]
+        self.assertIn("derive_filename_from_existing_definition", steps)
+        self.assertIn("preview_filename_change", steps)
+        self.assertIn("confirm_automatic_internal_link_updates", steps)
+        self.assertIn("request_rename_approval", steps)
+        self.assertIn("rename_with_official_obsidian_cli", steps)
 
     def test_invalid_filename_text_requires_redrafting_instead_of_substitution(self):
         invalid = self.fixture["invalid_filename"]

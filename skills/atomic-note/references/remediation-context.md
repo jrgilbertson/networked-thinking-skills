@@ -40,14 +40,19 @@ Before previewing an improvement, compare the timestamp-stripped filename with
 the reader-visible wording of the Definition's first sentence without its final
 period, and compare the YAML `title` with the H1 short concept name.
 
-If the proposed improvement changes the Definition's first sentence, derive the
-corresponding filename and preview the content change and filename change
-together. Before requesting approval, confirm that the derived text is valid as
-one filename component in the target vault and platform. If it is not, redraft
-the first sentence with the learner; do not silently strip or substitute
-characters. Obtain explicit rename approval before either change is applied.
-If rename approval is denied, do not write the proposed first-sentence change;
-keep the original sentence or redraft without changing it.
+If this comparison detects an existing filename/Definition mismatch, or if the
+proposed improvement changes the Definition's first sentence, derive and
+preview the corresponding filename change. Do this even when the Definition's
+first sentence is unchanged. When the first sentence changes, preview the
+content change and filename change together. Before requesting approval,
+confirm that the derived text is valid as one filename component in the target
+vault and platform. If it is not, redraft the first sentence with the learner;
+do not silently strip or substitute characters. Obtain explicit rename
+approval before applying the filename change. When the first sentence changes,
+approval is required before either change is applied. If rename approval is
+denied, do not write a proposed first-sentence change; keep the original
+sentence or redraft without changing it. If the sentence was already unchanged,
+leave the stale filename in place and report the remaining mismatch.
 
 Before an approved rename, confirm in Obsidian's **Files and links** settings
 that **Automatically update internal links** is enabled. If it is disabled,

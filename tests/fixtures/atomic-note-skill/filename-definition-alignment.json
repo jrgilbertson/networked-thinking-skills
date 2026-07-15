@@ -31,6 +31,19 @@
     "definition_first_sentence_changed": false,
     "required_result": "Keep the original first sentence and filename aligned; do not apply the rejected sentence change by itself."
   },
+  "stale_filename_unchanged": {
+    "source_scenario": "An existing note has a stale filename, while the requested improvement leaves the Definition's first sentence unchanged.",
+    "path": "Atomic Notes/202607151230 Focused repetition builds durable skill.md",
+    "definition_first_sentence": "Deliberate practice improves performance through focused repetition and timely feedback.",
+    "definition_first_sentence_changed": false,
+    "required_steps": [
+      "derive_filename_from_existing_definition",
+      "preview_filename_change",
+      "confirm_automatic_internal_link_updates",
+      "request_rename_approval",
+      "rename_with_official_obsidian_cli"
+    ]
+  },
   "invalid_filename": {
     "definition_first_sentence": "Deliberate practice uses feedback/error cycles to improve a specific skill.",
     "forbidden_silent_filename": "Deliberate practice uses feedback-error cycles to improve a specific skill",

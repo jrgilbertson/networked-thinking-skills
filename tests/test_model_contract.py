@@ -9,10 +9,14 @@ from shared.scripts.schema_validation import ValidationError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODEL_JUDGMENT_SCHEMA_PATH = REPO_ROOT / "shared" / "schemas" / "model-judgment.schema.json"
+CLEAN_NOTE_PATH = (
+    "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language "
+    "and keeps the claim small enough to test against examples.md"
+)
 
 
 BASE_CACHE_KEY_ARGS = {
-    "note_path": "Atomic Notes/202601010101 Clean DAE note.md",
+    "note_path": CLEAN_NOTE_PATH,
     "content_hash": "abc123",
     "doctrine_version": "1.0.0",
     "rubric_version": "1.0.0",
@@ -22,7 +26,7 @@ BASE_CACHE_KEY_ARGS = {
 
 VALID_JUDGMENT = {
     "schema_version": "1.0.0",
-    "note_path": "Atomic Notes/202601010101 Clean DAE note.md",
+    "note_path": CLEAN_NOTE_PATH,
     "dimension_adjustments": {
         "clarity": -5,
         "connections": 10,

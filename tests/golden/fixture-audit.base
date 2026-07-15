@@ -11,16 +11,16 @@ views:
     name: "All Audited Notes"
     filters:
       or:
-        - 'file.path == "Atomic Notes/202601010101 Clean DAE note.md"'
+        - 'file.path == "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples.md"'
         - 'file.path == "Atomic Notes/202601010102 Weak DAE note.md"'
         - 'file.path == "Atomic Notes/202601010103 Multi note bundle.md"'
         - 'file.path == "Atomic Notes/202601010104 Misfiled reference note.md"'
         - 'file.path == "Atomic Notes/202601010105 Missing parent note.md"'
         - 'file.path == "Atomic Notes/202601010106 Factual risk note.md"'
-        - 'file.path == "Atomic Notes/202601010107 Optional Anki note.md"'
+        - 'file.path == "Atomic Notes/202601010107 Optional Anki cards can reinforce an atomic note when the prompt tests the central claim instead of repeating the heading.md"'
         - 'file.path == "Atomic Notes/202601010108 Malformed Anki note.md"'
         - 'file.path == "Atomic Notes/202601010109 Duplicate candidate note.md"'
-        - 'file.path == "Atomic Notes/202601010110 Reference and sources note.md"'
+        - 'file.path == "Atomic Notes/202601010110 A source-backed atomic note keeps one durable idea in DAE form and adds optional trailing sections for connections and provenance.md"'
     order:
       - file.name
       - file.path
@@ -68,9 +68,9 @@ views:
     name: "No Changes"
     filters:
       or:
-        - 'file.path == "Atomic Notes/202601010101 Clean DAE note.md"'
-        - 'file.path == "Atomic Notes/202601010107 Optional Anki note.md"'
-        - 'file.path == "Atomic Notes/202601010110 Reference and sources note.md"'
+        - 'file.path == "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples.md"'
+        - 'file.path == "Atomic Notes/202601010107 Optional Anki cards can reinforce an atomic note when the prompt tests the central claim instead of repeating the heading.md"'
+        - 'file.path == "Atomic Notes/202601010110 A source-backed atomic note keeps one durable idea in DAE form and adds optional trailing sections for connections and provenance.md"'
     order:
       - file.name
       - file.path

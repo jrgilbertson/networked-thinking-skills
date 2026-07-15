@@ -18,7 +18,7 @@ and lists its origin under Sources.
 
 Reference:
 
-- Related: [[202601010101 Clean DAE note]].
+- Related: [[202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples]].
 
 Sources:
 

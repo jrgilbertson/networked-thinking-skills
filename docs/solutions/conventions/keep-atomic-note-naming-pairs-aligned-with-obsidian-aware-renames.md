@@ -66,8 +66,10 @@ filename character, redraft the sentence with the learner so the sentence and
 filename remain exact matches. Do not silently delete or replace the character
 (`shared/references/doctrine.md:59`).
 
-When an improvement changes the first Definition sentence, treat the content
-edit and rename as one approved operation:
+When an existing comparison finds a stale filename, route it through the rename
+workflow even if the requested content improvement leaves the Definition's
+first sentence unchanged. When an improvement changes that sentence, treat the
+content edit and rename as one approved operation:
 
 - Derive the new filename, validate it, and preview the content and filename
   changes together (`shared/references/remediation-context.md:43`).
@@ -75,6 +77,8 @@ edit and rename as one approved operation:
   denied, retain the original first sentence or redraft without changing it;
   never write the new sentence by itself and leave a stale filename
   (`shared/references/remediation-context.md:48`).
+- If a stale-only rename is denied, leave the filename unchanged and report the
+  remaining mismatch rather than silently treating the note as aligned.
 - Confirm under Obsidian's **Files and links** settings that **Automatically
   update internal links** is enabled. Inspect it through available Obsidian app
   context; if the interface cannot expose it, have the learner inspect the
@@ -133,6 +137,8 @@ repository could document one rule while installed skills teach another.
 
 - When creating an atomic note with a timestamp-prefixed filename.
 - When improving a note changes, or may change, the first Definition sentence.
+- When an existing note already has a stale filename, even if the requested
+  content improvement does not change the first Definition sentence.
 - When checking YAML `title`, H1, filename, and Definition text for alignment.
 - When a proposed Definition sentence may contain invalid filename characters.
 - When doctrine or remediation guidance under `shared/` changes and generated

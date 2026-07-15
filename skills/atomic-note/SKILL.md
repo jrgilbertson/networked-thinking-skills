@@ -39,11 +39,12 @@ filesystem writes. When working from an installed skill, prefer
 6. Add Anki only when memorization is useful. For synced `Cloze` notes, preserve useful cloze ordinals and put the Analogy plus Example behind `Extra:`; the Example must be a separate paragraph beginning `For example,`.
 7. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
 8. Preview the note and both naming pairs before writing when working in a
-   user's vault. If an improved Definition's first sentence changes, preview
-   the corresponding filename and follow the remediation context's explicit
-   approval, automatic-link-update preflight, and official CLI `rename` or
-   `move` workflow. If approval is denied, do not write a first-sentence change
-   that would leave the filename stale.
+   user's vault. If either an existing filename/Definition mismatch is detected
+   or an improved Definition's first sentence changes, preview the corresponding
+   filename and follow the remediation context's explicit approval,
+   automatic-link-update preflight, and official CLI `rename` or `move`
+   workflow. If approval is denied, do not write a first-sentence change that
+   would leave the filename stale; report an unchanged pre-existing mismatch.
 9. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes or rename them through direct filesystem path writes. Use quote-safe content transport for app-context writes.
 10. After writing, verify the final filename against the Definition's first
     sentence, the YAML `title` against the H1 short concept name, and any path or

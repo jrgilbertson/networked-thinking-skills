@@ -16,9 +16,17 @@ class FixtureVaultTest(unittest.TestCase):
             notes = sorted((root / "Atomic Notes").glob("*.md"))
             self.assertGreaterEqual(len(notes), 9)
             names = {note.name for note in notes}
-            self.assertIn("202601010101 Clean DAE note.md", names)
+            self.assertIn(
+                "202601010101 A clean atomic note explains one durable idea in plain language "
+                "and keeps the claim small enough to test against examples.md",
+                names,
+            )
             self.assertIn("202601010103 Multi note bundle.md", names)
-            self.assertIn("202601010110 Reference and sources note.md", names)
+            self.assertIn(
+                "202601010110 A source-backed atomic note keeps one durable idea in DAE form "
+                "and adds optional trailing sections for connections and provenance.md",
+                names,
+            )
 
     def test_main_accepts_target_and_prints_root(self):
         with tempfile.TemporaryDirectory() as tmp:
