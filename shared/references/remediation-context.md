@@ -47,12 +47,24 @@ Compare the timestamp-stripped filename with that reader-visible source without
 its final period. Exclude only the timestamp, `.md` extension, Markdown
 wrappers, Anki cloze syntax, and final period. All other visible words,
 capitalization, punctuation, and word order must match. Separately compare the
-YAML `title` with the H1 short concept name.
+YAML `title` with the H1 short concept name, then compare their shared short
+concept with the Definition's concept.
 
 When a learner or governing template explicitly declares that a pre-existing
 user vault uses a different filename scheme, preserve it as a compatibility
 exception unless the learner approves a migration. Do not infer another
 Networked Thinking naming style from nearby inconsistencies.
+
+When only the YAML/H1 pair or its semantic relationship to the Definition is
+mismatched, and the applicable Definition source remains unchanged, use a
+content-only flow. Preview the exact YAML and H1 edits and the concept correction,
+obtain explicit approval, then apply the approved edits through an Obsidian
+app-context modify operation. Verify that YAML `title` and H1 match, that their
+shared short concept identifies the Definition's concept, and that the unchanged
+filename/Definition pair remains aligned. Do not require a rename or rename
+approval for this content-only path. If correcting the concept requires changing
+the applicable Definition source, compare the resulting source with the filename
+and use the rename flow below only when that pair would differ.
 
 If this comparison detects an existing filename/Definition mismatch, or if the
 proposed improvement would introduce one, derive and preview the exact filename

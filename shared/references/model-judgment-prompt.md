@@ -40,7 +40,7 @@ Do not preserve an issue unless it truly applies to the note content you reviewe
 | `weak_analogy` | 15 | Replace the Analogy with a familiar concrete referent and shared relation. |
 | `weak_example` | 15 | Replace the Example with a concrete case that starts with 'For example,'. |
 | `unclear` | 15 | Rewrite unclear or misleading prose before relying on the note. |
-| `title_body_mismatch` | 15 | Make the timestamp-stripped filename exactly match the reader-visible applicable Definition source without its final period through the approved rename flow, and keep the YAML title and H1 on the same short concept name. |
+| `title_body_mismatch` | 15 | Align each mismatched naming pair: make the timestamp-stripped filename exactly match the reader-visible applicable Definition source without its final period, using the approved rename flow when that pair differs; make the YAML title and H1 use the same short concept name, and correct that concept if it differs from the Definition. |
 | `duplicate_overlap` | 8 | Review this note against related notes for possible overlap. |
 | `factual_risk` | 8 | Mark empirical, current, attributed, or sensitive-domain claims for fact checking. |
 

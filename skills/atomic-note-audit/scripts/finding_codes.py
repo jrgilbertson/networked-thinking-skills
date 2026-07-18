@@ -84,9 +84,11 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
     "title_body_mismatch": FindingCodeSpec(
         loss=15,
         message=(
-            "Make the timestamp-stripped filename exactly match the reader-visible "
-            "applicable Definition source without its final period through the approved "
-            "rename flow, and keep the YAML title and H1 on the same short concept name."
+            "Align each mismatched naming pair: make the timestamp-stripped filename "
+            "exactly match the reader-visible applicable Definition source without its "
+            "final period, using the approved rename flow when that pair differs; make "
+            "the YAML title and H1 use the same short concept name, and correct that "
+            "concept if it differs from the Definition."
         ),
         recommendation_mode="improve-in-place",
     ),

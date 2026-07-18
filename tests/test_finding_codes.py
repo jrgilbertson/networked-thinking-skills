@@ -17,6 +17,8 @@ class FindingCodeContractTest(unittest.TestCase):
         self.assertIn("YAML title and H1", message)
         self.assertIn("short concept name", message)
         self.assertIn("approved rename flow", message)
+        self.assertIn("when that pair differs", message)
+        self.assertIn("concept if it differs from the Definition", message)
 
     def test_model_prompt_explains_canonical_filename_alignment(self):
         prompt = " ".join(

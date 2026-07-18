@@ -20,6 +20,10 @@ def rendered_definition_filename_text(sentence):
     text = re.sub(r"\{\{c\d+::(.*?)(?:::[^{}]*)?\}\}", r"\1", sentence)
     text = re.sub(r"\[\[[^|\]]+\|([^\]]+)\]\]", r"\1", text)
     text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+    text = re.sub(r"~~([^~\n]+)~~", r"\1", text)
+    text = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"\1", text)
+    text = re.sub(r"(?<!_)_([^_\n]+)_(?!_)", r"\1", text)
     text = re.sub(r"\*\*|__|`", "", text)
     return text.removesuffix(".")
 
@@ -46,6 +50,18 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
             self.assertIn("H1", text)
             self.assertIn("short concept name", text)
             self.assertNotIn("proposition-style", text)
+
+    def test_rendered_definition_filename_text_removes_markdown_wrappers(self):
+        cases = (
+            ("[Visible words](https://example.com).", "Visible words"),
+            ("*Visible words*.", "Visible words"),
+            ("_Visible words_.", "Visible words"),
+            ("~~Visible words~~.", "Visible words"),
+        )
+
+        for sentence, expected in cases:
+            with self.subTest(sentence=sentence):
+                self.assertEqual(rendered_definition_filename_text(sentence), expected)
 
     def test_authoring_guidance_has_note_type_alignment_table(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
@@ -143,6 +159,11 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("If it is disabled, stop before mutation", remediation)
         self.assertIn("explicitly confirm its state", remediation)
         self.assertIn("the same representative links or backlinks", remediation)
+        self.assertIn("use a content-only flow", remediation)
+        self.assertIn("obtain explicit approval", remediation)
+        self.assertIn("Obsidian app-context modify operation", remediation)
+        self.assertIn("Do not require a rename or rename approval", remediation)
+        self.assertIn("only when that pair would differ", remediation)
         self.assertIn("existing filename/Definition mismatch", skill)
         self.assertIn("report an unchanged pre-existing mismatch", skill)
 
