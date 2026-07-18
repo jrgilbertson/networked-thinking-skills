@@ -67,3 +67,10 @@ Use the scan to decide whether to:
 - create a missing connective note when the current note is carrying a related
   concept that has no atomic home;
 - update the relevant structure note so the new or improved note is findable.
+
+Structure Note entries are index links, so whenever this skill adds one, use
+the complete note filename stem, including its timestamp, as an unaliased
+wikilink: `[[full note filename]]`. Do not shorten Structure Note entries to
+`[[full note filename|display alias]]` unless the learner explicitly requests
+an alias. This convention is specific to Structure Note entries; wikilinks in
+ordinary prose may use display aliases when shorter text improves readability.

@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Audit scoring excludes trailing `Reference:` and `Sources:` labels from DAE word counts and factual-risk checks.
 - Improved Definition sentences now require an approved Obsidian CLI rename
   with automatic internal-link updates enabled and post-rename link checks.
+- Structure Note updates now use complete, unaliased note filenames unless the
+  learner explicitly requests a display alias.
 
 ## [0.1.0] - 2026-06-05
 
