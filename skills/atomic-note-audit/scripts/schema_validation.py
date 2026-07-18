@@ -118,7 +118,14 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
         # ValidationError and dimension names.
         from model_contract import validate_model_judgment
 
-        validate_model_judgment(row["model_judgment"])
+        model_judgment = row["model_judgment"]
+        validate_model_judgment(model_judgment)
+        for key in ("note_path", "prompt_version"):
+            if model_judgment[key] != row[key]:
+                raise ValidationError(
+                    f"model_judgment.{key} mismatch: "
+                    f"expected {row[key]!r}, got {model_judgment[key]!r}"
+                )
     if not isinstance(row["factual_risk"], bool):
         raise ValidationError("factual_risk must be a boolean")
     if not isinstance(row["fact_check_required"], bool):

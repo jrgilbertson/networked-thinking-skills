@@ -56,7 +56,7 @@ VALID_ROW = {
 
 VALID_EMBEDDED_MODEL_JUDGMENT = {
     "schema_version": "2.0.0",
-    "prompt_version": "1.0.2",
+    "prompt_version": VALID_ROW["prompt_version"],
     "note_path": VALID_ROW["note_path"],
     "dimension_adjustments": {"clarity": -5},
     "findings": [
@@ -127,6 +127,26 @@ class SchemaValidationTest(unittest.TestCase):
         row["model_judgment"] = VALID_EMBEDDED_MODEL_JUDGMENT
 
         validate_audit_row(row, default_scan=True)
+
+    def test_embedded_model_judgment_note_path_must_match_row(self):
+        row = dict(VALID_ROW)
+        row["model_judgment"] = {
+            **VALID_EMBEDDED_MODEL_JUDGMENT,
+            "note_path": "Atomic Notes/202601010102 Other.md",
+        }
+
+        with self.assertRaisesRegex(ValidationError, r"model_judgment\.note_path mismatch"):
+            validate_audit_row(row, default_scan=True)
+
+    def test_embedded_model_judgment_prompt_version_must_match_row(self):
+        row = dict(VALID_ROW)
+        row["model_judgment"] = {
+            **VALID_EMBEDDED_MODEL_JUDGMENT,
+            "prompt_version": "1.0.2",
+        }
+
+        with self.assertRaisesRegex(ValidationError, r"model_judgment\.prompt_version mismatch"):
+            validate_audit_row(row, default_scan=True)
 
     def test_old_embedded_model_judgment_fails(self):
         row = dict(VALID_ROW)
