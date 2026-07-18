@@ -5,7 +5,8 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 ## Required Shape
 
 - One concept per file.
-- Timestamp-prefixed filename when the vault uses timestamp atomic notes.
+- Timestamp-prefixed filename whose stem copies the reader-visible applicable
+  Definition source without its final period.
 - Frontmatter with `title` and `aliases`.
 - Clear Definition, Analogy, and Example content.
 - At least one useful connection to a structure note or related concept.
@@ -71,20 +72,38 @@ every available fact into one by default.
 Atomic notes use two separate matching pairs:
 
 - The timestamp-prefixed filename uses the reader-visible wording of the
-  Definition's first sentence without its final period. The timestamp, `.md`
-  extension, and Markdown wrappers are not part of that comparison. All other
-  visible words, capitalization, punctuation, and word order must match.
-  Before writing, confirm that the resulting text is valid as one filename
-  component in the target vault and platform. If it is not, redraft the first
-  sentence with the learner so the sentence and filename can still match;
-  never silently remove or substitute characters.
+  applicable Definition source without its final period. The timestamp, `.md`
+  extension, Markdown wrappers, and Anki cloze syntax are not part of that
+  comparison. Compare cloze text as a reader sees it. All other visible words,
+  capitalization, punctuation, and word order must match.
 - The YAML `title` and H1 use the same short concept name. That short concept
   name does not need to repeat the full Definition sentence.
 
-Check both pairs when creating a note and when improving an existing note. If
-an improvement changes the Definition's first sentence, reconcile the filename
-through the approved rename flow in the remediation context rather than leaving
-the old filename in place.
+Choose the applicable Definition source by note shape. Visible DAE takes
+precedence over optional Anki card text:
+
+| Note shape | Applicable Definition source | Matching rule |
+| --- | --- | --- |
+| Plain-prose DAE, with or without Anki | First visible DAE sentence after the H1 | Exact reader-visible wording without the final period |
+| Legacy headed DAE, with or without Anki | First sentence under `## Definition` | Exact reader-visible wording without the final period |
+| Anki `Basic` with DAE stored only in `Back:` | First Definition sentence in `Back:` | Exact reader-visible wording without the final period |
+| Anki `Cloze` with DAE stored only in the card body | Rendered cloze-bearing Definition sentence | Exact reader-visible wording without the final period |
+
+Before writing the filename, confirm that its derived stem is valid as one
+filename component in the target vault and platform. If it is not, redraft the
+Definition source with the learner so the visible sentence and filename can
+still match; never silently remove or substitute characters. Check both pairs
+when creating or improving a note. Reconcile an existing or newly introduced
+filename/Definition mismatch through the approved rename flow in the
+remediation context.
+
+When a learner or governing template explicitly declares that a pre-existing
+user vault uses a different filename scheme, preserve it as a compatibility
+exception unless the learner approves a migration. Do not describe it as
+another Networked Thinking naming style or use nearby inconsistencies to weaken
+the canonical rule. This exception applies only to workflows that receive that
+declaration; model judgment without vault-level context evaluates the canonical
+contract.
 
 ## Anki
 

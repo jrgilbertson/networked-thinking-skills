@@ -11,7 +11,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
+  provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
+- Doctrine `1.0.4` and model prompt `1.0.2` make canonical atomic-note filenames
+  copy the exact reader-visible Definition opening after the timestamp and
+  without its final period, while YAML titles and H1s share a short concept name.
+- Interactive authoring preserves explicitly declared non-standard user-vault
+  filename schemes as compatibility exceptions, while model judgment without
+  vault-level context evaluates the canonical Networked Thinking contract.
 - Atomic-note doctrine now matches filenames to the Definition's first sentence
   and keeps YAML titles aligned with short H1 concept names.
 - Structure-note and Anki guidance now treats learner-chosen factual recall and

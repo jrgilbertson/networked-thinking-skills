@@ -13,7 +13,11 @@ from typing import Any, Protocol
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.scripts.model_contract import validate_model_judgment
+from shared.scripts.audit_engine import PROMPT_VERSION
+from shared.scripts.model_contract import (
+    MODEL_JUDGMENT_SCHEMA_VERSION,
+    validate_model_judgment,
+)
 from shared.scripts.schema_validation import ValidationError, validate_audit_row
 
 
@@ -136,11 +140,13 @@ def collect_model_judgments(
     rows = _read_audit_rows(audit_jsonl)
     if limit is not None:
         rows = rows[:limit]
+    _require_current_prompt_version(rows)
 
     output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
 
-    completed = _read_completed_paths(output_jsonl)
+    prompt_versions = {str(row["note_path"]): PROMPT_VERSION for row in rows}
+    completed = _read_completed_paths(output_jsonl, prompt_versions)
     expected = {str(row["note_path"]) for row in rows}
     extra_completed = sorted(completed - expected)
     if extra_completed:
@@ -163,7 +169,7 @@ def collect_model_judgments(
             runner=runner,
         )
 
-    final_completed = _read_completed_paths(output_jsonl)
+    final_completed = _read_completed_paths(output_jsonl, prompt_versions)
     missing = sorted(expected - final_completed)
     if missing:
         raise ValidationError(f"missing={len(missing)} first={missing[0]}")
@@ -350,8 +356,7 @@ def _run_batch(
     runner.run(prompt, output_path=output_path, stdout_path=stdout_path, stderr_path=stderr_path)
 
     judgments = parse_model_output(output_path.read_text(encoding="utf-8"))
-    _validate_batch_judgments(batch.rows, judgments)
-    return judgments
+    return _validated_batch_judgments(batch.rows, judgments)
 
 
 def render_batch_prompt(vault_root: Path, rows: list[dict[str, Any]]) -> str:
@@ -419,15 +424,25 @@ def parse_model_output(raw: str) -> list[dict[str, Any]]:
     return judgments
 
 
-def _validate_batch_judgments(rows: list[dict[str, Any]], judgments: list[dict[str, Any]]) -> None:
+def _validated_batch_judgments(
+    rows: list[dict[str, Any]], judgments: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     expected_paths = [str(row["note_path"]) for row in rows]
     actual_paths = [str(judgment.get("note_path")) for judgment in judgments]
     if actual_paths != expected_paths:
         raise ValidationError(
             f"note_path mismatch expected={expected_paths!r} actual={actual_paths!r}"
         )
-    for judgment in judgments:
-        validate_model_judgment(judgment)
+    stored_judgments: list[dict[str, Any]] = []
+    for row, judgment in zip(rows, judgments, strict=True):
+        stored_judgment = {
+            **judgment,
+            "schema_version": MODEL_JUDGMENT_SCHEMA_VERSION,
+            "prompt_version": PROMPT_VERSION,
+        }
+        validate_model_judgment(stored_judgment)
+        stored_judgments.append(stored_judgment)
+    return stored_judgments
 
 
 def _strip_fence(text: str) -> str:
@@ -473,13 +488,26 @@ def _make_batches(
     return batches
 
 
-def _read_completed_paths(path: Path) -> set[str]:
+def _read_completed_paths(
+    path: Path,
+    expected_prompt_versions: dict[str, str] | None = None,
+) -> set[str]:
     if not path.exists():
         return set()
     completed: set[str] = set()
     for judgment in _read_jsonl(path):
         validate_model_judgment(judgment)
         note_path = str(judgment["note_path"])
+        if (
+            expected_prompt_versions is not None
+            and note_path in expected_prompt_versions
+            and judgment["prompt_version"] != expected_prompt_versions[note_path]
+        ):
+            raise ValidationError(
+                f"existing judgment prompt_version mismatch for {note_path}: "
+                f"expected {expected_prompt_versions[note_path]}, "
+                f"got {judgment['prompt_version']}"
+            )
         if note_path in completed:
             raise ValidationError(f"duplicate model judgment note_path: {note_path}")
         completed.add(note_path)
@@ -491,6 +519,16 @@ def _read_audit_rows(path: Path) -> list[dict[str, Any]]:
     for row in rows:
         validate_audit_row(row, default_scan=True)
     return rows
+
+
+def _require_current_prompt_version(rows: list[dict[str, Any]]) -> None:
+    for row in rows:
+        if row["prompt_version"] != PROMPT_VERSION:
+            raise ValidationError(
+                f"audit row prompt_version mismatch for {row['note_path']}: "
+                f"expected {PROMPT_VERSION}, got {row['prompt_version']}; "
+                "rerun the deterministic audit before collecting model judgments"
+            )
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:

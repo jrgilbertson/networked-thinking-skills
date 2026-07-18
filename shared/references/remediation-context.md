@@ -36,23 +36,50 @@ control characters so corrupted formulas do not sync into Anki.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
-Before previewing an improvement, compare the timestamp-stripped filename with
-the reader-visible wording of the Definition's first sentence without its final
-period, and compare the YAML `title` with the H1 short concept name.
+Before previewing an improvement, choose the applicable Definition source.
+Use the first visible DAE sentence after the H1 for plain-prose DAE, even when
+the note also has an optional Anki card. Use the first sentence under
+`## Definition` for a legacy headed note. Only when DAE exists solely inside an
+Anki card, use the first Definition sentence in `Back:` for `Basic` or the
+rendered cloze-bearing Definition sentence for `Cloze`.
+
+Compare the timestamp-stripped filename with that reader-visible source without
+its final period. Exclude only the timestamp, `.md` extension, Markdown
+wrappers, Anki cloze syntax, and final period. All other visible words,
+capitalization, punctuation, and word order must match. Separately compare the
+YAML `title` with the H1 short concept name, then compare their shared short
+concept with the Definition's concept.
+
+When a learner or governing template explicitly declares that a pre-existing
+user vault uses a different filename scheme, preserve it as a compatibility
+exception unless the learner approves a migration. Do not infer another
+Networked Thinking naming style from nearby inconsistencies.
+
+When only the YAML/H1 pair or its semantic relationship to the Definition is
+mismatched, and the applicable Definition source remains unchanged, use a
+content-only flow. Preview the exact YAML and H1 edits and the concept correction,
+obtain explicit approval, then apply the approved edits through an Obsidian
+app-context modify operation. Verify that YAML `title` and H1 match, that their
+shared short concept identifies the Definition's concept, and that the unchanged
+filename/Definition pair remains aligned. Do not require a rename or rename
+approval for this content-only path. If correcting the concept requires changing
+the applicable Definition source, compare the resulting source with the filename
+and use the rename flow below only when that pair would differ.
 
 If this comparison detects an existing filename/Definition mismatch, or if the
-proposed improvement changes the Definition's first sentence, derive and
-preview the corresponding filename change. Do this even when the Definition's
-first sentence is unchanged. When the first sentence changes, preview the
+proposed improvement would introduce one, derive and preview the exact filename
+from the applicable Definition source. Do this even when the Definition's first
+sentence is unchanged. When a Definition change requires a rename, preview the
 content change and filename change together. Before requesting approval,
 confirm that the derived text is valid as one filename component in the target
-vault and platform. If it is not, redraft the first sentence with the learner;
-do not silently strip or substitute characters. Obtain explicit rename
-approval before applying the filename change. When the first sentence changes,
-approval is required before either change is applied. If rename approval is
-denied, do not write a proposed first-sentence change; keep the original
-sentence or redraft without changing it. If the sentence was already unchanged,
-leave the stale filename in place and report the remaining mismatch.
+vault and platform. If it is not, redraft the Definition source with the
+learner; do not silently strip or substitute characters. Obtain explicit rename
+approval before applying the filename change. When a Definition change requires
+a rename, approval is required before either change is applied. If rename
+approval is denied, do not write a proposed Definition change that would
+introduce filename drift; keep the original Definition or redraft it to remain
+aligned. If the Definition was already unchanged, leave the stale filename in
+place and report the remaining mismatch.
 
 Before an approved rename, confirm in Obsidian's **Files and links** settings
 that **Automatically update internal links** is enabled. If it is disabled,
@@ -63,10 +90,10 @@ a representative set of links or backlinks before mutation. Perform the
 filename change with the official CLI `rename` or `move` command through the
 verified Obsidian CLI resolver. Never rename an atomic-note file through the
 raw filesystem. After the content and filename changes, verify both naming
-pairs, the final path, and the same representative links or backlinks. If a
-mutation fails, do not report success with a partially aligned note; restore
-the prior state through Obsidian-aware tooling or stop and report the exact
-state that needs recovery.
+pairs, the final path, and the same representative links or backlinks.
+If a mutation fails, do not report success with a partially aligned note;
+restore the prior state through Obsidian-aware tooling or stop and report the
+exact state that needs recovery.
 
 When fixing a missing parent link, insert the backlink into the relevant
 structure note with line-aware logic that preserves the surrounding list nesting

@@ -54,6 +54,15 @@ def apply_model_judgments(
     if extra_paths:
         raise ValidationError(f"model judgment note_path has no audit row: {extra_paths[0]}")
 
+    for row in rows:
+        note_path = str(row["note_path"])
+        judgment = judgment_by_path.get(note_path)
+        if judgment is not None and judgment["prompt_version"] != row["prompt_version"]:
+            raise ValidationError(
+                f"model judgment prompt_version mismatch for {note_path}: "
+                f"expected {row['prompt_version']}, got {judgment['prompt_version']}"
+            )
+
     missing_paths = sorted(row_paths - set(judgment_by_path))
     if missing_paths and not allow_missing:
         raise ValidationError(

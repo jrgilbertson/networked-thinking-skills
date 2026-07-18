@@ -34,32 +34,49 @@ filesystem writes. When working from an installed skill, prefer
 3. Draft one DAE note: Definition paragraph, Analogy paragraph, Example
    paragraph. For non-Anki notes, write the DAE as plain prose after the H1
    without `## Definition`, `## Analogy`, or `## Example` headings.
-4. Apply the two naming pairs: the timestamp-prefixed filename uses the
-   Definition's first sentence without its final period, while the YAML `title`
-   and H1 use the same short concept name. Preserve all other reader-visible
-   wording, capitalization, punctuation, and word order in the filename. If the
-   Definition sentence is not valid as one filename component in the target
-   vault and platform, redraft it with the learner instead of silently changing
-   characters.
-5. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
-6. Add Anki only when memorization serves the learner's stated goal. Factual
+4. Apply the two naming pairs. The timestamp-prefixed filename uses the
+   reader-visible wording of the applicable Definition source without its final
+   period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze
+   syntax are excluded; compare cloze text as a reader sees it. All other visible
+   words, capitalization, punctuation, and word order must match. Keep the YAML
+   `title` and H1 aligned to the same short concept name; that name does not need
+   to repeat the full Definition sentence. If the derived text is not valid as
+   one filename component in the target vault and platform, redraft the
+   Definition source with the learner instead of silently changing characters.
+5. When a learner or governing template explicitly declares that a pre-existing
+   user vault uses a different filename scheme, preserve it as a compatibility
+   exception unless the learner approves a migration. Do not describe it as
+   another Networked Thinking naming style or use nearby inconsistencies to
+   weaken the canonical rule.
+6. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
+7. Add Anki only when memorization serves the learner's stated goal. Factual
    recall and trivia are valid uses when the learner explicitly wants to
    practice them; still apply the learner-specific Anki-YAGNI check rather than
    adding every available fact. For synced `Cloze` notes, preserve useful cloze
    ordinals and put the Analogy plus Example behind `Extra:`; the Example must
    be a separate paragraph beginning `For example,`.
-7. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
-8. Preview the note and both naming pairs before writing when working in a
-   user's vault. If either an existing filename/Definition mismatch is detected
-   or an improved Definition's first sentence changes, preview the corresponding
-   filename and follow the remediation context's explicit approval,
+8. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
+9. Preview the note and both naming pairs before writing in a user's vault. If
+   an existing filename/Definition mismatch is detected or a proposed change to
+   the applicable Definition source would introduce one, preview the
+   corresponding filename and follow the remediation context's explicit approval,
    automatic-link-update preflight, and official CLI `rename` or `move`
-   workflow. If approval is denied, do not write a first-sentence change that
-   would leave the filename stale; report an unchanged pre-existing mismatch.
-9. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes or rename them through direct filesystem path writes. Use quote-safe content transport for app-context writes.
-10. After writing, verify the final filename against the Definition's first
-    sentence, the YAML `title` against the H1 short concept name, and any path or
-    link changes caused by a rename.
+   workflow. If approval is denied, do not write a Definition change that would
+   introduce filename drift; report an unchanged pre-existing mismatch.
+10. Write through Obsidian-aware tooling when modifying vault files; never create atomic notes or rename them through direct filesystem path writes. Use quote-safe content transport for app-context writes.
+11. After writing, verify the filename against the applicable Definition source,
+    the YAML `title` against the H1 short concept name, and any path or link
+    changes caused by a rename.
+
+Choose the applicable Definition source by note shape. Visible DAE takes
+precedence over optional Anki card text:
+
+| Note shape | Applicable Definition source | Matching rule |
+| --- | --- | --- |
+| Plain-prose DAE, with or without Anki | First visible DAE sentence after the H1 | Exact reader-visible wording without the final period |
+| Legacy headed DAE, with or without Anki | First sentence under `## Definition` | Exact reader-visible wording without the final period |
+| Anki `Basic` with DAE stored only in `Back:` | First Definition sentence in `Back:` | Exact reader-visible wording without the final period |
+| Anki `Cloze` with DAE stored only in the card body | Rendered cloze-bearing Definition sentence | Exact reader-visible wording without the final period |
 
 ## Quality Bar
 
