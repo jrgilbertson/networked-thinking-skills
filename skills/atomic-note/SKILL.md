@@ -84,3 +84,10 @@ Use the scan to decide whether to:
   without narrowing a broad, learner-chosen topic to analytical use alone. For
   example, a Mythology structure note can support comparison of figures and
   motifs alongside names, stories, and other facts selected for trivia review.
+
+Structure Note entries are index links, so whenever this skill adds one, use
+the complete note filename stem, including its timestamp, as an unaliased
+wikilink: `[[full note filename]]`. Do not shorten Structure Note entries to
+`[[full note filename|display alias]]` unless the learner explicitly requests
+an alias. This convention is specific to Structure Note entries; wikilinks in
+ordinary prose may use display aliases when shorter text improves readability.

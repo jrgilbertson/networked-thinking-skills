@@ -72,7 +72,12 @@ When fixing a missing parent link, insert the backlink into the relevant
 structure note with line-aware logic that preserves the surrounding list nesting
 and numbering. Verify the rendered source text after the write; do not rely on a
 brittle exact multi-line replacement when Obsidian may have already updated
-nearby wikilinks.
+nearby wikilinks. Structure Note entries are index links, so use the complete
+note filename stem, including its timestamp, as an unaliased wikilink:
+`[[full note filename]]`. Do not shorten Structure Note entries to
+`[[full note filename|display alias]]` unless the learner explicitly requests
+an alias. This convention does not prohibit display aliases in ordinary prose
+or other contexts where shorter link text improves readability.
 
 ## Split Multi-Note Files
 

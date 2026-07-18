@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_DIR = ROOT / "tests/fixtures/atomic-note-skill"
 NAMING_FIXTURE_PATH = FIXTURE_DIR / "filename-definition-alignment.json"
 RECALL_FIXTURE_PATH = FIXTURE_DIR / "recall-friendly-structure-note.json"
+STRUCTURE_LINK_FIXTURE_PATH = FIXTURE_DIR / "structure-note-link.json"
 
 
 def normalized_text(path):
@@ -27,6 +28,9 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.fixture = json.loads(NAMING_FIXTURE_PATH.read_text(encoding="utf-8"))
         cls.recall_fixture = json.loads(RECALL_FIXTURE_PATH.read_text(encoding="utf-8"))
+        cls.structure_link_fixture = json.loads(
+            STRUCTURE_LINK_FIXTURE_PATH.read_text(encoding="utf-8")
+        )
 
     def test_guidance_supports_recall_friendly_structure_notes(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
@@ -104,6 +108,30 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("the same representative links or backlinks", remediation)
         self.assertIn("existing filename/Definition mismatch", skill)
         self.assertIn("report an unchanged pre-existing mismatch", skill)
+
+    def test_structure_note_guidance_requires_full_unaliased_entries(self):
+        remediation = normalized_text(ROOT / "shared/references/remediation-context.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        for text in (remediation, skill):
+            self.assertIn("Structure Note entries", text)
+            self.assertIn("`[[full note filename]]`", text)
+            self.assertIn("`[[full note filename|display alias]]`", text)
+            self.assertIn("explicitly requests an alias", text)
+            self.assertIn("ordinary prose", text)
+
+    def test_parent_link_fixture_adds_full_unaliased_filename(self):
+        fixture = self.structure_link_fixture
+        full_note_filename = Path(fixture["note_path"]).stem
+        expected_entry = f"- [[{full_note_filename}]]"
+
+        self.assertFalse(fixture["explicit_alias_requested"])
+        self.assertEqual(fixture["expected_inserted_entry"], expected_entry)
+        self.assertNotIn("|", fixture["expected_inserted_entry"])
+        self.assertEqual(
+            fixture["existing_structure_note_entries"] + [expected_entry],
+            fixture["expected_structure_note_entries"],
+        )
 
     def test_fake_regression_example_covers_both_mismatches(self):
         before = self.fixture["before"]
