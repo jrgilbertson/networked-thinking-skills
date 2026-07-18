@@ -24,7 +24,13 @@ filesystem writes. When working from an installed skill, prefer
 ## Workflow
 
 1. Read the relevant source material or existing note.
-2. Scan nearby notes and topics before writing: exact duplicates, overlapping aliases, parent structure notes, sibling notes, prerequisites, and connective gaps.
+2. Scan nearby notes and topics before writing: exact duplicates, overlapping
+   aliases, parent structure notes, sibling notes, prerequisites, and connective
+   gaps. Identify whether the learner wants conceptual navigation, factual
+   recall, trivia review, or a mix, and preserve that purpose in the parent
+   structure note. A broad parent is a navigation hub, not itself a DAE atomic
+   note; apply the one-concept and DAE rules to each atomic child instead of
+   narrowing or splitting the hub merely because it spans a topic.
 3. Draft one DAE note: Definition paragraph, Analogy paragraph, Example
    paragraph. For non-Anki notes, write the DAE as plain prose after the H1
    without `## Definition`, `## Analogy`, or `## Example` headings.
@@ -36,7 +42,12 @@ filesystem writes. When working from an installed skill, prefer
    vault and platform, redraft it with the learner instead of silently changing
    characters.
 5. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
-6. Add Anki only when memorization is useful. For synced `Cloze` notes, preserve useful cloze ordinals and put the Analogy plus Example behind `Extra:`; the Example must be a separate paragraph beginning `For example,`.
+6. Add Anki only when memorization serves the learner's stated goal. Factual
+   recall and trivia are valid uses when the learner explicitly wants to
+   practice them; still apply the learner-specific Anki-YAGNI check rather than
+   adding every available fact. For synced `Cloze` notes, preserve useful cloze
+   ordinals and put the Analogy plus Example behind `Extra:`; the Example must
+   be a separate paragraph beginning `For example,`.
 7. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
 8. Preview the note and both naming pairs before writing when working in a
    user's vault. If either an existing filename/Definition mismatch is detected
@@ -52,7 +63,10 @@ filesystem writes. When working from an installed skill, prefer
 
 ## Quality Bar
 
-The note should explain one concept clearly enough to stand alone while remaining connected to the surrounding knowledge network.
+The note should explain one concept clearly enough to stand alone while
+remaining connected to the surrounding knowledge network. Judge quality from
+the learner's purpose and the DAE, connection, and sourcing requirements, not
+from whether the purpose favors conceptual synthesis over factual recall.
 
 ## Nearby-Topic Scan
 
@@ -66,7 +80,10 @@ Use the scan to decide whether to:
 - link to sibling or prerequisite notes already present;
 - create a missing connective note when the current note is carrying a related
   concept that has no atomic home;
-- update the relevant structure note so the new or improved note is findable.
+- update the relevant structure note so the new or improved note is findable
+  without narrowing a broad, learner-chosen topic to analytical use alone. For
+  example, a Mythology structure note can support comparison of figures and
+  motifs alongside names, stories, and other facts selected for trivia review.
 
 Structure Note entries are index links, so whenever this skill adds one, use
 the complete note filename stem, including its timestamp, as an unaliased
