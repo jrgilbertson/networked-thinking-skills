@@ -66,7 +66,7 @@ def render_model_judgment_prompt() -> str:
             "- A note with check-worthy factual claims should emit one `factual_risk` finding and set both `factual_risk` and `fact_check_required` to true.",
             "- A synced Anki card for a reference-only, low-stakes, or rarely recalled concept can emit `anki_yagni`, but do not use it merely because the topic is advanced, specialized, medical, academic, or outside your own work.",
             "- When the learner explicitly wants factual recall or trivia practice, treat that goal as evidence of utility; do not emit `anki_yagni` solely because the card is recall-oriented or lacks an analytical synthesis purpose.",
-            "- A synced Anki card that only asks for a person's name pronunciation or other reference-only person detail can emit `anki_yagni` before rehoming or removing the card.",
+            "- When learner utility is unclear, a synced Anki card that only asks for a person's name pronunciation or other reference-only person detail can emit `anki_yagni` before rehoming or removing the card.",
             "",
             "## Output JSON Shape",
             "",

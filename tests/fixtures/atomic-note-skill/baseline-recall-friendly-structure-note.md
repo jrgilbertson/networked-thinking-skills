@@ -18,7 +18,7 @@ Date: 2026-07-18 | Harness: Codex subagent | Model: GPT-5 session model
 
 | Prompt | Prior-version behavior (observed) | Revised-version behavior (observed) | Verdict |
 | --- | --- | --- | --- |
-| Turn the fact that Ganymede is Jupiter's largest moon into a DAE atomic note and Anki card because I explicitly want quiz recall. | Likely created the card, but the audit guidance could still second-guess it as low-stakes or reference-only trivia because explicit recall intent was not affirmative utility evidence. | Created one sourced, connected DAE note and treated the explicit quiz goal as memorization-utility evidence. Kept Anki-YAGNI available for other utility concerns and retained first-sync verification. | Better |
+| Turn the invented Velunara myth-cycle fact that the moon-keeper Orivane carries seven silver keys into a DAE atomic note and Anki card because I explicitly want quiz recall. | Likely created the card, but the audit guidance could still second-guess it as low-stakes or reference-only trivia because explicit recall intent was not affirmative utility evidence. | Created one sourced, connected DAE note and treated the explicit quiz goal as memorization-utility evidence. Kept Anki-YAGNI available for other utility concerns and retained first-sync verification. | Better |
 
 ## Case 3: Explicit analytical use
 
