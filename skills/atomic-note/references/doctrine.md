@@ -5,7 +5,8 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 ## Required Shape
 
 - One concept per file.
-- Timestamp-prefixed filename when the vault uses timestamp atomic notes.
+- Follow the vault's local filename convention; include a timestamp prefix when
+  its atomic notes do.
 - Frontmatter with `title` and `aliases`.
 - Clear Definition, Analogy, and Example content.
 - At least one useful connection to a structure note or related concept.
@@ -50,23 +51,46 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 
 ## Naming Alignment
 
-Atomic notes use two separate matching pairs:
+Atomic notes use two separate alignment checks:
 
-- The timestamp-prefixed filename uses the reader-visible wording of the
-  Definition's first sentence without its final period. The timestamp, `.md`
-  extension, and Markdown wrappers are not part of that comparison. All other
-  visible words, capitalization, punctuation, and word order must match.
-  Before writing, confirm that the resulting text is valid as one filename
-  component in the target vault and platform. If it is not, redraft the first
-  sentence with the learner so the sentence and filename can still match;
-  never silently remove or substitute characters.
+- In a vault that uses proposition-style timestamp filenames, the filename
+  stem after the timestamp expresses the same single concept as the note's
+  Definition source at the same level of specificity. The wording need not be
+  verbatim, but the stem must not state a broader, narrower, or different
+  proposition.
 - The YAML `title` and H1 use the same short concept name. That short concept
-  name does not need to repeat the full Definition sentence.
+  name does not need to repeat the full Definition sentence, but it must remain
+  compatible with the filename proposition and Definition rather than
+  contradicting or broadening them.
 
-Check both pairs when creating a note and when improving an existing note. If
-an improvement changes the Definition's first sentence, reconcile the filename
-through the approved rename flow in the remediation context rather than leaving
-the old filename in place.
+Detect the filename convention before applying the proposition rule. Inspect
+the user template and nearby atomic notes in the same folder and of the same
+note type. Treat the local convention as proposition-style when the template
+directs it or nearby examples consistently pair a timestamped proposition with
+the note's Definition source. A timestamp prefix alone is not evidence of a
+proposition-style convention. In a mixed vault, scope the decision to the
+target folder, template, and note type. If those sources conflict or remain
+unclear, preserve the local filename pattern and do not force proposition
+filenames without evidence.
+
+| Note type | Compare filename proposition against | Alignment rule |
+| --- | --- | --- |
+| Anki `Basic` | First definition sentence in `Back:` | Same single concept and same specificity |
+| Anki `Cloze` | Cloze-bearing definition sentence | Same single concept and same specificity |
+| Non-Anki DAE | First sentence under `## Definition` | Same single concept and same specificity |
+| Mixed or unclear local convention | Nearby atomic-note examples and user template | Follow local convention; do not force proposition filenames without evidence |
+
+Current non-Anki authoring uses plain-prose DAE rather than section headings.
+For those notes, compare against the first visible DAE sentence after the H1;
+the `## Definition` source in the table covers legacy headed notes.
+
+Before writing a proposition filename, confirm that its stem is valid as one
+filename component in the target vault and platform. If it is not, redraft the
+stem and Definition wording with the learner while preserving the same concept
+and specificity; never silently remove or substitute characters. Check both
+alignment relationships when creating or improving a note. Reconcile an
+existing or newly introduced filename/Definition mismatch through the approved
+rename flow in the remediation context.
 
 ## Anki
 

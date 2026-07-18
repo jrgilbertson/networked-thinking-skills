@@ -36,23 +36,34 @@ control characters so corrupted formulas do not sync into Anki.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
-Before previewing an improvement, compare the timestamp-stripped filename with
-the reader-visible wording of the Definition's first sentence without its final
-period, and compare the YAML `title` with the H1 short concept name.
+Before previewing an improvement, determine whether the local convention uses
+proposition-style timestamp filenames from the user template and nearby atomic
+notes in the same folder and of the same note type. A timestamp prefix alone is
+not sufficient. In a mixed or unclear vault, follow the local evidence and do
+not force a proposition filename.
+
+When that convention applies, compare the timestamp-stripped filename with the
+relevant Definition source at the same level of specificity: the first
+definition sentence in `Back:` for `Basic`, the cloze-bearing definition
+sentence for `Cloze`, and the first visible Definition sentence for non-Anki
+DAE. Also compare the YAML `title` with the H1 short concept name and confirm
+that this display title is compatible with, and does not broaden, the filename
+proposition and Definition.
 
 If this comparison detects an existing filename/Definition mismatch, or if the
-proposed improvement changes the Definition's first sentence, derive and
-preview the corresponding filename change. Do this even when the Definition's
-first sentence is unchanged. When the first sentence changes, preview the
-content change and filename change together. Before requesting approval,
-confirm that the derived text is valid as one filename component in the target
-vault and platform. If it is not, redraft the first sentence with the learner;
-do not silently strip or substitute characters. Obtain explicit rename
-approval before applying the filename change. When the first sentence changes,
-approval is required before either change is applied. If rename approval is
-denied, do not write a proposed first-sentence change; keep the original
-sentence or redraft without changing it. If the sentence was already unchanged,
-leave the stale filename in place and report the remaining mismatch.
+proposed improvement would introduce one, derive and preview a filename stem
+that expresses the same single concept and specificity. Do this even when the
+Definition's first sentence is unchanged. When a Definition change requires a
+rename, preview the content change and filename change together. Before
+requesting approval, confirm that the derived text is valid as one filename
+component in the target vault and platform. If it is not, redraft the filename
+and Definition wording with the learner; do not silently strip or substitute
+characters. Obtain explicit rename approval before applying the filename
+change. When a Definition change requires a rename, approval is required before
+either change is applied. If rename approval is denied, do not write a proposed
+Definition change that would introduce filename drift; keep the original
+Definition or redraft it to remain aligned. If the Definition was already
+unchanged, leave the stale filename in place and report the remaining mismatch.
 
 Before an approved rename, confirm in Obsidian's **Files and links** settings
 that **Automatically update internal links** is enabled. If it is disabled,
@@ -62,11 +73,11 @@ ask the learner to inspect the setting and explicitly confirm its state. Record
 a representative set of links or backlinks before mutation. Perform the
 filename change with the official CLI `rename` or `move` command through the
 verified Obsidian CLI resolver. Never rename an atomic-note file through the
-raw filesystem. After the content and filename changes, verify both naming
-pairs, the final path, and the same representative links or backlinks. If a
-mutation fails, do not report success with a partially aligned note; restore
-the prior state through Obsidian-aware tooling or stop and report the exact
-state that needs recovery.
+raw filesystem. After the content and filename changes, verify both alignment
+relationships, the final path, and the same representative links or backlinks.
+If a mutation fails, do not report success with a partially aligned note;
+restore the prior state through Obsidian-aware tooling or stop and report the
+exact state that needs recovery.
 
 When fixing a missing parent link, insert the backlink into the relevant
 structure note with line-aware logic that preserves the surrounding list nesting

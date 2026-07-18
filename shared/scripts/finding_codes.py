@@ -83,7 +83,10 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
     ),
     "title_body_mismatch": FindingCodeSpec(
         loss=15,
-        message="Align the note title, Definition, and body around the same concept.",
+        message=(
+            "Align the proposition-style filename stem and Definition at the same "
+            "specificity; keep the display title and body compatible with that concept."
+        ),
         recommendation_mode="improve-in-place",
     ),
     "duplicate_overlap": FindingCodeSpec(

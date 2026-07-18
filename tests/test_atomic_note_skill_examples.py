@@ -30,11 +30,60 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         for text in (doctrine, skill):
-            self.assertIn("Definition's first sentence", text)
-            self.assertIn("final period", text)
+            self.assertIn("same single concept", text)
+            self.assertIn("same level of specificity", text)
             self.assertIn("YAML `title`", text)
             self.assertIn("H1", text)
             self.assertIn("short concept name", text)
+
+    def test_authoring_guidance_has_note_type_alignment_table(self):
+        doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        expected_rows = (
+            "| Anki `Basic` | First definition sentence in `Back:` | Same single concept and same specificity |",
+            "| Anki `Cloze` | Cloze-bearing definition sentence | Same single concept and same specificity |",
+            "| Non-Anki DAE | First sentence under `## Definition` | Same single concept and same specificity |",
+            "| Mixed or unclear local convention | Nearby atomic-note examples and user template | Follow local convention; do not force proposition filenames without evidence |",
+        )
+        for text_name, text in (("doctrine", doctrine), ("skill", skill)):
+            for row in expected_rows:
+                with self.subTest(text=text_name, row=row):
+                    self.assertIn(row, text)
+
+    def test_guidance_requires_evidence_for_proposition_style_filenames(self):
+        doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        for text in (doctrine, skill):
+            self.assertIn("timestamp prefix alone", text)
+            self.assertIn("user template", text)
+            self.assertIn("nearby atomic notes", text)
+            self.assertIn("mixed", text)
+            self.assertIn("do not force", text)
+
+    def test_synthetic_mismatches_cover_each_definition_source(self):
+        cases = self.fixture["semantic_alignment_cases"]
+        self.assertEqual(
+            [case["note_type"] for case in cases],
+            ["Anki Basic", "Anki Cloze", "Non-Anki DAE"],
+        )
+        self.assertEqual(
+            [case["definition_source"] for case in cases],
+            [
+                "First definition sentence in Back:",
+                "Cloze-bearing definition sentence",
+                "First sentence under ## Definition or first visible DAE sentence",
+            ],
+        )
+        for case in cases:
+            with self.subTest(note_type=case["note_type"]):
+                self.assertNotEqual(
+                    filename_definition_text(case["path"]),
+                    definition_filename_text(case["definition_sentence"]),
+                )
+                self.assertEqual(case["expected_finding"], "title_body_mismatch")
+                self.assertTrue(case["display_title"])
 
     def test_remediation_requires_cli_rename_and_link_verification(self):
         remediation = normalized_text(ROOT / "shared/references/remediation-context.md")
