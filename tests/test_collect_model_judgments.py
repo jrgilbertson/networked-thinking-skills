@@ -48,6 +48,18 @@ def judgment_for(note_path: str, *, findings: list[dict[str, object]] | None = N
     }
 
 
+def stored_judgment_for(
+    note_path: str,
+    *,
+    prompt_version: str = "1.0.1",
+) -> dict[str, object]:
+    return {
+        **judgment_for(note_path),
+        "schema_version": "2.0.0",
+        "prompt_version": prompt_version,
+    }
+
+
 def jsonl_for(judgments: list[dict[str, object]]) -> str:
     return "\n".join(json.dumps(judgment, sort_keys=True) for judgment in judgments) + "\n"
 
@@ -451,12 +463,20 @@ class CollectModelJudgmentsTest(unittest.TestCase):
                 )
 
             self.assertEqual(count, 3)
-            self.assertEqual(len(output.read_text(encoding="utf-8").splitlines()), 3)
+            stored = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(len(stored), 3)
+            self.assertEqual(
+                [judgment["prompt_version"] for judgment in stored],
+                [row["prompt_version"] for row in rows],
+            )
             self.assertEqual(len(runner.prompts), 1)
 
     def test_collect_model_judgments_resumes_existing_output(self):
         rows = load_fixture_rows()[:3]
-        completed = judgment_for(str(rows[0]["note_path"]))
+        completed = stored_judgment_for(
+            str(rows[0]["note_path"]),
+            prompt_version=str(rows[0]["prompt_version"]),
+        )
         remaining = [judgment_for(str(row["note_path"])) for row in rows[1:]]
         runner = FakeRunner([jsonl_for(remaining)])
 
@@ -479,6 +499,51 @@ class CollectModelJudgmentsTest(unittest.TestCase):
 
             self.assertEqual(count, 3)
             self.assertNotIn(str(rows[0]["note_path"]), runner.prompts[0])
+
+    def test_collect_model_judgments_rejects_stale_resumed_prompt_version(self):
+        row = load_fixture_rows()[0]
+        runner = FakeRunner([])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            output = tmp_path / "model-judgments.jsonl"
+            output.write_text(
+                jsonl_for([stored_judgment_for(str(row["note_path"]), prompt_version="1.0.0")]),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ValidationError, "prompt_version mismatch"):
+                collect_model_judgments(
+                    vault_root=FIXTURE_VAULT,
+                    audit_jsonl=AUDIT_JSONL,
+                    output_jsonl=output,
+                    raw_dir=tmp_path / "raw",
+                    max_notes=1,
+                    max_chars=100_000,
+                    limit=1,
+                    runner=runner,
+                )
+
+    def test_collect_model_judgments_rejects_resumed_judgment_without_prompt_version(self):
+        row = load_fixture_rows()[0]
+        runner = FakeRunner([])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            output = tmp_path / "model-judgments.jsonl"
+            output.write_text(jsonl_for([judgment_for(str(row["note_path"]))]), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValidationError, "missing required keys: prompt_version"):
+                collect_model_judgments(
+                    vault_root=FIXTURE_VAULT,
+                    audit_jsonl=AUDIT_JSONL,
+                    output_jsonl=output,
+                    raw_dir=tmp_path / "raw",
+                    max_notes=1,
+                    max_chars=100_000,
+                    limit=1,
+                    runner=runner,
+                )
 
     def test_collect_model_judgments_splits_and_retries_invalid_batch(self):
         rows = load_fixture_rows()[:2]
@@ -575,7 +640,10 @@ class CollectModelJudgmentsTest(unittest.TestCase):
 
     def test_duplicate_existing_judgment_fails(self):
         rows = load_fixture_rows()[:1]
-        duplicate = judgment_for(str(rows[0]["note_path"]))
+        duplicate = stored_judgment_for(
+            str(rows[0]["note_path"]),
+            prompt_version=str(rows[0]["prompt_version"]),
+        )
         runner = FakeRunner([])
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -597,7 +665,10 @@ class CollectModelJudgmentsTest(unittest.TestCase):
 
     def test_existing_judgment_outside_selected_rows_fails(self):
         rows = load_fixture_rows()[:2]
-        outside_selected_rows = judgment_for(str(rows[1]["note_path"]))
+        outside_selected_rows = stored_judgment_for(
+            str(rows[1]["note_path"]),
+            prompt_version=str(rows[1]["prompt_version"]),
+        )
         runner = FakeRunner([])
 
         with tempfile.TemporaryDirectory() as tmp:

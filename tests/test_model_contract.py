@@ -25,7 +25,8 @@ BASE_CACHE_KEY_ARGS = {
 }
 
 VALID_JUDGMENT = {
-    "schema_version": "1.0.0",
+    "schema_version": "2.0.0",
+    "prompt_version": "1.0.1",
     "note_path": CLEAN_NOTE_PATH,
     "dimension_adjustments": {
         "clarity": -5,
@@ -113,6 +114,8 @@ class ModelContractTest(unittest.TestCase):
     def test_schema_allows_null_factual_risk_reason_and_excerpt_reason_evidence(self):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
 
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "2.0.0")
+        self.assertIn("prompt_version", schema["required"])
         self.assertEqual(set(schema["properties"]["factual_risk_reason"]["type"]), {"string", "null"})
 
         finding = schema["$defs"]["finding"]

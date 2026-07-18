@@ -35,6 +35,7 @@ def load_fixture_manifest() -> dict[str, object]:
 def judgment_for(
     note_path: str,
     *,
+    prompt_version: str = "1.0.1",
     findings: list[dict[str, object]] | None = None,
     dimension_adjustments: dict[str, int] | None = None,
     factual_risk: bool = False,
@@ -42,7 +43,8 @@ def judgment_for(
     fact_check_required: bool = False,
 ) -> dict[str, object]:
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "2.0.0",
+        "prompt_version": prompt_version,
         "note_path": note_path,
         "dimension_adjustments": dimension_adjustments or {},
         "findings": findings or [],
@@ -249,6 +251,24 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         judgments.append(deepcopy(judgments[0]))
 
         with self.assertRaises(ValidationError):
+            apply_model_judgments(rows, manifest, judgments)
+
+    def test_stale_prompt_version_fails(self):
+        rows = load_fixture_rows()
+        manifest = load_fixture_manifest()
+        judgments = judgments_for_rows(rows)
+        judgments[0]["prompt_version"] = "1.0.0"
+
+        with self.assertRaisesRegex(ValidationError, "prompt_version mismatch"):
+            apply_model_judgments(rows, manifest, judgments)
+
+    def test_missing_prompt_version_fails(self):
+        rows = load_fixture_rows()
+        manifest = load_fixture_manifest()
+        judgments = judgments_for_rows(rows)
+        del judgments[0]["prompt_version"]
+
+        with self.assertRaisesRegex(ValidationError, "missing required keys: prompt_version"):
             apply_model_judgments(rows, manifest, judgments)
 
     def test_cli_writes_valid_outputs(self):

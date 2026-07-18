@@ -51,6 +51,8 @@ Use `references/model-judgment-prompt.md` verbatim when asking an
 LLM for model judgment. The prompt is generated from the scoring vocabulary
 source of truth and must stay aligned with `scripts/finding_codes.py`.
 Model output must be strict JSON and validated before it affects scoring.
+The collector owns stored schema and prompt provenance; do not ask the model to
+invent those values.
 
 To prepare one note for judgment without prompt drift, run:
 
@@ -79,11 +81,11 @@ file is parsed instead. Quote path placeholders such as `{output_path}`,
 spaces. Use doubled braces for literal `{` or `}` characters.
 
 Keep `--raw-dir` outside the vault by default because it contains private note
-content in prompts and logs. The collector resumes from an existing valid
-`model-judgments.jsonl`, validates each response, and splits failed batches into
-smaller retries.
+content in prompts and logs. The collector stamps each stored judgment with the
+matching audit row's `prompt_version`. It resumes only when existing provenance
+matches, validates each response, and splits failed batches into smaller retries.
 
-Collect model responses as JSONL, one strict
+The collector stores model responses as JSONL, one strict
 `schemas/model-judgment.schema.json` object per line. Then apply them to
 the deterministic audit rows before generating the model-judgment report or
 Base:
@@ -94,7 +96,8 @@ python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-a
 
 By default, the apply step hard-fails unless every audit row has exactly one
 matching model judgment. Use `--allow-missing` only for a deliberate sampling
-pass; unmatched rows stay `pending_model: true`.
+pass; unmatched rows stay `pending_model: true`. Supplied judgments with missing
+or mismatched `prompt_version` provenance are rejected.
 
 For reviewed rows, model findings replace deterministic semantic findings. The
 apply step keeps only deterministic audit checks a single-note model cannot

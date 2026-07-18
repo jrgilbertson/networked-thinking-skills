@@ -10,6 +10,7 @@ from shared.scripts.schema_validation import DIMENSION_KEYS, ValidationError
 
 MODEL_JUDGMENT_REQUIRED = {
     "schema_version",
+    "prompt_version",
     "note_path",
     "dimension_adjustments",
     "findings",
@@ -18,6 +19,7 @@ MODEL_JUDGMENT_REQUIRED = {
     "fact_check_required",
     "evidence",
 }
+MODEL_JUDGMENT_SCHEMA_VERSION = "2.0.0"
 FINDING_REQUIRED = {"code", "message"}
 FINDING_ALLOWED = FINDING_REQUIRED | {"evidence"}
 EVIDENCE_KEYS = {"excerpt", "reason"}
@@ -52,7 +54,12 @@ def validate_model_judgment(judgment: dict[str, Any]) -> None:
 
     _require_keys(judgment, MODEL_JUDGMENT_REQUIRED, "model_judgment")
     _reject_extra_keys(judgment, MODEL_JUDGMENT_REQUIRED, "model_judgment")
-    _validate_non_empty_string(judgment["schema_version"], "model_judgment.schema_version")
+    if judgment["schema_version"] != MODEL_JUDGMENT_SCHEMA_VERSION:
+        raise ValidationError(
+            "model_judgment.schema_version must be "
+            f"{MODEL_JUDGMENT_SCHEMA_VERSION}"
+        )
+    _validate_non_empty_string(judgment["prompt_version"], "model_judgment.prompt_version")
     _validate_non_empty_string(judgment["note_path"], "model_judgment.note_path")
     _validate_dimension_adjustments(judgment["dimension_adjustments"])
     _validate_findings(judgment["findings"])

@@ -11,6 +11,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
+  provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
 - Canonical atomic-note filenames now copy the exact reader-visible Definition
   opening after the timestamp and without its final period, while YAML titles

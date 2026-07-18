@@ -78,8 +78,9 @@ that provider/tool trust boundary before running exhaustive model judgment on
 private vault content.
 
 The deterministic audit remains the source input. A model-judgment pass should
-use `references/model-judgment-prompt.md` and emit strict JSON matching
-`schemas/model-judgment.schema.json`; validate those judgments before
+use `references/model-judgment-prompt.md` and emit strict judgment JSON. Before
+storage, the collector adds schema and prompt provenance so the resulting object
+matches `schemas/model-judgment.schema.json`; validate stored judgments before
 they affect scores, buckets, or reports. In default mode, review flagged or
 ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
 review every note.
@@ -113,12 +114,16 @@ spaces. Use doubled braces for literal `{` or `}` characters. The collector
 writes raw prompts and runner stdout/stderr
 to `--raw-dir`. Those
 files contain private note content, so keep `--raw-dir` outside the vault unless
-the user explicitly wants private prompt logs stored there. The collector is
-resumable: if `model-judgments.jsonl` already contains valid judgments, it skips
-those note paths. It validates every model response against
+the user explicitly wants private prompt logs stored there. The collector adds
+each audit row's `prompt_version` to its stored judgment, so the model supplies
+judgment content rather than provenance. It resumes only when existing
+provenance matches; missing or stale provenance fails instead of silently
+skipping the note. It validates every model response against
 `scripts/model_contract.py` before appending and splits a failed batch
 into smaller retries when the model drifts from JSONL or the controlled finding
-vocabulary.
+vocabulary. Requiring this stored provenance advances the model-judgment schema
+contract to `2.0.0`; it does not change the model prompt because the collector,
+not the model, owns the new field.
 
 After model judgments have been collected into JSONL, apply them to the
 deterministic audit rows before generating review artifacts:
@@ -133,7 +138,8 @@ python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/model-app
 `apply_model_judgments` requires one judgment per audit row by default. Use
 `--allow-missing` only for an intentional partial/sampling pass; unmatched rows
 remain `pending_model: true` so model judgment coverage and clean-note KPIs stay
-honest.
+honest. Every supplied judgment must also carry the same `prompt_version` as its
+matching audit row.
 
 For reviewed rows, model findings are the final semantic quality judgment. The
 apply step retains only deterministic audit findings the single-note model
