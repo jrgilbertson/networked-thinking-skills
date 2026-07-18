@@ -20,7 +20,9 @@ An Atomic Note that also includes Obsidian-to-Anki card content while preserving
 The canonical Networked Thinking filename uses a timestamp followed by the reader-visible applicable Definition source without its final period. Plain-prose DAE takes precedence over optional Anki card text. YAML `title` and H1 separately use the same short concept name.
 
 ### Structure Note
-A hub note that gives Atomic Notes a findable context by linking related concepts into a larger topic or review area.
+A hub note that organizes Atomic Notes into a findable topic or review area for learner-chosen conceptual navigation, factual recall, trivia review, or a mix.
+
+Its breadth is intentional; DAE and one-concept rules apply to linked Atomic Notes, not the Structure Note itself.
 
 ## Audit And Skill Contracts
 

@@ -5,7 +5,10 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_PATH = ROOT / "tests/fixtures/atomic-note-skill/filename-definition-alignment.json"
+FIXTURE_DIR = ROOT / "tests/fixtures/atomic-note-skill"
+NAMING_FIXTURE_PATH = FIXTURE_DIR / "filename-definition-alignment.json"
+RECALL_FIXTURE_PATH = FIXTURE_DIR / "recall-friendly-structure-note.json"
+STRUCTURE_LINK_FIXTURE_PATH = FIXTURE_DIR / "structure-note-link.json"
 
 
 def normalized_text(path):
@@ -31,7 +34,59 @@ def rendered_definition_filename_text(sentence):
 class AtomicNoteSkillContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+        cls.fixture = json.loads(NAMING_FIXTURE_PATH.read_text(encoding="utf-8"))
+        cls.recall_fixture = json.loads(RECALL_FIXTURE_PATH.read_text(encoding="utf-8"))
+        cls.structure_link_fixture = json.loads(
+            STRUCTURE_LINK_FIXTURE_PATH.read_text(encoding="utf-8")
+        )
+
+    def test_guidance_supports_recall_friendly_structure_notes(self):
+        doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+        rubric = normalized_text(ROOT / "shared/references/audit-rubric.md")
+
+        for text in (doctrine, skill):
+            self.assertIn("conceptual navigation", text)
+            self.assertIn("factual recall", text)
+            self.assertIn("trivia", text)
+            self.assertIn("learner", text)
+            self.assertIn("not itself a DAE atomic note", text)
+
+        self.assertIn("explicitly wants to practice factual recall or trivia", rubric)
+        self.assertNotIn("rather than only as literary trivia", doctrine)
+        self.assertNotIn("rather than only as literary trivia", skill)
+
+    def test_fake_mythology_structure_example_preserves_recall_goal_and_quality_bar(self):
+        expected = self.recall_fixture["expected"]
+        request = self.recall_fixture["request"]
+        doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        self.assertIn("Create a DAE atomic note", request)
+        self.assertIn("then update a broad Mythology structure note", request)
+        self.assertEqual(expected["structure_note"], "Structure Notes/Mythology.md")
+        self.assertEqual(
+            set(expected["supported_purposes"]),
+            {"conceptual_navigation", "factual_recall", "trivia_review"},
+        )
+        self.assertTrue(expected["preserve_broad_topic_scope"])
+        self.assertTrue(expected["children_remain_dae_atomic_notes"])
+        self.assertTrue(expected["source_factual_claims_when_appropriate"])
+        self.assertEqual(expected["quality_penalty_for_recall_orientation"], "none")
+
+        if expected["preserve_broad_topic_scope"]:
+            self.assertIn("navigation hub", doctrine)
+            self.assertIn("narrowing or splitting the hub", skill)
+        if expected["children_remain_dae_atomic_notes"]:
+            self.assertIn("one concept in DAE form", doctrine)
+            self.assertIn("apply the one-concept and DAE rules", skill)
+        if expected["source_factual_claims_when_appropriate"]:
+            self.assertIn("sources factual claims when appropriate", doctrine)
+        self.assertEqual(expected["anki_decision"], "learner_goal_and_yagni_check")
+        self.assertIn("Anki remains optional and learner-specific", doctrine)
+        self.assertIn("learner-specific Anki-YAGNI check", skill)
+        if expected["quality_penalty_for_recall_orientation"] == "none":
+            self.assertIn("Recall or trivia orientation is not by itself a quality defect", doctrine)
 
     def test_production_instructions_define_the_two_matching_pairs(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
@@ -166,6 +221,30 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("only when that pair would differ", remediation)
         self.assertIn("existing filename/Definition mismatch", skill)
         self.assertIn("report an unchanged pre-existing mismatch", skill)
+
+    def test_structure_note_guidance_requires_full_unaliased_entries(self):
+        remediation = normalized_text(ROOT / "shared/references/remediation-context.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        for text in (remediation, skill):
+            self.assertIn("Structure Note entries", text)
+            self.assertIn("`[[full note filename]]`", text)
+            self.assertIn("`[[full note filename|display alias]]`", text)
+            self.assertIn("explicitly requests an alias", text)
+            self.assertIn("ordinary prose", text)
+
+    def test_parent_link_fixture_adds_full_unaliased_filename(self):
+        fixture = self.structure_link_fixture
+        full_note_filename = Path(fixture["note_path"]).stem
+        expected_entry = f"- [[{full_note_filename}]]"
+
+        self.assertFalse(fixture["explicit_alias_requested"])
+        self.assertEqual(fixture["expected_inserted_entry"], expected_entry)
+        self.assertNotIn("|", fixture["expected_inserted_entry"])
+        self.assertEqual(
+            fixture["existing_structure_note_entries"] + [expected_entry],
+            fixture["expected_structure_note_entries"],
+        )
 
     def test_fake_regression_example_covers_both_mismatches(self):
         before = self.fixture["before"]

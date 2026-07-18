@@ -20,6 +20,24 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   (formulas, lookup tables, commands) worth preserving but not worth testing
   directly.
 
+## Learner Purpose and Structure Notes
+
+Structure notes may organize atomic notes for conceptual navigation, factual
+recall, trivia review, or a learner-chosen mix. Preserve the learner's intended
+scope instead of narrowing a broad topic to analytical synthesis or reusable
+thinking tools. For example, a `Mythology` structure note can connect figures
+and motifs for conceptual comparison while also collecting names, stories, and
+other facts the learner wants to remember. The structure note is a navigation
+hub, not itself a DAE atomic note; the one-concept and DAE rules apply to its
+atomic children rather than to the breadth of the hub.
+
+Recall-oriented children remain atomic notes: each covers one concept in DAE
+form, connects to the surrounding network, and sources factual claims when
+appropriate. Recall or trivia orientation is not by itself a quality defect.
+Anki remains optional and learner-specific; an explicit desire to practice a
+fact supports adding a card, while the Anki-YAGNI check still prevents turning
+every available fact into one by default.
+
 ## DAE Rules
 
 - Definition: 10-50 rendered words. Rendered word counts use the visible text a

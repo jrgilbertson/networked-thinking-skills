@@ -20,6 +20,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Interactive authoring preserves explicitly declared non-standard user-vault
   filename schemes as compatibility exceptions, while model judgment without
   vault-level context evaluates the canonical Networked Thinking contract.
+- Atomic-note doctrine now matches filenames to the Definition's first sentence
+  and keeps YAML titles aligned with short H1 concept names.
+- Structure-note and Anki guidance now treats learner-chosen factual recall and
+  trivia as valid purposes alongside conceptual navigation.
 
 ### Fixed
 
@@ -27,6 +31,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Audit scoring excludes trailing `Reference:` and `Sources:` labels from DAE word counts and factual-risk checks.
 - Improved Definition sentences now require an approved Obsidian CLI rename
   with automatic internal-link updates enabled and post-rename link checks.
+- Structure Note updates now use complete, unaliased note filenames unless the
+  learner explicitly requests a display alias.
 
 ## [0.1.0] - 2026-06-05
 

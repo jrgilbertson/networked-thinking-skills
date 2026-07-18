@@ -66,7 +66,7 @@ class AuditEngineTest(unittest.TestCase):
 
         self.assertEqual(row["schema_version"], "1.0.0")
         self.assertEqual(row["doctrine_version"], "1.0.3")
-        self.assertEqual(row["rubric_version"], "1.0.0")
+        self.assertEqual(row["rubric_version"], "1.0.1")
         self.assertEqual(row["prompt_version"], "1.0.1")
         self.assertEqual(manifest["schema_version"], "1.0.0")
 
