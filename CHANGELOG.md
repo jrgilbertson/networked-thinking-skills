@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
 - Atomic-note doctrine now matches filenames to the Definition's first sentence
   and keeps YAML titles aligned with short H1 concept names.
+- Structure-note and Anki guidance now treats learner-chosen factual recall and
+  trivia as valid purposes alongside conceptual navigation.
 
 ### Fixed
 

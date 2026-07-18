@@ -1,0 +1,19 @@
+{
+  "id": "recall-friendly-mythology-structure-note",
+  "description": "An invented mythology hub tests learner-chosen conceptual and recall purposes without using private vault content.",
+  "request": "Create a broad Mythology structure note for comparing motifs and reviewing names, figures, and stories I want to remember.",
+  "failure_mode": "Narrow the hub to mythology used as a thinking tool and exclude literary trivia.",
+  "expected": {
+    "structure_note": "Structure Notes/Mythology.md",
+    "supported_purposes": [
+      "conceptual_navigation",
+      "factual_recall",
+      "trivia_review"
+    ],
+    "preserve_broad_topic_scope": true,
+    "children_remain_dae_atomic_notes": true,
+    "source_factual_claims_when_appropriate": true,
+    "anki_decision": "learner_goal_and_yagni_check",
+    "quality_penalty_for_recall_orientation": "none"
+  }
+}

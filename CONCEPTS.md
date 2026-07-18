@@ -17,7 +17,9 @@ An Atomic Note whose DAE content lives directly in visible note prose rather tha
 An Atomic Note that also includes Obsidian-to-Anki card content while preserving the same DAE concept contract.
 
 ### Structure Note
-A hub note that gives Atomic Notes a findable context by linking related concepts into a larger topic or review area.
+A hub note that organizes Atomic Notes into a findable topic or review area for learner-chosen conceptual navigation, factual recall, trivia review, or a mix.
+
+Its breadth is intentional; DAE and one-concept rules apply to linked Atomic Notes, not the Structure Note itself.
 
 ## Audit And Skill Contracts
 

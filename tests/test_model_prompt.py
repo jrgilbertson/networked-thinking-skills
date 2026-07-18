@@ -51,6 +51,8 @@ class ModelPromptTest(unittest.TestCase):
         self.assertIn("`anki_yagni`", prompt)
         self.assertIn("Confirm this Anki card is worth memorizing", prompt)
         self.assertIn("learner's domain", prompt)
+        self.assertIn("explicitly wants factual recall or trivia practice", prompt)
+        self.assertIn("do not emit `anki_yagni` solely because", prompt)
 
 
 if __name__ == "__main__":
