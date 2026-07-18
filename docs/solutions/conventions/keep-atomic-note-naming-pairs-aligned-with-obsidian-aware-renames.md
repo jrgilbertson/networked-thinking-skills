@@ -112,8 +112,9 @@ remediation references synchronize into both installable skill directories,
 while audit-only scripts synchronize into `atomic-note-audit`
 (`shared/scripts/sync_skill_artifacts.py:25`).
 Because these rules change both doctrine and model-judgment instructions,
-advance `doctrine_version` and `prompt_version`. The finding code and loss stay
-the same, so schema and rubric versions remain unchanged (`pyproject.toml:11`).
+advance `doctrine_version` to `1.0.4` and `prompt_version` to `1.0.2`. The
+finding code and loss stay the same, so the audit-row schema and scoring rubric
+versions remain unchanged (`pyproject.toml:11`).
 
 Use synthetic contract fixtures rather than private vault content. Cover
 `Basic`, rendered `Cloze`, plain-prose DAE with optional Anki, aligned and

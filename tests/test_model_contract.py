@@ -26,7 +26,7 @@ BASE_CACHE_KEY_ARGS = {
 
 VALID_JUDGMENT = {
     "schema_version": "2.0.0",
-    "prompt_version": "1.0.1",
+    "prompt_version": "1.0.2",
     "note_path": CLEAN_NOTE_PATH,
     "dimension_adjustments": {
         "clarity": -5,
@@ -64,9 +64,9 @@ class ModelContractTest(unittest.TestCase):
         replacements = {
             "note_path": "Atomic Notes/202601010102 Weak DAE note.md",
             "content_hash": "def456",
-            "doctrine_version": "1.0.1",
+            "doctrine_version": "1.0.4",
             "rubric_version": "1.0.1",
-            "prompt_version": "1.0.1",
+            "prompt_version": "1.0.2",
             "audit_mode": "model",
         }
         for field, replacement in replacements.items():

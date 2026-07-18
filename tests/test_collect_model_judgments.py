@@ -51,7 +51,7 @@ def judgment_for(note_path: str, *, findings: list[dict[str, object]] | None = N
 def stored_judgment_for(
     note_path: str,
     *,
-    prompt_version: str = "1.0.1",
+    prompt_version: str = "1.0.2",
 ) -> dict[str, object]:
     return {
         **judgment_for(note_path),

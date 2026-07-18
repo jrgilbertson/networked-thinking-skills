@@ -35,7 +35,7 @@ def load_fixture_manifest() -> dict[str, object]:
 def judgment_for(
     note_path: str,
     *,
-    prompt_version: str = "1.0.1",
+    prompt_version: str = "1.0.2",
     findings: list[dict[str, object]] | None = None,
     dimension_adjustments: dict[str, int] | None = None,
     factual_risk: bool = False,
