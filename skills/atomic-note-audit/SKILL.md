@@ -54,11 +54,25 @@ Model output must be strict JSON and validated before it affects scoring.
 The collector owns stored schema and prompt provenance; do not ask the model to
 invent those values.
 
-To prepare one note for judgment without prompt drift, run:
+To inspect the generated content prompt for one note without prompt drift, run:
 
 ```bash
 python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
+
+That prompt and the model's raw response are not stored judgment records. To
+produce a validated, applicable judgment for one note, select its audit row and
+route it through the same trusted collector used for batch runs:
+
+```bash
+python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --collector-input /tmp/networked-thinking-audit/example-audit.jsonl
+python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/example-audit.jsonl --output-jsonl /tmp/networked-thinking-audit/example-judgment.jsonl --raw-dir /tmp/networked-thinking-model-raw/example --model gpt-5.5
+python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/example-judgment.jsonl --output-jsonl /tmp/networked-thinking-audit/example-applied.jsonl --output-manifest /tmp/networked-thinking-audit/example-applied-manifest.json --allow-missing
+```
+
+The preparation step validates the deterministic audit rows and writes only the
+selected row. The collector then stamps trusted schema and prompt provenance;
+the model is never asked to supply those values.
 
 For exhaustive runs, use the validated batch collector with a selected local
 agent runner. Codex CLI remains supported as one runner:

@@ -85,12 +85,28 @@ they affect scores, buckets, or reports. In default mode, review flagged or
 ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
 review every note.
 
-Prepare single-note model requests with the generated prompt and exact
+Inspect a single-note content request with the generated prompt and exact
 vault-relative path:
 
 ```bash
 python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
 ```
+
+The prompt file and the model's raw response are inspection artifacts, not
+stored judgments. To produce a validated judgment that can be applied, select
+the note's deterministic audit row and send that one-row JSONL through the
+trusted collector:
+
+```bash
+python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --collector-input /tmp/networked-thinking-audit/example-audit.jsonl
+python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/example-audit.jsonl --output-jsonl /tmp/networked-thinking-audit/example-judgment.jsonl --raw-dir /tmp/networked-thinking-model-raw/example --model gpt-5.5
+python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/example-judgment.jsonl --output-jsonl /tmp/networked-thinking-audit/example-applied.jsonl --output-manifest /tmp/networked-thinking-audit/example-applied-manifest.json --allow-missing
+```
+
+The preparation step validates the baseline and emits only the matching audit
+row. The collector owns the stored schema and `prompt_version`, and
+`--allow-missing` keeps unreviewed baseline rows pending in this deliberate
+single-note pass.
 
 Collect exhaustive model judgments in validated batches by selecting a local
 agent runner. Codex CLI remains supported as one runner:

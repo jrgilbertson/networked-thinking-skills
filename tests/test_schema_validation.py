@@ -54,6 +54,29 @@ VALID_ROW = {
     "prompt_version": "1.0.0"
 }
 
+VALID_EMBEDDED_MODEL_JUDGMENT = {
+    "schema_version": "2.0.0",
+    "prompt_version": "1.0.2",
+    "note_path": VALID_ROW["note_path"],
+    "dimension_adjustments": {"clarity": -5},
+    "findings": [
+        {
+            "code": "weak_definition",
+            "message": "The definition needs a clearer boundary.",
+            "evidence": [
+                {
+                    "excerpt": "Definition: An idea that links to other ideas.",
+                    "reason": "The definition does not distinguish the idea from a general note.",
+                }
+            ],
+        }
+    ],
+    "factual_risk": False,
+    "factual_risk_reason": None,
+    "fact_check_required": False,
+    "evidence": [],
+}
+
 VALID_MANIFEST = {
     "schema_version": "1.0.0",
     "run_id": "run-1",
@@ -97,6 +120,38 @@ class SchemaValidationTest(unittest.TestCase):
         row = dict(VALID_ROW)
         del row["model_judgment"]
         with self.assertRaises(ValidationError):
+            validate_audit_row(row, default_scan=True)
+
+    def test_valid_embedded_model_judgment_passes(self):
+        row = dict(VALID_ROW)
+        row["model_judgment"] = VALID_EMBEDDED_MODEL_JUDGMENT
+
+        validate_audit_row(row, default_scan=True)
+
+    def test_old_embedded_model_judgment_fails(self):
+        row = dict(VALID_ROW)
+        row["model_judgment"] = {
+            **VALID_EMBEDDED_MODEL_JUDGMENT,
+            "schema_version": "1.0.0",
+        }
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            r"model_judgment\.schema_version must be 2\.0\.0",
+        ):
+            validate_audit_row(row, default_scan=True)
+
+    def test_malformed_embedded_model_judgment_fails(self):
+        row = dict(VALID_ROW)
+        row["model_judgment"] = {
+            **VALID_EMBEDDED_MODEL_JUDGMENT,
+            "fact_check_required": "false",
+        }
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            "model_judgment.fact_check_required must be a boolean",
+        ):
             validate_audit_row(row, default_scan=True)
 
     def test_extra_audit_row_key_fails(self):

@@ -8,6 +8,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from shared.scripts.audit_engine import PROMPT_VERSION
 from shared.scripts.collect_model_judgments import (
     CodexRunner,
     CommandRunner,
@@ -467,9 +468,35 @@ class CollectModelJudgmentsTest(unittest.TestCase):
             self.assertEqual(len(stored), 3)
             self.assertEqual(
                 [judgment["prompt_version"] for judgment in stored],
-                [row["prompt_version"] for row in rows],
+                [PROMPT_VERSION] * len(rows),
             )
             self.assertEqual(len(runner.prompts), 1)
+
+    def test_collect_model_judgments_rejects_stale_audit_before_runner_invocation(self):
+        row = load_fixture_rows()[0]
+        row["prompt_version"] = "1.0.0"
+        runner = FakeRunner([])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            audit_jsonl = tmp_path / "stale-audit.jsonl"
+            audit_jsonl.write_text(jsonl_for([row]), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ValidationError,
+                "rerun the deterministic audit before collecting model judgments",
+            ):
+                collect_model_judgments(
+                    vault_root=FIXTURE_VAULT,
+                    audit_jsonl=audit_jsonl,
+                    output_jsonl=tmp_path / "model-judgments.jsonl",
+                    raw_dir=tmp_path / "raw",
+                    max_notes=1,
+                    max_chars=100_000,
+                    runner=runner,
+                )
+
+            self.assertEqual(runner.prompts, [])
 
     def test_collect_model_judgments_resumes_existing_output(self):
         rows = load_fixture_rows()[:3]

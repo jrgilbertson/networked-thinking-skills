@@ -13,6 +13,7 @@ from typing import Any, Protocol
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from audit_engine import PROMPT_VERSION
 from model_contract import (
     MODEL_JUDGMENT_SCHEMA_VERSION,
     validate_model_judgment,
@@ -139,11 +140,12 @@ def collect_model_judgments(
     rows = _read_audit_rows(audit_jsonl)
     if limit is not None:
         rows = rows[:limit]
+    _require_current_prompt_version(rows)
 
     output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     raw_dir.mkdir(parents=True, exist_ok=True)
 
-    prompt_versions = {str(row["note_path"]): str(row["prompt_version"]) for row in rows}
+    prompt_versions = {str(row["note_path"]): PROMPT_VERSION for row in rows}
     completed = _read_completed_paths(output_jsonl, prompt_versions)
     expected = {str(row["note_path"]) for row in rows}
     extra_completed = sorted(completed - expected)
@@ -436,7 +438,7 @@ def _validated_batch_judgments(
         stored_judgment = {
             **judgment,
             "schema_version": MODEL_JUDGMENT_SCHEMA_VERSION,
-            "prompt_version": str(row["prompt_version"]),
+            "prompt_version": PROMPT_VERSION,
         }
         validate_model_judgment(stored_judgment)
         stored_judgments.append(stored_judgment)
@@ -517,6 +519,16 @@ def _read_audit_rows(path: Path) -> list[dict[str, Any]]:
     for row in rows:
         validate_audit_row(row, default_scan=True)
     return rows
+
+
+def _require_current_prompt_version(rows: list[dict[str, Any]]) -> None:
+    for row in rows:
+        if row["prompt_version"] != PROMPT_VERSION:
+            raise ValidationError(
+                f"audit row prompt_version mismatch for {row['note_path']}: "
+                f"expected {PROMPT_VERSION}, got {row['prompt_version']}; "
+                "rerun the deterministic audit before collecting model judgments"
+            )
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:

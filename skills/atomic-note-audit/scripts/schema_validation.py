@@ -113,8 +113,12 @@ def validate_audit_row(row: dict[str, Any], *, default_scan: bool) -> None:
     _validate_dimensions(row["dimensions"])
     _validate_findings(row["findings"])
     _validate_recommendations(row["recommendations"])
-    if row["model_judgment"] is not None and not isinstance(row["model_judgment"], dict):
-        raise ValidationError("model_judgment must be null or an object")
+    if row["model_judgment"] is not None:
+        # Import lazily because model_contract reuses this module's shared
+        # ValidationError and dimension names.
+        from model_contract import validate_model_judgment
+
+        validate_model_judgment(row["model_judgment"])
     if not isinstance(row["factual_risk"], bool):
         raise ValidationError("factual_risk must be a boolean")
     if not isinstance(row["fact_check_required"], bool):
