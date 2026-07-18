@@ -12,12 +12,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
-- Proposition-style timestamp filenames now express the same concept and
-  specificity as each note type's Definition source, while concise display
-  titles remain compatible labels.
-- Authoring and model-judgment guidance now detect naming conventions from
-  local templates and nearby notes instead of treating timestamps alone as
-  proposition evidence.
+- Canonical atomic-note filenames now copy the exact reader-visible Definition
+  opening after the timestamp and without its final period, while YAML titles
+  and H1s share a short concept name.
+- Interactive authoring preserves explicitly declared non-standard user-vault
+  filename schemes as compatibility exceptions, while model judgment without
+  vault-level context evaluates the canonical Networked Thinking contract.
 
 ### Fixed
 

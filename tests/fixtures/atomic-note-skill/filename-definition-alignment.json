@@ -49,33 +49,41 @@
     "forbidden_silent_filename": "Deliberate practice uses feedback-error cycles to improve a specific skill",
     "required_action": "redraft_first_sentence_with_learner"
   },
-  "semantic_alignment_cases": [
+  "alignment_cases": [
     {
-      "note_type": "Anki Basic",
+      "note_shape": "Anki Basic with DAE only in Back",
       "path": "Atomic Notes/202607181000 Continuous delivery keeps software ready.md",
-      "definition_source": "First definition sentence in Back:",
+      "definition_source": "First Definition sentence in Back:",
       "definition_sentence": "Continuous delivery keeps every validated code change deployable.",
       "display_title": "Continuous Delivery",
-      "mismatch_kind": "filename_is_less_specific",
+      "mismatch_kind": "visible_wording_differs",
+      "expected_aligned": false,
       "expected_finding": "title_body_mismatch"
     },
     {
-      "note_type": "Anki Cloze",
-      "path": "Atomic Notes/202607181001 Spaced repetition strengthens memory through timed review.md",
-      "definition_source": "Cloze-bearing definition sentence",
-      "definition_sentence": "Interleaving strengthens discrimination by mixing related problem types during practice.",
+      "note_shape": "Anki Cloze with DAE only in card body",
+      "path": "Atomic Notes/202607181001 Interleaving strengthens discrimination by mixing related problem types during practice.md",
+      "definition_source": "Rendered cloze-bearing Definition sentence",
+      "definition_sentence": "Interleaving {{c1::strengthens discrimination}} by mixing related problem types during practice.",
       "display_title": "Interleaving",
-      "mismatch_kind": "filename_expresses_different_concept",
-      "expected_finding": "title_body_mismatch"
+      "mismatch_kind": null,
+      "expected_aligned": true,
+      "expected_finding": null
     },
     {
-      "note_type": "Non-Anki DAE",
+      "note_shape": "Plain-prose DAE",
       "path": "Atomic Notes/202607181002 Retrieval practice improves learning.md",
-      "definition_source": "First sentence under ## Definition or first visible DAE sentence",
+      "definition_source": "First visible DAE sentence after the H1",
       "definition_sentence": "Retrieval practice strengthens later recall by requiring an answer before feedback.",
       "display_title": "Retrieval Practice",
-      "mismatch_kind": "filename_is_less_specific",
+      "mismatch_kind": "visible_wording_differs",
+      "expected_aligned": false,
       "expected_finding": "title_body_mismatch"
     }
-  ]
+  ],
+  "compatibility_exception": {
+    "declaration_source": "learner_or_governing_template",
+    "scope": "interactive_authoring_and_remediation",
+    "audit_without_vault_context": "evaluate_canonical_contract"
+  }
 }

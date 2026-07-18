@@ -16,8 +16,12 @@ def filename_definition_text(path):
     return re.sub(r"^\d{12} ", "", Path(path).stem)
 
 
-def definition_filename_text(sentence):
-    return sentence.removesuffix(".")
+def rendered_definition_filename_text(sentence):
+    text = re.sub(r"\{\{c\d+::(.*?)(?:::[^{}]*)?\}\}", r"\1", sentence)
+    text = re.sub(r"\[\[[^|\]]+\|([^\]]+)\]\]", r"\1", text)
+    text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
+    text = re.sub(r"\*\*|__|`", "", text)
+    return text.removesuffix(".")
 
 
 class AtomicNoteSkillContractTest(unittest.TestCase):
@@ -30,60 +34,96 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         for text in (doctrine, skill):
-            self.assertIn("same single concept", text)
-            self.assertIn("same level of specificity", text)
+            self.assertIn("reader-visible wording", text)
+            self.assertIn("applicable Definition source", text)
+            self.assertIn(
+                "All other visible words, capitalization, punctuation, and word order must match",
+                text,
+            )
+            self.assertIn("Markdown wrappers", text)
+            self.assertIn("Anki cloze syntax", text)
             self.assertIn("YAML `title`", text)
             self.assertIn("H1", text)
             self.assertIn("short concept name", text)
+            self.assertNotIn("proposition-style", text)
 
     def test_authoring_guidance_has_note_type_alignment_table(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         expected_rows = (
-            "| Anki `Basic` | First definition sentence in `Back:` | Same single concept and same specificity |",
-            "| Anki `Cloze` | Cloze-bearing definition sentence | Same single concept and same specificity |",
-            "| Non-Anki DAE | First sentence under `## Definition` | Same single concept and same specificity |",
-            "| Mixed or unclear local convention | Nearby atomic-note examples and user template | Follow local convention; do not force proposition filenames without evidence |",
+            "| Plain-prose DAE, with or without Anki | First visible DAE sentence after the H1 | "
+            "Exact reader-visible wording without the final period |",
+            "| Legacy headed DAE, with or without Anki | First sentence under `## Definition` | "
+            "Exact reader-visible wording without the final period |",
+            "| Anki `Basic` with DAE stored only in `Back:` | First Definition sentence in `Back:` | "
+            "Exact reader-visible wording without the final period |",
+            "| Anki `Cloze` with DAE stored only in the card body | Rendered cloze-bearing Definition sentence | "
+            "Exact reader-visible wording without the final period |",
         )
         for text_name, text in (("doctrine", doctrine), ("skill", skill)):
             for row in expected_rows:
                 with self.subTest(text=text_name, row=row):
                     self.assertIn(row, text)
 
-    def test_guidance_requires_evidence_for_proposition_style_filenames(self):
+    def test_guidance_treats_nonstandard_vaults_as_a_compatibility_exception(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         for text in (doctrine, skill):
-            self.assertIn("timestamp prefix alone", text)
-            self.assertIn("user template", text)
-            self.assertIn("nearby atomic notes", text)
-            self.assertIn("mixed", text)
-            self.assertIn("do not force", text)
+            self.assertIn("pre-existing user vault", text)
+            self.assertIn("compatibility exception", text)
+            self.assertIn("learner or governing template explicitly declares", text)
+            self.assertIn("Do not describe it as another Networked Thinking naming style", text)
 
-    def test_synthetic_mismatches_cover_each_definition_source(self):
-        cases = self.fixture["semantic_alignment_cases"]
-        self.assertEqual(
-            [case["note_type"] for case in cases],
-            ["Anki Basic", "Anki Cloze", "Non-Anki DAE"],
+    def test_synthetic_cases_cover_aligned_and_misaligned_definition_sources(self):
+        cases = self.fixture["alignment_cases"]
+        self.assertGreaterEqual(
+            {case["note_shape"] for case in cases},
+            {
+                "Anki Basic with DAE only in Back",
+                "Anki Cloze with DAE only in card body",
+                "Plain-prose DAE",
+            },
         )
-        self.assertEqual(
-            [case["definition_source"] for case in cases],
-            [
-                "First definition sentence in Back:",
-                "Cloze-bearing definition sentence",
-                "First sentence under ## Definition or first visible DAE sentence",
-            ],
-        )
+        self.assertIn(True, [case["expected_aligned"] for case in cases])
+        self.assertIn(False, [case["expected_aligned"] for case in cases])
+
         for case in cases:
-            with self.subTest(note_type=case["note_type"]):
-                self.assertNotEqual(
+            with self.subTest(note_shape=case["note_shape"]):
+                aligned = (
                     filename_definition_text(case["path"]),
-                    definition_filename_text(case["definition_sentence"]),
+                    rendered_definition_filename_text(case["definition_sentence"]),
                 )
-                self.assertEqual(case["expected_finding"], "title_body_mismatch")
+                self.assertEqual(aligned[0] == aligned[1], case["expected_aligned"])
+                self.assertEqual(
+                    case["expected_finding"],
+                    None if case["expected_aligned"] else "title_body_mismatch",
+                )
                 self.assertTrue(case["display_title"])
+
+    def test_optional_anki_fixture_uses_visible_dae_definition_for_its_filename(self):
+        note = next(
+            (ROOT / "tests/fixtures/tiny-vault/Atomic Notes").glob(
+                "202601010107 *.md"
+            )
+        )
+        body = note.read_text(encoding="utf-8")
+        definition = re.search(r"# Optional Anki note\n\n(.+?\.)", body, re.DOTALL)
+
+        self.assertIsNotNone(definition)
+        visible_sentence = " ".join(definition.group(1).split())
+        self.assertEqual(
+            filename_definition_text(note),
+            rendered_definition_filename_text(visible_sentence),
+        )
+
+    def test_compatibility_exception_is_interactive_only(self):
+        exception = self.fixture["compatibility_exception"]
+
+        self.assertEqual(exception["declaration_source"], "learner_or_governing_template")
+        self.assertEqual(exception["scope"], "interactive_authoring_and_remediation")
+        self.assertEqual(exception["audit_without_vault_context"], "evaluate_canonical_contract")
 
     def test_remediation_requires_cli_rename_and_link_verification(self):
         remediation = normalized_text(ROOT / "shared/references/remediation-context.md")
@@ -111,7 +151,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         expected = self.fixture["expected"]
         self.assertNotEqual(
             filename_definition_text(before["path"]),
-            definition_filename_text(before["definition_first_sentence"]),
+            rendered_definition_filename_text(before["definition_first_sentence"]),
         )
         self.assertNotEqual(before["yaml_title"], before["h1"])
         self.assertNotEqual(
@@ -120,7 +160,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         )
         self.assertEqual(
             filename_definition_text(expected["path"]),
-            definition_filename_text(expected["definition_first_sentence"]),
+            rendered_definition_filename_text(expected["definition_first_sentence"]),
         )
         self.assertEqual(expected["yaml_title"], expected["h1"])
 
@@ -136,7 +176,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         denied = self.fixture["rename_denied"]
         self.assertEqual(
             filename_definition_text(denied["path"]),
-            definition_filename_text(denied["definition_first_sentence"]),
+            rendered_definition_filename_text(denied["definition_first_sentence"]),
         )
         self.assertEqual(denied["yaml_title"], denied["h1"])
         self.assertFalse(denied["definition_first_sentence_changed"])
@@ -149,7 +189,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         stale = self.fixture["stale_filename_unchanged"]
         self.assertNotEqual(
             filename_definition_text(stale["path"]),
-            definition_filename_text(stale["definition_first_sentence"]),
+            rendered_definition_filename_text(stale["definition_first_sentence"]),
         )
         self.assertFalse(stale["definition_first_sentence_changed"])
         steps = stale["required_steps"]
@@ -161,7 +201,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
 
     def test_invalid_filename_text_requires_redrafting_instead_of_substitution(self):
         invalid = self.fixture["invalid_filename"]
-        derived = definition_filename_text(invalid["definition_first_sentence"])
+        derived = rendered_definition_filename_text(invalid["definition_first_sentence"])
 
         self.assertIn("/", derived)
         self.assertNotEqual(derived, invalid["forbidden_silent_filename"])

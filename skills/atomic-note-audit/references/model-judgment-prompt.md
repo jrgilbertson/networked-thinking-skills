@@ -40,7 +40,7 @@ Do not preserve an issue unless it truly applies to the note content you reviewe
 | `weak_analogy` | 15 | Replace the Analogy with a familiar concrete referent and shared relation. |
 | `weak_example` | 15 | Replace the Example with a concrete case that starts with 'For example,'. |
 | `unclear` | 15 | Rewrite unclear or misleading prose before relying on the note. |
-| `title_body_mismatch` | 15 | Align the proposition-style filename stem and Definition at the same specificity; keep the display title and body compatible with that concept. |
+| `title_body_mismatch` | 15 | Make the timestamp-stripped filename exactly match the reader-visible applicable Definition source without its final period through the approved rename flow, and keep the YAML title and H1 on the same short concept name. |
 | `duplicate_overlap` | 8 | Review this note against related notes for possible overlap. |
 | `factual_risk` | 8 | Mark empirical, current, attributed, or sensitive-domain claims for fact checking. |
 
@@ -53,16 +53,22 @@ De-duplication rules used by scoring:
 - If factual risk applies, set `factual_risk` and `fact_check_required` to true and emit exactly one `factual_risk` finding.
 - If `anki_yagni` applies, do not delete or remove Anki cards automatically; remediation must confirm with the learner because memorization value depends on the learner's domain.
 
-For `title_body_mismatch`, first establish from the user template and nearby
-atomic notes that the local convention uses a proposition-style timestamp
-filename. A timestamp prefix alone is not enough. In mixed or unclear vaults,
-follow the target folder, template, and note-type convention and do not infer a
-filename mismatch without evidence. When the proposition rule applies, emit
-`title_body_mismatch` if the filename stem expresses a broader, narrower, or
-different concept than the first definition sentence in `Back:` for `Basic`,
-the cloze-bearing definition sentence for `Cloze`, or the first visible
-Definition sentence for non-Anki DAE. A concise display title may differ in
-wording, but emit the finding if it contradicts or broadens that concept.
+For `title_body_mismatch`, apply the canonical Networked Thinking filename rule
+by default. The timestamp-stripped filename must exactly match the
+reader-visible applicable Definition source without its final period. Use the
+first visible DAE sentence after the H1 for plain-prose DAE, including notes
+with optional Anki cards. Use the first sentence under `## Definition` for a
+legacy headed note. Only when DAE exists solely inside an Anki card, use the
+first Definition sentence in `Back:` for `Basic` or the rendered cloze-bearing
+Definition sentence for `Cloze`.
+
+Exclude only the timestamp, `.md` extension, Markdown wrappers, Anki cloze
+syntax, and final period. All other visible words, capitalization, punctuation,
+and word order must match. Emit the finding when this filename pair differs,
+when YAML `title` and H1 differ, or when their shared short concept name
+identifies a different concept from the Definition. This model judgment
+evaluates the canonical contract because its request contains no vault-level
+compatibility declaration.
 
 Examples:
 

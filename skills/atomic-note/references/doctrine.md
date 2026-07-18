@@ -5,8 +5,8 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 ## Required Shape
 
 - One concept per file.
-- Follow the vault's local filename convention; include a timestamp prefix when
-  its atomic notes do.
+- Timestamp-prefixed filename whose stem copies the reader-visible applicable
+  Definition source without its final period.
 - Frontmatter with `title` and `aliases`.
 - Clear Definition, Analogy, and Example content.
 - At least one useful connection to a structure note or related concept.
@@ -51,46 +51,41 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
 
 ## Naming Alignment
 
-Atomic notes use two separate alignment checks:
+Atomic notes use two separate matching pairs:
 
-- In a vault that uses proposition-style timestamp filenames, the filename
-  stem after the timestamp expresses the same single concept as the note's
-  Definition source at the same level of specificity. The wording need not be
-  verbatim, but the stem must not state a broader, narrower, or different
-  proposition.
+- The timestamp-prefixed filename uses the reader-visible wording of the
+  applicable Definition source without its final period. The timestamp, `.md`
+  extension, Markdown wrappers, and Anki cloze syntax are not part of that
+  comparison. Compare cloze text as a reader sees it. All other visible words,
+  capitalization, punctuation, and word order must match.
 - The YAML `title` and H1 use the same short concept name. That short concept
-  name does not need to repeat the full Definition sentence, but it must remain
-  compatible with the filename proposition and Definition rather than
-  contradicting or broadening them.
+  name does not need to repeat the full Definition sentence.
 
-Detect the filename convention before applying the proposition rule. Inspect
-the user template and nearby atomic notes in the same folder and of the same
-note type. Treat the local convention as proposition-style when the template
-directs it or nearby examples consistently pair a timestamped proposition with
-the note's Definition source. A timestamp prefix alone is not evidence of a
-proposition-style convention. In a mixed vault, scope the decision to the
-target folder, template, and note type. If those sources conflict or remain
-unclear, preserve the local filename pattern and do not force proposition
-filenames without evidence.
+Choose the applicable Definition source by note shape. Visible DAE takes
+precedence over optional Anki card text:
 
-| Note type | Compare filename proposition against | Alignment rule |
+| Note shape | Applicable Definition source | Matching rule |
 | --- | --- | --- |
-| Anki `Basic` | First definition sentence in `Back:` | Same single concept and same specificity |
-| Anki `Cloze` | Cloze-bearing definition sentence | Same single concept and same specificity |
-| Non-Anki DAE | First sentence under `## Definition` | Same single concept and same specificity |
-| Mixed or unclear local convention | Nearby atomic-note examples and user template | Follow local convention; do not force proposition filenames without evidence |
+| Plain-prose DAE, with or without Anki | First visible DAE sentence after the H1 | Exact reader-visible wording without the final period |
+| Legacy headed DAE, with or without Anki | First sentence under `## Definition` | Exact reader-visible wording without the final period |
+| Anki `Basic` with DAE stored only in `Back:` | First Definition sentence in `Back:` | Exact reader-visible wording without the final period |
+| Anki `Cloze` with DAE stored only in the card body | Rendered cloze-bearing Definition sentence | Exact reader-visible wording without the final period |
 
-Current non-Anki authoring uses plain-prose DAE rather than section headings.
-For those notes, compare against the first visible DAE sentence after the H1;
-the `## Definition` source in the table covers legacy headed notes.
-
-Before writing a proposition filename, confirm that its stem is valid as one
+Before writing the filename, confirm that its derived stem is valid as one
 filename component in the target vault and platform. If it is not, redraft the
-stem and Definition wording with the learner while preserving the same concept
-and specificity; never silently remove or substitute characters. Check both
-alignment relationships when creating or improving a note. Reconcile an
-existing or newly introduced filename/Definition mismatch through the approved
-rename flow in the remediation context.
+Definition source with the learner so the visible sentence and filename can
+still match; never silently remove or substitute characters. Check both pairs
+when creating or improving a note. Reconcile an existing or newly introduced
+filename/Definition mismatch through the approved rename flow in the
+remediation context.
+
+When a learner or governing template explicitly declares that a pre-existing
+user vault uses a different filename scheme, preserve it as a compatibility
+exception unless the learner approves a migration. Do not describe it as
+another Networked Thinking naming style or use nearby inconsistencies to weaken
+the canonical rule. This exception applies only to workflows that receive that
+declaration; model judgment without vault-level context evaluates the canonical
+contract.
 
 ## Anki
 

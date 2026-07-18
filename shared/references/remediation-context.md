@@ -36,34 +36,38 @@ control characters so corrupted formulas do not sync into Anki.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
-Before previewing an improvement, determine whether the local convention uses
-proposition-style timestamp filenames from the user template and nearby atomic
-notes in the same folder and of the same note type. A timestamp prefix alone is
-not sufficient. In a mixed or unclear vault, follow the local evidence and do
-not force a proposition filename.
+Before previewing an improvement, choose the applicable Definition source.
+Use the first visible DAE sentence after the H1 for plain-prose DAE, even when
+the note also has an optional Anki card. Use the first sentence under
+`## Definition` for a legacy headed note. Only when DAE exists solely inside an
+Anki card, use the first Definition sentence in `Back:` for `Basic` or the
+rendered cloze-bearing Definition sentence for `Cloze`.
 
-When that convention applies, compare the timestamp-stripped filename with the
-relevant Definition source at the same level of specificity: the first
-definition sentence in `Back:` for `Basic`, the cloze-bearing definition
-sentence for `Cloze`, and the first visible Definition sentence for non-Anki
-DAE. Also compare the YAML `title` with the H1 short concept name and confirm
-that this display title is compatible with, and does not broaden, the filename
-proposition and Definition.
+Compare the timestamp-stripped filename with that reader-visible source without
+its final period. Exclude only the timestamp, `.md` extension, Markdown
+wrappers, Anki cloze syntax, and final period. All other visible words,
+capitalization, punctuation, and word order must match. Separately compare the
+YAML `title` with the H1 short concept name.
+
+When a learner or governing template explicitly declares that a pre-existing
+user vault uses a different filename scheme, preserve it as a compatibility
+exception unless the learner approves a migration. Do not infer another
+Networked Thinking naming style from nearby inconsistencies.
 
 If this comparison detects an existing filename/Definition mismatch, or if the
-proposed improvement would introduce one, derive and preview a filename stem
-that expresses the same single concept and specificity. Do this even when the
-Definition's first sentence is unchanged. When a Definition change requires a
-rename, preview the content change and filename change together. Before
-requesting approval, confirm that the derived text is valid as one filename
-component in the target vault and platform. If it is not, redraft the filename
-and Definition wording with the learner; do not silently strip or substitute
-characters. Obtain explicit rename approval before applying the filename
-change. When a Definition change requires a rename, approval is required before
-either change is applied. If rename approval is denied, do not write a proposed
-Definition change that would introduce filename drift; keep the original
-Definition or redraft it to remain aligned. If the Definition was already
-unchanged, leave the stale filename in place and report the remaining mismatch.
+proposed improvement would introduce one, derive and preview the exact filename
+from the applicable Definition source. Do this even when the Definition's first
+sentence is unchanged. When a Definition change requires a rename, preview the
+content change and filename change together. Before requesting approval,
+confirm that the derived text is valid as one filename component in the target
+vault and platform. If it is not, redraft the Definition source with the
+learner; do not silently strip or substitute characters. Obtain explicit rename
+approval before applying the filename change. When a Definition change requires
+a rename, approval is required before either change is applied. If rename
+approval is denied, do not write a proposed Definition change that would
+introduce filename drift; keep the original Definition or redraft it to remain
+aligned. If the Definition was already unchanged, leave the stale filename in
+place and report the remaining mismatch.
 
 Before an approved rename, confirm in Obsidian's **Files and links** settings
 that **Automatically update internal links** is enabled. If it is disabled,
@@ -73,8 +77,8 @@ ask the learner to inspect the setting and explicitly confirm its state. Record
 a representative set of links or backlinks before mutation. Perform the
 filename change with the official CLI `rename` or `move` command through the
 verified Obsidian CLI resolver. Never rename an atomic-note file through the
-raw filesystem. After the content and filename changes, verify both alignment
-relationships, the final path, and the same representative links or backlinks.
+raw filesystem. After the content and filename changes, verify both naming
+pairs, the final path, and the same representative links or backlinks.
 If a mutation fails, do not report success with a partially aligned note;
 restore the prior state through Obsidian-aware tooling or stop and report the
 exact state that needs recovery.

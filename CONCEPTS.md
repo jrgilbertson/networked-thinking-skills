@@ -16,8 +16,8 @@ An Atomic Note whose DAE content lives directly in visible note prose rather tha
 ### Anki-Backed Atomic Note
 An Atomic Note that also includes Obsidian-to-Anki card content while preserving the same DAE concept contract.
 
-### Proposition-Style Filename Convention
-A locally established Atomic Note naming pattern in which a timestamp-prefixed filename stem expresses the Definition's single concept at the same specificity rather than serving only as a short topic label.
+### Atomic Note Filename
+The canonical Networked Thinking filename uses a timestamp followed by the reader-visible applicable Definition source without its final period. Plain-prose DAE takes precedence over optional Anki card text. YAML `title` and H1 separately use the same short concept name.
 
 ### Structure Note
 A hub note that gives Atomic Notes a findable context by linking related concepts into a larger topic or review area.
