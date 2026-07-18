@@ -67,9 +67,9 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
             self.assertIn("apply the one-concept and DAE rules", skill)
         if expected["source_factual_claims_when_appropriate"]:
             self.assertIn("sources factual claims when appropriate", doctrine)
-        if expected["anki_decision"] == "learner_goal_and_yagni_check":
-            self.assertIn("Anki remains optional and learner-specific", doctrine)
-            self.assertIn("learner-specific Anki-YAGNI check", skill)
+        self.assertEqual(expected["anki_decision"], "learner_goal_and_yagni_check")
+        self.assertIn("Anki remains optional and learner-specific", doctrine)
+        self.assertIn("learner-specific Anki-YAGNI check", skill)
         if expected["quality_penalty_for_recall_orientation"] == "none":
             self.assertIn("Recall or trivia orientation is not by itself a quality defect", doctrine)
 
