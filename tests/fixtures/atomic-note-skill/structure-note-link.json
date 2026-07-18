@@ -1,0 +1,13 @@
+{
+  "note_path": "Atomic Notes/202607181245 State machines make behavior explicit through named states and transitions.md",
+  "structure_note_path": "Structure Notes/Software Design.md",
+  "explicit_alias_requested": false,
+  "existing_structure_note_entries": [
+    "- [[202607181230 Pure functions return the same output for the same input without observable side effects]]"
+  ],
+  "expected_inserted_entry": "- [[202607181245 State machines make behavior explicit through named states and transitions]]",
+  "expected_structure_note_entries": [
+    "- [[202607181230 Pure functions return the same output for the same input without observable side effects]]",
+    "- [[202607181245 State machines make behavior explicit through named states and transitions]]"
+  ]
+}
