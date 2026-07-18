@@ -153,10 +153,10 @@ orientation.
 
 ### Analytical use without trivia
 
-If the learner asks for the hero's journey as a reusable analytical framework
-and does not want trivia study, create the analytical DAE note, connect it to
-the appropriate parent, and omit Anki. Preserving recall as a valid option does
-not impose recall on learners who did not choose it.
+If the learner asks for the invented Lantern-Bridge pattern as a reusable
+analytical framework and does not want trivia study, create the analytical DAE
+note, connect it to the appropriate parent, and omit Anki. Preserving recall as
+a valid option does not impose recall on learners who did not choose it.
 
 ## Related
 
