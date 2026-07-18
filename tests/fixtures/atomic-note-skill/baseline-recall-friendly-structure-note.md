@@ -10,7 +10,7 @@ Date: 2026-07-18 | Harness: Codex subagent | Model: GPT-5 session model
 
 | Prompt | Prior-version behavior (observed) | Revised-version behavior (observed) | Verdict |
 | --- | --- | --- | --- |
-| Create a broad Mythology structure note for comparing motifs and reviewing names, figures, and stories I want to remember. | Preserved motif comparison but could narrow the hub toward analysis, split its breadth as if it were one atomic note, or demote recall material to reference-only content. | Preserved one broad navigation hub with both comparison and recall sections. Applied DAE and one-concept rules to linked atomic children, not to the hub, and did not add Anki without a clearer practice request. | Better |
+| Create a DAE atomic note about the invented moon-keeper Orivane, then update a broad Mythology structure note so I can compare motifs and review names, figures, and stories I want to remember. | Preserved motif comparison but could narrow the parent hub toward analysis, split its breadth as if it were one atomic note, or demote recall material to reference-only content. | Created the atomic child and preserved one broad parent navigation hub with both comparison and recall sections. Applied DAE and one-concept rules to the atomic child, not to the hub, and did not add Anki without a clearer practice request. | Better |
 
 ## Case 2: Explicit factual quiz recall
 
@@ -26,7 +26,7 @@ Date: 2026-07-18 | Harness: Codex subagent | Model: GPT-5 session model
 
 | Prompt | Prior-version behavior (observed) | Revised-version behavior (observed) | Verdict |
 | --- | --- | --- | --- |
-| Create an atomic note about the hero's journey as a reusable analytical framework; I do not want trivia study. | Created a non-Anki DAE note for the analytical framework and linked it to a narrative or mythology parent. | Preserved the same analytical purpose, DAE shape, connection, and sourcing guidance without introducing recall or Anki. | Same |
+| Create an atomic note about the invented Lantern-Bridge pattern as a reusable analytical framework for comparing story transitions; I do not want trivia study. | Created a non-Anki DAE note for the analytical framework and linked it to a narrative or mythology parent. | Preserved the same analytical purpose, DAE shape, connection, and sourcing guidance without introducing recall or Anki. | Same |
 
 ## Result
 

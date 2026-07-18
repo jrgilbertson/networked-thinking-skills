@@ -50,9 +50,12 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
 
     def test_fake_mythology_structure_example_preserves_recall_goal_and_quality_bar(self):
         expected = self.recall_fixture["expected"]
+        request = self.recall_fixture["request"]
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
+        self.assertIn("Create a DAE atomic note", request)
+        self.assertIn("then update a broad Mythology structure note", request)
         self.assertEqual(expected["structure_note"], "Structure Notes/Mythology.md")
         self.assertEqual(
             set(expected["supported_purposes"]),
