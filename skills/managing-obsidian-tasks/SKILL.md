@@ -85,6 +85,10 @@ explicit approval before writing every new task, including when the request
 already says "create a task." Apply requested corrections to the preview and
 ask again.
 
+Set the proposed status to `todo` when every required value is resolved and the
+task is ready to begin. Keep it in `triage` when any required value is
+`unknown`.
+
 After approval, use the CLI `create` operation without overwrite. Re-read the
 exact path and query the All tasks Base view. Linter-owned properties remain
 outside this skill's completion gate.

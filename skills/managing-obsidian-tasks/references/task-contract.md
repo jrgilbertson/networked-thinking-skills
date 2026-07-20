@@ -24,7 +24,7 @@ linting and does not block creation. Do not invoke linting or set them manually.
 Every task has these agent-managed properties:
 
 ```yaml
-status: triage
+status: todo
 priority: P2
 execution_shape: agent-first
 task_type: investigate
@@ -34,8 +34,9 @@ goal: "Complete the comparison until actionable findings are recorded, respectin
 ```
 
 Use `unknown` only when the available request, comparable tasks, and linked
-context do not support a value. A task with an unknown required value stays in
-`triage`.
+context do not support a value. Set a new task to `todo` when every required
+value is resolved and it is ready to begin. If any required value is `unknown`,
+keep it in `triage`.
 
 ### Status
 

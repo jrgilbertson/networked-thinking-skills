@@ -60,6 +60,19 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("Wait for explicit approval before writing every new task", text)
         self.assertIn("including when the request already says \"create a task.\"", text)
 
+    def test_creation_status_matches_required_field_readiness(self):
+        skill = normalized_text(SKILL_DIR / "SKILL.md")
+        contract = normalized_text(ROOT / "shared/references/task-contract.md")
+        template = normalized_text(SKILL_DIR / "assets/task-template.md")
+
+        self.assertIn(
+            "status to `todo` when every required value is resolved", skill
+        )
+        self.assertIn("`triage` when any required value is `unknown`", skill)
+        self.assertIn("status: todo", contract)
+        self.assertIn("status: triage", template)
+        self.assertIn("unknown", template)
+
     def test_contract_has_required_enums_without_tags_or_schema_field(self):
         text = normalized_text(ROOT / "shared/references/task-contract.md")
 
