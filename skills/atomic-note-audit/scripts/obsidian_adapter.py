@@ -81,7 +81,11 @@ def resolve_obsidian_binary(binary: str = DEFAULT_OBSIDIAN_BINARY) -> str | None
         if not _looks_like_macos_gui_binary(resolved_candidate):
             return str(candidate)
 
-    if binary == DEFAULT_OBSIDIAN_BINARY and _is_executable_file(MACOS_OBSIDIAN_CLI_PATH):
+    if (
+        _is_bare_command(binary)
+        and binary in {DEFAULT_OBSIDIAN_BINARY, "obsidian-cli"}
+        and _is_executable_file(MACOS_OBSIDIAN_CLI_PATH)
+    ):
         return str(MACOS_OBSIDIAN_CLI_PATH)
 
     return None

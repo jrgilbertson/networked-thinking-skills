@@ -101,9 +101,13 @@ After approval and immediately before the write, confirm that the exact target
 remains absent and compare that state with the approved absence baseline. If it
 exists or otherwise differs, abort the write, recompute the proposal from the
 current state, present the revised preview, and request approval again. Then
-use the CLI `create` operation without overwrite. Re-read the exact path and
-query the All tasks Base view. Linter-owned properties remain outside this
-skill's completion gate.
+pass the complete approved note through a quote-safe transport, such as a
+serialized JSON/base64 payload or a helper that safely escapes content, and use
+the CLI `create` operation without overwrite. Never interpolate note Markdown
+into a shell `content=` argument. The transport must preserve apostrophes,
+backticks, shell substitutions, backslashes, and wikilinks literally. Re-read
+the exact path and query the All tasks Base view. Linter-owned properties
+remain outside this skill's completion gate.
 
 Completion: the approved note exists once, matches the preview, and appears in
 the task Base.
@@ -125,6 +129,11 @@ log entries with CLI `append`. For a body-section replacement, use CLI `eval`
 with `app.vault.process(file, updater)` so the updater receives the current
 content. Avoid whole-note replacement so concurrent context and history
 survive.
+
+When `property:set` creates or updates `due`, `not_before`, `follow_up_on`,
+`blocked_since`, or `date_closed`, explicitly pass `type=date`; for `people`,
+explicitly pass `type=list`. Use `type=text` for other scalar task properties
+unless an existing property type must be preserved.
 
 Apply direct, unambiguous user updates without another confirmation. Follow the
 execution-shape and status gates in the task contract for agent-initiated

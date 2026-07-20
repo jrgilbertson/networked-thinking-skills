@@ -153,12 +153,13 @@ Do not use tags in task notes.
 
 ```yaml
 waiting_on: "[[Person]] or external event"
-follow_up_on: 2026-07-27
+follow_up_on: "<actual chosen follow-up date, YYYY-MM-DD>"
 ```
 
 Waiting means no current action is expected. Review it on or after
-`follow_up_on`; do not treat it as an invitation to ask repeatedly how to
-unblock it.
+`follow_up_on`; choose the actual date when the task should next be reviewed.
+The value above is a placeholder, not a date to copy. Do not treat waiting as
+an invitation to ask repeatedly how to unblock it.
 
 `blocked` requires:
 

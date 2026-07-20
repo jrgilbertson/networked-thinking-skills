@@ -92,6 +92,18 @@ class ObsidianPreflightTest(unittest.TestCase):
 
         self.assertEqual(resolved, str(cli))
 
+    def test_legacy_binary_name_falls_back_to_app_bundled_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp) / "obsidian-cli"
+            cli.write_text("", encoding="utf-8")
+            cli.chmod(0o755)
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=None):
+                with patch("shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH", cli):
+                    resolved = resolve_obsidian_binary("obsidian-cli")
+
+        self.assertEqual(resolved, str(cli))
+
     def test_adapter_timeout_returns_failed_command_result(self):
         timeout = subprocess.TimeoutExpired(
             cmd=["/tmp/obsidian", "help"],

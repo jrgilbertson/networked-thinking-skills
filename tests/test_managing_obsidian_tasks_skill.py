@@ -159,6 +159,46 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("Set `blocked_since` to the actual date of the transition", text)
         self.assertNotIn("blocked_since: 2026-07-20", text)
 
+    def test_follow_up_date_uses_the_actual_chosen_date(self):
+        text = normalized_text(ROOT / "shared/references/task-contract.md")
+
+        self.assertIn(
+            'follow_up_on: "<actual chosen follow-up date, YYYY-MM-DD>"', text
+        )
+        self.assertIn("choose the actual date when the task should next be reviewed", text)
+        self.assertNotIn("follow_up_on: 2026-07-27", text)
+
+    def test_creation_uses_quote_safe_content_transport(self):
+        text = normalized_text(SKILL_DIR / "SKILL.md")
+
+        self.assertIn("quote-safe transport", text)
+        self.assertIn("serialized JSON/base64 payload", text)
+        self.assertIn("Never interpolate note Markdown into a shell `content=` argument", text)
+        for content_kind in (
+            "apostrophes",
+            "backticks",
+            "shell substitutions",
+            "backslashes",
+            "wikilinks",
+        ):
+            self.assertIn(content_kind, text)
+
+    def test_property_set_passes_explicit_task_property_types(self):
+        text = normalized_text(SKILL_DIR / "SKILL.md")
+
+        for date_property in (
+            "due",
+            "not_before",
+            "follow_up_on",
+            "blocked_since",
+            "date_closed",
+        ):
+            self.assertIn(date_property, text)
+        self.assertIn("explicitly pass `type=date`", text)
+        self.assertIn("for `people`, explicitly pass `type=list`", text)
+        self.assertIn("Use `type=text` for other scalar task properties", text)
+        self.assertIn("existing property type must be preserved", text)
+
     def test_base_has_every_approved_view_and_folder_boundary(self):
         text = (SKILL_DIR / "assets/tasks.base").read_text(encoding="utf-8")
 
