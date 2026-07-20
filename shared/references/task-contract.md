@@ -172,8 +172,11 @@ It also requires a nonempty `## Unblock condition` section.
 `done` and `cancelled` require:
 
 ```yaml
-date_closed: 2026-07-20
+date_closed: "<actual transition date, YYYY-MM-DD>"
 ```
+
+Set `date_closed` to the actual date of the transition to `done` or
+`cancelled`; the value above is a placeholder, not a date to copy.
 
 Done also requires every applicable Definition of done item checked and a
 nonempty Result or Deliverables section. Cancelled requires a nonempty

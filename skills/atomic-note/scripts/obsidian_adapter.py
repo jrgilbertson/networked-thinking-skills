@@ -7,8 +7,10 @@ import shutil
 import subprocess
 
 
-DEFAULT_OBSIDIAN_BINARY = "obsidian-cli"
+DEFAULT_OBSIDIAN_BINARY = "obsidian"
 MACOS_OBSIDIAN_CLI_PATH = Path("/Applications/Obsidian.app/Contents/MacOS/obsidian-cli")
+COMMAND_TIMEOUT_SECONDS = 30
+TIMEOUT_RETURN_CODE = 124
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,23 @@ class ObsidianAdapter:
                 check=False,
                 capture_output=True,
                 text=True,
+                timeout=COMMAND_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stdout = _as_text(exc.stdout)
+            stderr = _as_text(exc.stderr)
+            timeout_message = (
+                f"Obsidian CLI command timed out after {COMMAND_TIMEOUT_SECONDS} seconds."
+            )
+            if stderr:
+                stderr = f"{stderr.rstrip()}\n{timeout_message}"
+            else:
+                stderr = timeout_message
+            return CommandResult(
+                ok=False,
+                stdout=stdout,
+                stderr=stderr,
+                returncode=TIMEOUT_RETURN_CODE,
             )
         except OSError as exc:
             return CommandResult(ok=False, stdout="", stderr=str(exc), returncode=126)
@@ -95,3 +114,11 @@ def _looks_like_macos_gui_binary(path: Path) -> bool:
         path.name.casefold() == "obsidian"
         and path.parent.as_posix().endswith("/Obsidian.app/Contents/MacOS")
     )
+
+
+def _as_text(value: str | bytes | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode(errors="replace")
+    return value

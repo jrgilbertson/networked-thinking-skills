@@ -2,7 +2,7 @@
 name: managing-obsidian-tasks
 description: Use when the user explicitly says task, todo, or personal Kanban, or asks to find, review, update, wait, block, complete, or cancel an existing Obsidian task. Requests phrased only as "track this for later" belong to the issue workflow. Do not use for work bound for GitHub, Linear, or a Codex conversation; calendar events or reminders; checklist edits inside other notes; or immediate implementation not requested as a task.
 license: MIT
-compatibility: Requires a running Obsidian desktop app with the official Obsidian CLI. Dashboard setup also requires the core Bases plugin.
+compatibility: Requires a running Obsidian desktop app with the official Obsidian CLI. The core Bases plugin is required for setup, search, create, update, and close because each operation completes through Base views.
 ---
 
 # Managing Obsidian Tasks
@@ -18,8 +18,10 @@ Read `references/task-contract.md` before drafting, creating, changing,
 transitioning, or validating a task. A search-only run may delay reading it
 until task properties need interpretation.
 
-Read the files under `assets/` only when setting up or repairing the task
-system. They define the current task template, Base, and structure note.
+Read `assets/task-template.md` when creating a task or when setting up or
+repairing the task system. Read the other files under `assets/` only when
+setting up or repairing the task system; they define the Base and structure
+note.
 
 ## Obsidian CLI boundary
 
@@ -27,7 +29,9 @@ Use the official Obsidian CLI for every vault search, read, create, update,
 rename, move, property change, and deletion. Run it through
 `python3 scripts/obsidian_cli.py` when the bundled wrapper is usable; otherwise
 invoke the official CLI binary directly. Always pass the intended vault and an
-exact vault-relative path for mutations.
+exact vault-relative path for mutations. With the bundled wrapper, pass the
+vault as `--vault <vault-name>` so it is placed before the Obsidian command;
+never forward a raw `vault=` argument.
 
 Preflight the CLI against the target vault before any write. When the app or
 CLI is unavailable, keep the proposed content as a draft and stop before
@@ -68,8 +72,12 @@ historical context has informed the operation.
 #### Setup or repair
 
 Compare the three assets with the target paths. Present the files that would be
-created or replaced and wait for approval. Write approved content through the
-CLI. Preserve user customizations unless they violate the task contract.
+created or replaced and wait for approval. After approval and immediately
+before each write, re-read the exact target or confirm that it remains absent,
+then compare that state with the approved baseline. On a mismatch, abort the
+write, recompute the proposal from the current state, present the revised
+preview, and request approval again. Write approved content through the CLI.
+Preserve user customizations unless they violate the task contract.
 
 Completion: the template, Base, and structure note are readable through the
 CLI, and every Base view queries without error.
@@ -89,9 +97,13 @@ Set the proposed status to `todo` when every required value is resolved and the
 task is ready to begin. Keep it in `triage` when any required value is
 `unknown`.
 
-After approval, use the CLI `create` operation without overwrite. Re-read the
-exact path and query the All tasks Base view. Linter-owned properties remain
-outside this skill's completion gate.
+After approval and immediately before the write, confirm that the exact target
+remains absent and compare that state with the approved absence baseline. If it
+exists or otherwise differs, abort the write, recompute the proposal from the
+current state, present the revised preview, and request approval again. Then
+use the CLI `create` operation without overwrite. Re-read the exact path and
+query the All tasks Base view. Linter-owned properties remain outside this
+skill's completion gate.
 
 Completion: the approved note exists once, matches the preview, and appears in
 the task Base.

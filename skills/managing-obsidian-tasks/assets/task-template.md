@@ -28,7 +28,7 @@ No additional context.
 
 ## Source
 
-Direct user request.
+Source provenance is unresolved.
 
 ## Deliverables
 

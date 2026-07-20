@@ -47,6 +47,8 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("official Obsidian CLI for every vault search", text)
         self.assertIn("Raw filesystem access is not a fallback", text)
         self.assertIn("exact vault-relative path", text)
+        self.assertIn("`--vault <vault-name>`", text)
+        self.assertIn("never forward a raw `vault=` argument", text)
         self.assertIn("Re-read the note after every mutation", text)
         self.assertIn("only when its CLI result was obtained", text)
         self.assertIn("app.vault.process(file, updater)", text)
@@ -59,6 +61,28 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("Present the proposed filename, complete metadata, and populated body", text)
         self.assertIn("Wait for explicit approval before writing every new task", text)
         self.assertIn("including when the request already says \"create a task.\"", text)
+
+    def test_template_access_and_bases_compatibility_cover_runtime_operations(self):
+        text = normalized_text(SKILL_DIR / "SKILL.md")
+
+        self.assertIn("Read `assets/task-template.md` when creating a task", text)
+        self.assertIn("Read the other files under `assets/` only when setting up or repairing", text)
+        self.assertIn(
+            "Bases plugin is required for setup, search, create, update, and close",
+            text,
+        )
+
+    def test_setup_and_creation_revalidate_the_approved_baseline_before_writing(self):
+        text = normalized_text(SKILL_DIR / "SKILL.md")
+
+        self.assertIn("immediately before each write", text)
+        self.assertIn("confirm that it remains absent", text)
+        self.assertIn("approved baseline", text)
+        self.assertIn("immediately before the write, confirm that the exact target remains absent", text)
+        self.assertIn("approved absence baseline", text)
+        self.assertIn("abort the write", text)
+        self.assertIn("request approval again", text)
+        self.assertIn("CLI `create` operation without overwrite", text)
 
     def test_creation_status_matches_required_field_readiness(self):
         skill = normalized_text(SKILL_DIR / "SKILL.md")
@@ -118,6 +142,15 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertNotIn("tags:", text)
         self.assertNotIn("schema:", text)
         self.assertNotIn("task_id:", text)
+        self.assertIn("Source provenance is unresolved.", text)
+        self.assertNotIn("Direct user request.", text)
+
+    def test_closure_date_uses_the_actual_transition_date(self):
+        text = normalized_text(ROOT / "shared/references/task-contract.md")
+
+        self.assertIn('date_closed: "<actual transition date, YYYY-MM-DD>"', text)
+        self.assertIn("Set `date_closed` to the actual date of the transition", text)
+        self.assertNotIn("date_closed: 2026-07-20", text)
 
     def test_base_has_every_approved_view_and_folder_boundary(self):
         text = (SKILL_DIR / "assets/tasks.base").read_text(encoding="utf-8")
