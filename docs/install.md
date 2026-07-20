@@ -2,10 +2,11 @@
 
 Run read-only audits before remediation. Remediation can edit, split, relink, or delete vault files, and it requires Obsidian-aware tooling.
 
-This repo packages two skills:
+This repo packages three skills:
 
 - `skills/atomic-note`
 - `skills/atomic-note-audit`
+- `skills/managing-obsidian-tasks`
 
 Each published skill directory is self-contained. `npx skills add` copies the selected skill directory, including skill-local references, schemas, and helper scripts. No separate `shared/` copy step is required.
 
@@ -69,7 +70,7 @@ execution: temp HOME raw copy with self-contained skill directories
 -->
 ```bash
 mkdir -p "$HOME/.agents/skills"
-cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.agents/skills/"
+cp -R skills/atomic-note skills/atomic-note-audit skills/managing-obsidian-tasks "$HOME/.agents/skills/"
 ```
 
 ### Claude Code Raw Skills
@@ -85,7 +86,7 @@ execution: temp HOME raw copy with self-contained skill directories
 -->
 ```bash
 mkdir -p "$HOME/.claude/skills"
-cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.claude/skills/"
+cp -R skills/atomic-note skills/atomic-note-audit skills/managing-obsidian-tasks "$HOME/.claude/skills/"
 ```
 
 ## `npx skills` From This Clone
@@ -104,7 +105,7 @@ last_verified: 2026-06-20
 execution: clean temp HOME local repo root npx install with self-contained skill artifacts
 -->
 ```bash
-npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --copy -y
+npx skills add . --agent codex -g --skill atomic-note --skill atomic-note-audit --skill managing-obsidian-tasks --copy -y
 ```
 
 ### Claude Code
@@ -119,7 +120,7 @@ last_verified: 2026-06-20
 execution: clean temp HOME local repo root npx install with self-contained skill artifacts
 -->
 ```bash
-npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --copy -y
+npx skills add . --agent claude-code -g --skill atomic-note --skill atomic-note-audit --skill managing-obsidian-tasks --copy -y
 ```
 
 ## Public GitHub Installs
@@ -198,7 +199,7 @@ execution: local file copy of self-contained skill directories only; Hermes CLI 
 -->
 ```bash
 mkdir -p "$HOME/.agents/skills"
-cp -R skills/atomic-note skills/atomic-note-audit "$HOME/.agents/skills/"
+cp -R skills/atomic-note skills/atomic-note-audit skills/managing-obsidian-tasks "$HOME/.agents/skills/"
 ```
 
 Add this to `~/.hermes/config.yaml`:

@@ -23,6 +23,12 @@ class SkillArtifactSpec:
 
 
 ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
+    "managing-obsidian-tasks": SkillArtifactSpec(
+        name="managing-obsidian-tasks",
+        references=("task-contract.md",),
+        schemas=(),
+        scripts=("obsidian_adapter.py", "obsidian_cli.py"),
+    ),
     "atomic-note": SkillArtifactSpec(
         name="atomic-note",
         references=("doctrine.md", "remediation-context.md"),
