@@ -112,12 +112,17 @@ class ObsidianPreflightTest(unittest.TestCase):
             stderr="partial error",
         )
 
-        with patch("shared.scripts.obsidian_adapter.shutil.which", return_value="/tmp/obsidian"):
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
             with patch(
                 "shared.scripts.obsidian_adapter.subprocess.run",
                 side_effect=timeout,
             ) as run:
-                result = ObsidianAdapter().help()
+                result = ObsidianAdapter(
+                    timeout_seconds=COMMAND_TIMEOUT_SECONDS
+                ).help()
 
         self.assertFalse(result.ok)
         self.assertEqual(result.stdout, "partial output")
@@ -125,6 +130,48 @@ class ObsidianPreflightTest(unittest.TestCase):
         self.assertIn("partial error", result.stderr)
         self.assertEqual(result.returncode, TIMEOUT_RETURN_CODE)
         self.assertEqual(run.call_args.kwargs["timeout"], COMMAND_TIMEOUT_SECONDS)
+
+    def test_adapter_has_no_timeout_by_default(self):
+        completed = subprocess.CompletedProcess(
+            args=["/tmp/obsidian", "help"],
+            returncode=0,
+            stdout="help output",
+            stderr="",
+        )
+
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
+            with patch(
+                "shared.scripts.obsidian_adapter.subprocess.run",
+                return_value=completed,
+            ) as run:
+                result = ObsidianAdapter().help()
+
+        self.assertTrue(result.ok)
+        self.assertIsNone(run.call_args.kwargs["timeout"])
+
+    def test_adapter_reports_configured_timeout_duration(self):
+        timeout_seconds = 2.5
+        timeout = subprocess.TimeoutExpired(
+            cmd=["/tmp/obsidian", "help"],
+            timeout=timeout_seconds,
+        )
+
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
+            with patch(
+                "shared.scripts.obsidian_adapter.subprocess.run",
+                side_effect=timeout,
+            ):
+                result = ObsidianAdapter(timeout_seconds=timeout_seconds).help()
+
+        self.assertFalse(result.ok)
+        self.assertIn("timed out after 2.5 seconds", result.stderr)
+        self.assertEqual(result.returncode, TIMEOUT_RETURN_CODE)
 
     def test_resolver_uses_path_binary_when_local_shadow_is_not_executable(self):
         with tempfile.TemporaryDirectory() as tmp:

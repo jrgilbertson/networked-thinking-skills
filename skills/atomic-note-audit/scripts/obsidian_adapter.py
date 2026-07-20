@@ -22,8 +22,13 @@ class CommandResult:
 
 
 class ObsidianAdapter:
-    def __init__(self, binary: str = DEFAULT_OBSIDIAN_BINARY) -> None:
+    def __init__(
+        self,
+        binary: str = DEFAULT_OBSIDIAN_BINARY,
+        timeout_seconds: float | None = None,
+    ) -> None:
         self.binary = binary
+        self.timeout_seconds = timeout_seconds
 
     def available(self) -> bool:
         return resolve_obsidian_binary(self.binary) is not None
@@ -43,13 +48,13 @@ class ObsidianAdapter:
                 check=False,
                 capture_output=True,
                 text=True,
-                timeout=COMMAND_TIMEOUT_SECONDS,
+                timeout=self.timeout_seconds,
             )
         except subprocess.TimeoutExpired as exc:
             stdout = _as_text(exc.stdout)
             stderr = _as_text(exc.stderr)
             timeout_message = (
-                f"Obsidian CLI command timed out after {COMMAND_TIMEOUT_SECONDS} seconds."
+                f"Obsidian CLI command timed out after {self.timeout_seconds} seconds."
             )
             if stderr:
                 stderr = f"{stderr.rstrip()}\n{timeout_message}"

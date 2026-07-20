@@ -77,7 +77,10 @@ before each write, re-read the exact target or confirm that it remains absent,
 then compare that state with the approved baseline. On a mismatch, abort the
 write, recompute the proposal from the current state, present the revised
 preview, and request approval again. Write approved content through the CLI.
-Preserve user customizations unless they violate the task contract.
+For each of the three assets (the template, Base, and structure note), use the
+same quote-safe JSON/base64/helper transport required for task creation. Never
+interpolate asset Markdown or YAML into a shell `content=` argument. Preserve
+user customizations unless they violate the task contract.
 
 Completion: the template, Base, and structure note are readable through the
 CLI, and every Base view queries without error.

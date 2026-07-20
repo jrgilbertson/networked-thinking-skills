@@ -97,6 +97,12 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("status: triage", template)
         self.assertIn("unknown", template)
 
+    def test_template_marks_unresolved_goal_unknown(self):
+        template = (SKILL_DIR / "assets/task-template.md").read_text(encoding="utf-8")
+
+        self.assertIn("goal: unknown", template)
+        self.assertNotIn('goal: ""', template)
+
     def test_contract_has_required_enums_without_tags_or_schema_field(self):
         text = normalized_text(ROOT / "shared/references/task-contract.md")
 
@@ -182,6 +188,19 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
             "wikilinks",
         ):
             self.assertIn(content_kind, text)
+
+    def test_setup_uses_quote_safe_transport_for_every_asset(self):
+        text = normalized_text(SKILL_DIR / "SKILL.md")
+
+        self.assertIn(
+            "each of the three assets (the template, Base, and structure note)",
+            text,
+        )
+        self.assertIn("same quote-safe JSON/base64/helper transport", text)
+        self.assertIn(
+            "Never interpolate asset Markdown or YAML into a shell `content=` argument",
+            text,
+        )
 
     def test_property_set_passes_explicit_task_property_types(self):
         text = normalized_text(SKILL_DIR / "SKILL.md")

@@ -1,6 +1,6 @@
 ---
 execution_shape: unknown
-goal: ""
+goal: unknown
 human_energy: unknown
 priority: P2
 source_type: unknown
