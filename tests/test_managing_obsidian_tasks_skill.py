@@ -152,6 +152,13 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         self.assertIn("Set `date_closed` to the actual date of the transition", text)
         self.assertNotIn("date_closed: 2026-07-20", text)
 
+    def test_blocked_date_uses_the_actual_transition_date(self):
+        text = normalized_text(ROOT / "shared/references/task-contract.md")
+
+        self.assertIn('blocked_since: "<actual transition date, YYYY-MM-DD>"', text)
+        self.assertIn("Set `blocked_since` to the actual date of the transition", text)
+        self.assertNotIn("blocked_since: 2026-07-20", text)
+
     def test_base_has_every_approved_view_and_folder_boundary(self):
         text = (SKILL_DIR / "assets/tasks.base").read_text(encoding="utf-8")
 

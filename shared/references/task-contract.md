@@ -164,10 +164,12 @@ unblock it.
 
 ```yaml
 blocked_on: "Missing credential, decision, dependency, or required input"
-blocked_since: 2026-07-20
+blocked_since: "<actual transition date, YYYY-MM-DD>"
 ```
 
-It also requires a nonempty `## Unblock condition` section.
+Set `blocked_since` to the actual date of the transition to `blocked`; the
+value above is a placeholder, not a date to copy. A blocked task also requires
+a nonempty `## Unblock condition` section.
 
 `done` and `cancelled` require:
 

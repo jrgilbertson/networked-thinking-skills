@@ -70,7 +70,7 @@ CLI binary, falls back to the app-bundled macOS `obsidian-cli`, and refuses the
 macOS GUI binary when `obsidian` resolves to the wrong executable:
 
 ```bash
-python3 scripts/obsidian_cli.py vault="My Vault" eval code="app.vault.getFiles().length"
+python3 scripts/obsidian_cli.py --vault "My Vault" eval code="app.vault.getFiles().length"
 ```
 
 Verify the chosen binary against the running Obsidian app before relying on it:
