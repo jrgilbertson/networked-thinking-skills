@@ -10,6 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 SKILL_REFERENCES = {
+    "managing-obsidian-tasks": [
+        "references/task-contract.md",
+    ],
     "atomic-note": [
         "references/doctrine.md",
         "references/remediation-context.md",
@@ -50,7 +53,8 @@ class SkillIntegrityTest(unittest.TestCase):
                 self.assertTrue(text.startswith("---\n"))
                 self.assertIn(f"name: {skill}", text)
                 self.assertIn("description: Use when", text)
-                self.assertIn("references/doctrine.md", text)
+                for reference in references:
+                    self.assertIn(reference, text)
                 self.assertNotIn("../../shared", text)
                 self.assertNotIn("shared.scripts", text)
                 self.assertEqual(_required_reference_paths(text), references)
@@ -74,6 +78,7 @@ class SkillIntegrityTest(unittest.TestCase):
 
     def test_shared_references_exist(self):
         for name in [
+            "task-contract.md",
             "doctrine.md",
             "audit-rubric.md",
             "model-judgment-prompt.md",

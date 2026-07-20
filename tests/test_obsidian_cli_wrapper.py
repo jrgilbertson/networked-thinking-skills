@@ -8,7 +8,7 @@ from shared.scripts import obsidian_cli
 
 
 class ObsidianCliWrapperTest(unittest.TestCase):
-    def test_wrapper_forwards_args_to_adapter(self):
+    def test_wrapper_prepends_vault_before_forwarded_command(self):
         calls = []
 
         class FakeObsidianAdapter:
@@ -22,12 +22,41 @@ class ObsidianCliWrapperTest(unittest.TestCase):
         stdout = io.StringIO()
         with patch("shared.scripts.obsidian_cli.ObsidianAdapter", FakeObsidianAdapter):
             with contextlib.redirect_stdout(stdout):
-                return_code = obsidian_cli.main(["vault=jason-obsidian", "eval", "code=app.vault.getFiles().length"])
+                return_code = obsidian_cli.main(
+                    ["--vault", "jason-obsidian", "eval", "code=app.vault.getFiles().length"]
+                )
 
         self.assertEqual(return_code, 0)
         self.assertEqual(stdout.getvalue(), "=> 42\n")
-        self.assertEqual(calls[0], ("binary", "obsidian-cli"))
+        self.assertEqual(calls[0], ("binary", "obsidian"))
         self.assertEqual(calls[1], ("args", ["vault=jason-obsidian", "eval", "code=app.vault.getFiles().length"]))
+
+    def test_wrapper_rejects_raw_forwarded_vault_argument(self):
+        stderr = io.StringIO()
+
+        with contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as raised:
+                obsidian_cli.main(["eval", "vault=jason-obsidian", "code=1"])
+
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("--vault", stderr.getvalue())
+
+    def test_wrapper_allows_help_without_vault(self):
+        calls = []
+
+        class FakeObsidianAdapter:
+            def __init__(self, binary: str) -> None:
+                calls.append(("binary", binary))
+
+            def run(self, args: list[str]) -> CommandResult:
+                calls.append(("args", args))
+                return CommandResult(ok=True, stdout="", stderr="", returncode=0)
+
+        with patch("shared.scripts.obsidian_cli.ObsidianAdapter", FakeObsidianAdapter):
+            return_code = obsidian_cli.main(["help"])
+
+        self.assertEqual(return_code, 0)
+        self.assertEqual(calls, [("binary", "obsidian"), ("args", ["help"])])
 
     def test_wrapper_supports_binary_override_and_separator(self):
         calls = []

@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- `managing-obsidian-tasks`, a portable Obsidian CLI workflow for durable task
+  notes, review-before-create capture, lifecycle transitions, and derived Bases.
 - Runner adapters for model judgments in the audit workflow.
 - Self-contained npx install artifacts so `npx skills add` works without a repo clone.
 

@@ -12,7 +12,7 @@ class RepoSmokeTest(unittest.TestCase):
             data = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(data["name"], "networked-thinking-skills")
             self.assertEqual(data["repository"], "https://github.com/jrgilbertson/networked-thinking-skills")
-            self.assertEqual(len(data["skills"]), 2)
+            self.assertEqual(len(data["skills"]), 3)
             for skill in data["skills"]:
                 skill_path = ROOT / skill["path"]
                 self.assertTrue(skill_path.exists(), f"{skill_path} does not exist")

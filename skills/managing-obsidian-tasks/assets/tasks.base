@@ -1,0 +1,121 @@
+filters:
+  and:
+    - 'file.inFolder("Tasks")'
+    - 'file.ext == "md"'
+properties:
+  file.name:
+    displayName: Task
+  goal:
+    displayName: Goal
+  execution_shape:
+    displayName: Execution shape
+  human_energy:
+    displayName: Human energy
+  source_type:
+    displayName: Source type
+  task_type:
+    displayName: Task type
+  waiting_on:
+    displayName: Waiting on
+  follow_up_on:
+    displayName: Follow up on
+  blocked_on:
+    displayName: Blocked on
+  blocked_since:
+    displayName: Blocked since
+  date_closed:
+    displayName: Closed
+views:
+  - type: table
+    name: Triage
+    filters:
+      and:
+        - 'status == "triage"'
+    order:
+      - file.name
+      - priority
+      - execution_shape
+      - task_type
+      - human_energy
+      - goal
+  - type: table
+    name: Todo
+    filters:
+      and:
+        - 'status == "todo"'
+    order:
+      - file.name
+      - priority
+      - due
+      - not_before
+      - execution_shape
+      - human_energy
+      - project
+      - people
+      - goal
+  - type: table
+    name: In progress
+    filters:
+      and:
+        - 'status == "in-progress"'
+    order:
+      - file.name
+      - priority
+      - due
+      - execution_shape
+      - human_energy
+      - project
+      - people
+      - goal
+  - type: table
+    name: Waiting for
+    filters:
+      and:
+        - 'status == "waiting-for"'
+    order:
+      - file.name
+      - waiting_on
+      - follow_up_on
+      - priority
+      - project
+      - people
+      - goal
+  - type: table
+    name: Blocked
+    filters:
+      and:
+        - 'status == "blocked"'
+    order:
+      - file.name
+      - blocked_on
+      - blocked_since
+      - priority
+      - project
+      - people
+      - goal
+  - type: table
+    name: History
+    filters:
+      or:
+        - 'status == "done"'
+        - 'status == "cancelled"'
+    order:
+      - file.name
+      - status
+      - date_closed
+      - project
+      - people
+      - goal
+  - type: table
+    name: All tasks
+    order:
+      - file.name
+      - status
+      - priority
+      - execution_shape
+      - task_type
+      - human_energy
+      - due
+      - project
+      - people
+      - goal

@@ -129,8 +129,9 @@ single user-directed operation. Load `references/remediation-context.md`
 before planning any vault mutation.
 
 Require official Obsidian skills and preflight before vault mutations. Use the
-actual Obsidian CLI binary; `obsidian-cli` is the default because some systems
-reserve `obsidian` for the GUI app binary. Require approval before destructive
+actual Obsidian CLI binary; the registered `obsidian` command is the default,
+and the bundled resolver rejects the macOS GUI executable before using its CLI
+fallback. Require approval before destructive
 operations. If a sandboxed agent cannot attach to the running Obsidian app,
 rerun the Obsidian CLI step in an approved unsandboxed context instead of using
 raw filesystem edits for app-context operations. When working from an installed

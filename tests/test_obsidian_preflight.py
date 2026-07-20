@@ -9,7 +9,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 from shared.scripts.obsidian_adapter import (
+    COMMAND_TIMEOUT_SECONDS,
     DEFAULT_OBSIDIAN_BINARY,
+    TIMEOUT_RETURN_CODE,
     CommandResult,
     ObsidianAdapter,
     resolve_obsidian_binary,
@@ -29,6 +31,9 @@ def _create_required_skills(root: Path) -> None:
 
 
 class ObsidianPreflightTest(unittest.TestCase):
+    def test_default_binary_uses_registered_obsidian_command(self):
+        self.assertEqual(DEFAULT_OBSIDIAN_BINARY, "obsidian")
+
     def test_missing_skills_fail_and_include_obsidian_cli(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = check_skill_paths(Path(tmp))
@@ -87,6 +92,87 @@ class ObsidianPreflightTest(unittest.TestCase):
 
         self.assertEqual(resolved, str(cli))
 
+    def test_legacy_binary_name_falls_back_to_app_bundled_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp) / "obsidian-cli"
+            cli.write_text("", encoding="utf-8")
+            cli.chmod(0o755)
+
+            with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=None):
+                with patch("shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH", cli):
+                    resolved = resolve_obsidian_binary("obsidian-cli")
+
+        self.assertEqual(resolved, str(cli))
+
+    def test_adapter_timeout_returns_failed_command_result(self):
+        timeout = subprocess.TimeoutExpired(
+            cmd=["/tmp/obsidian", "help"],
+            timeout=COMMAND_TIMEOUT_SECONDS,
+            output="partial output",
+            stderr="partial error",
+        )
+
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
+            with patch(
+                "shared.scripts.obsidian_adapter.subprocess.run",
+                side_effect=timeout,
+            ) as run:
+                result = ObsidianAdapter(
+                    timeout_seconds=COMMAND_TIMEOUT_SECONDS
+                ).help()
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.stdout, "partial output")
+        self.assertIn("timed out", result.stderr)
+        self.assertIn("partial error", result.stderr)
+        self.assertEqual(result.returncode, TIMEOUT_RETURN_CODE)
+        self.assertEqual(run.call_args.kwargs["timeout"], COMMAND_TIMEOUT_SECONDS)
+
+    def test_adapter_has_no_timeout_by_default(self):
+        completed = subprocess.CompletedProcess(
+            args=["/tmp/obsidian", "help"],
+            returncode=0,
+            stdout="help output",
+            stderr="",
+        )
+
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
+            with patch(
+                "shared.scripts.obsidian_adapter.subprocess.run",
+                return_value=completed,
+            ) as run:
+                result = ObsidianAdapter().help()
+
+        self.assertTrue(result.ok)
+        self.assertIsNone(run.call_args.kwargs["timeout"])
+
+    def test_adapter_reports_configured_timeout_duration(self):
+        timeout_seconds = 2.5
+        timeout = subprocess.TimeoutExpired(
+            cmd=["/tmp/obsidian", "help"],
+            timeout=timeout_seconds,
+        )
+
+        with patch(
+            "shared.scripts.obsidian_adapter.shutil.which",
+            return_value="/tmp/obsidian",
+        ):
+            with patch(
+                "shared.scripts.obsidian_adapter.subprocess.run",
+                side_effect=timeout,
+            ):
+                result = ObsidianAdapter(timeout_seconds=timeout_seconds).help()
+
+        self.assertFalse(result.ok)
+        self.assertIn("timed out after 2.5 seconds", result.stderr)
+        self.assertEqual(result.returncode, TIMEOUT_RETURN_CODE)
+
     def test_resolver_uses_path_binary_when_local_shadow_is_not_executable(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -111,7 +197,11 @@ class ObsidianPreflightTest(unittest.TestCase):
         gui_binary = "/Applications/Obsidian.app/Contents/MacOS/obsidian"
 
         with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=gui_binary):
-            resolved = resolve_obsidian_binary("obsidian")
+            with patch(
+                "shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH",
+                Path("/missing/obsidian-cli"),
+            ):
+                resolved = resolve_obsidian_binary("obsidian")
 
         self.assertIsNone(resolved)
 
@@ -126,7 +216,11 @@ class ObsidianPreflightTest(unittest.TestCase):
             shim.symlink_to(app_binary)
 
             with patch("shared.scripts.obsidian_adapter.shutil.which", return_value=str(shim)):
-                resolved = resolve_obsidian_binary("obsidian")
+                with patch(
+                    "shared.scripts.obsidian_adapter.MACOS_OBSIDIAN_CLI_PATH",
+                    root / "missing-obsidian-cli",
+                ):
+                    resolved = resolve_obsidian_binary("obsidian")
 
         self.assertIsNone(resolved)
 

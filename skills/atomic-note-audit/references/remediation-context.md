@@ -5,8 +5,9 @@ Audit and remediation are separate phases. Audit recommendations do not mutate n
 ## Obsidian-Aware Mutation
 
 Use the official Obsidian skills and the actual Obsidian CLI binary for
-link-sensitive file operations. Prefer `obsidian-cli` unless the environment
-has verified that `obsidian` is the official CLI executable, not the GUI binary.
+link-sensitive file operations. Prefer the registered `obsidian` command; the
+bundled resolver rejects the macOS GUI executable and can fall back to the
+app-bundled `obsidian-cli` binary.
 When working from this repo, prefer `python3 scripts/obsidian_cli.py` so
 agents use the shared resolver and attach-failure hint instead of hard-coded
 local binary paths.

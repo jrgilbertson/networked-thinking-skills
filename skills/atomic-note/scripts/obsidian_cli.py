@@ -23,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
         obsidian_args = obsidian_args[1:]
     if not obsidian_args:
         obsidian_args = ["help"]
+    if args.vault is not None:
+        obsidian_args.insert(0, f"vault={args.vault}")
 
     result = ObsidianAdapter(binary=args.obsidian_binary).run(obsidian_args)
     if result.stdout:
@@ -44,7 +46,14 @@ def _parse_args(argv: list[str] | None) -> tuple[argparse.Namespace, list[str]]:
         default=DEFAULT_OBSIDIAN_BINARY,
         help=f"Obsidian CLI executable to use. Defaults to {DEFAULT_OBSIDIAN_BINARY}.",
     )
-    return parser.parse_known_args(argv)
+    parser.add_argument(
+        "--vault",
+        help="Vault name to prepend before the forwarded Obsidian command.",
+    )
+    args, obsidian_args = parser.parse_known_args(argv)
+    if any(arg.startswith("vault=") for arg in obsidian_args):
+        parser.error("pass the vault name with --vault, not a forwarded vault= argument")
+    return args, obsidian_args
 
 
 def _is_attach_failure(result: CommandResult) -> bool:

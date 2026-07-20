@@ -3,7 +3,7 @@
 [![CI](https://github.com/jrgilbertson/networked-thinking-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/jrgilbertson/networked-thinking-skills/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
-Agent Skills and deterministic helper scripts for creating, auditing, and improving Networked Thinking atomic notes in Obsidian vaults.
+Agent Skills and deterministic helper scripts for Networked Thinking notes and tasks in Obsidian vaults.
 
 ## Purpose
 
@@ -15,6 +15,7 @@ Networked Thinking is a book and practical system for turning saved articles, hi
 |---|---|
 | `atomic-note` | Create or improve a single-concept note in DAE format. |
 | `atomic-note-audit` | Score existing notes against the system's rubric, deterministic checks first, agent judgment second. |
+| `managing-obsidian-tasks` | Manage Obsidian tasks from capture to completion. |
 
 More skills will land here as the book's workflows do; each installs independently.
 
@@ -41,6 +42,7 @@ In an agent session opened on your vault, run a read-only audit first, then crea
 ```text
 Use atomic-note-audit to audit the quality of my atomic notes.
 Use atomic-note to turn this highlight into an atomic note.
+Create a todo to compare this article with my codebase.
 ```
 
 Always run the audit before remediation and review the generated plan before allowing vault mutation. Remediation can edit, split, relink, or delete vault files. The deeper guides cover the [audit workflow](docs/audit-workflow.md), the [remediation runbook](docs/remediation.md), and the [scoring rubric](docs/rubric.md).
