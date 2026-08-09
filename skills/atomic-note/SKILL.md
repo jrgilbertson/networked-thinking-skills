@@ -67,10 +67,11 @@ repo's shared references (see project AGENTS and install docs).
    practice them; still apply the learner-specific Anki-YAGNI check rather than
    adding every available fact. For `Basic`, Front is a retrieval question for
    the central claim; title, H1, and Definition sentence are not the Front.
-   Put DAE (and any primary formula with labels) on Back. For synced `Cloze`
-   notes, preserve useful cloze ordinals and put the Analogy plus Example
-   behind `Extra:`; the Example must be a separate paragraph beginning
-   `For example,`.
+   Put DAE (and any primary formula with labels) on Back, even when the same
+   DAE also appears before `START`. For `Cloze`, keep unclozed formulas off the
+   question side when they would reveal the deletion. For synced `Cloze` notes,
+   preserve useful cloze ordinals and put the Analogy plus Example behind
+   `Extra:`; the Example must be a separate paragraph beginning `For example,`.
 8. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
 9. Preview the note and both naming pairs before writing in a user's vault. If
    an existing filename/Definition mismatch is detected or a proposed change to

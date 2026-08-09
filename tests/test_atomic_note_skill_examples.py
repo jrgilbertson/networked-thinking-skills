@@ -111,13 +111,17 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         self.assertIn("formula completes the concept", doctrine)
+        self.assertIn("Definition cannot stand alone at review without one", doctrine)
         self.assertIn("Label each variable the formula uses", doctrine)
         self.assertIn('"where …" clause', doctrine)
         self.assertIn("same Definition paragraph", doctrine)
         self.assertIn("prose-first", doctrine)
         self.assertIn("Obsidian-only", doctrine)
         self.assertIn("keep the primary formula in Definition", doctrine)
+        self.assertIn("long displays", doctrine)
         self.assertIn("without restating the full where-clause", doctrine)
+        self.assertIn("put the primary formula and labels on `Back:`", doctrine)
+        self.assertIn("would reveal the deletion", doctrine)
         self.assertNotIn(
             "formulas, lookup tables, commands) worth preserving but not worth testing",
             doctrine,
@@ -127,6 +131,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("variable labels", skill)
         self.assertIn("prose-first sentence", skill)
         self.assertIn("Doctrine owns", skill)
+        self.assertIn("even when the same DAE also appears before `START`", skill)
 
         self.assertIn("retrieval question", doctrine)
         self.assertIn("central claim", doctrine)
