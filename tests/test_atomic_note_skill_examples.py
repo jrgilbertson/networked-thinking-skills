@@ -111,11 +111,13 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
 
         self.assertIn("formula completes the concept", doctrine)
-        self.assertIn("where", doctrine.casefold())
+        self.assertIn("Label each variable the formula uses", doctrine)
+        self.assertIn('"where …" clause', doctrine)
         self.assertIn("same Definition paragraph", doctrine)
         self.assertIn("prose-first", doctrine)
         self.assertIn("Obsidian-only", doctrine)
         self.assertIn("Do not park the primary formula only in `Reference:`", doctrine)
+        self.assertIn("without restating the full where-clause", doctrine)
         self.assertNotIn(
             "formulas, lookup tables, commands) worth preserving but not worth testing",
             doctrine,

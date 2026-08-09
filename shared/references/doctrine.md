@@ -55,18 +55,22 @@ every available fact into one by default.
   The first reader-visible Definition sentence still drives the filename; keep
   that sentence prose-first so variable labels do not change the filename source.
   Keep the whole Definition within 10-50 rendered words—tighten wording rather
-  than moving the primary formula only into `Reference:`. Example:
-  `Binomial standard deviation is the square root of $np(1-p)$, where $n$ is
-  trials and $p$ is success probability.` Do not create a second Anki card solely
-  because a formula exists; Anki-YAGNI still applies, and a separate Cloze is for
-  when symbol recall is the explicit goal.
+  than moving the primary formula only into `Reference:`. Example (one paragraph,
+  two sentences; only the first sentence is the filename source): `Binomial
+  standard deviation measures spread for a fixed number of independent trials.`
+  `It is $\sqrt{np(1-p)}$, where $n$ is trials and $p$ is success probability.`
+  Do not create a second Anki card solely because a formula exists; Anki-YAGNI
+  still applies, and a separate Cloze is for when symbol recall is the explicit
+  goal.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
   relational structure in natural prose. Do not default to colon or semicolon
   templates; use punctuation only when the sentence would read naturally outside
   the note format.
 - Example: concrete and specific. It starts with `For example,` and uses named
-  tools, real numbers, real domains, or real situations.
+  tools, real numbers, real domains, or real situations. When the Definition
+  already labeled the formula's variables, the Example may reuse those symbols
+  without restating the full where-clause.
 - Use stable wording in generic DAE prose. Avoid temporal or support-status
   words such as `currently`, `latest`, `now`, and `supported` unless the note is
   intentionally making a claim that should be marked for factual-risk review.
