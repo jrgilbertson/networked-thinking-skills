@@ -6,8 +6,6 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- Repository banner from the shared Networked Thinking visual system, with
-  production framing that keeps the title and knowledge graph prominent.
 - `managing-obsidian-tasks`, a portable Obsidian CLI workflow for durable task
   notes, review-before-create capture, lifecycle transitions, and derived Bases.
 - Runner adapters for model judgments in the audit workflow.
@@ -15,6 +13,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Updated the repository banner from the shared Networked Thinking visual
+  system, removing proof marks and the border so the title and knowledge graph
+  remain prominent.
 - Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
   provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
