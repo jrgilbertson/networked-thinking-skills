@@ -13,6 +13,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
+  variable labels after a prose-first sentence; `Reference:` holds alternate
+  forms and other Obsidian-only extras. Basic Front is a retrieval question for
+  the central claim. Audit finding codes are unchanged.
+- Install and skill docs recommend `atomic-note` + `atomic-note-audit` as a pair
+  and state that skill-local doctrine/remediation copies are generated from
+  `shared/`.
 - Updated the repository banner from the shared Networked Thinking visual
   system, removing proof marks and the border so the title and knowledge graph
   remain prominent.

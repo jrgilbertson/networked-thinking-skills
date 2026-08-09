@@ -4,9 +4,16 @@ Run read-only audits before remediation. Remediation can edit, split, relink, or
 
 This repo packages three skills:
 
-- `skills/atomic-note`
-- `skills/atomic-note-audit`
-- `skills/managing-obsidian-tasks`
+- `skills/atomic-note` — create or improve one atomic note
+- `skills/atomic-note-audit` — batch audit, model judgment, and remediation
+- `skills/managing-obsidian-tasks` — durable Obsidian task notes
+
+**Recommended pair:** install both `atomic-note` and `atomic-note-audit` for full
+Networked Thinking quality work (authoring plus vault health). Either skill can
+install alone. They share doctrine and remediation rules as skill-local copies
+generated from the repo `shared/` tree; each published directory stays
+self-contained. Contributors edit under `shared/` and run
+`python3 -m shared.scripts.sync_skill_artifacts` (see AGENTS.md).
 
 Each published skill directory is self-contained. `npx skills add` copies the selected skill directory, including skill-local references, schemas, and helper scripts. No separate `shared/` copy step is required.
 

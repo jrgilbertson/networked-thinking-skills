@@ -65,10 +65,23 @@ class AuditEngineTest(unittest.TestCase):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
         self.assertEqual(row["schema_version"], "1.0.0")
-        self.assertEqual(row["doctrine_version"], "1.0.4")
+        self.assertEqual(row["doctrine_version"], "1.0.5")
         self.assertEqual(row["rubric_version"], "1.0.1")
         self.assertEqual(row["prompt_version"], "1.0.2")
         self.assertEqual(manifest["schema_version"], "1.0.0")
+
+    def test_doctrine_version_matches_pyproject_tool_table(self):
+        from pathlib import Path
+        import re
+        from shared.scripts.audit_engine import DOCTRINE_VERSION
+
+        text = Path("pyproject.toml").read_text(encoding="utf-8")
+        match = re.search(
+            r"(?m)^doctrine_version\s*=\s*\"([^\"]+)\"",
+            text,
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), DOCTRINE_VERSION)
 
     def test_structure_parent_match_preserves_periods_in_note_title(self):
         row = self.audit_single_note(

@@ -7,7 +7,16 @@ description: Use when auditing or improving the quality of Networked Thinking at
 
 Use this skill to audit every Markdown file in a configured Atomic Notes folder, produce vault-health KPIs, and create remediation queues.
 
+For note create/improve workflows, install `atomic-note` as well. This skill
+stands alone for batch audit and remediation. Shared doctrine and remediation
+rules appear here as skill-local copies so the package does not depend on
+another skill's directory at install time.
+
 ## Required References
+
+These paths ship with the install so the skill stands alone. Do not hand-edit
+them in an installed skill; contributors regenerate skill-local copies from the
+repo's shared references (see project AGENTS and install docs).
 
 - `references/doctrine.md`
 - `references/audit-rubric.md`

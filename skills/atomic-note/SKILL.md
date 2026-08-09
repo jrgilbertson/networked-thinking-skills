@@ -7,6 +7,9 @@ description: Use when creating or improving a Networked Thinking atomic note in 
 
 Use this skill to create or improve one Networked Thinking atomic note.
 
+For authoring plus vault audit and remediation, install `atomic-note-audit` as
+well. This skill stands alone for create/improve work.
+
 Before writing or editing an Obsidian vault file, load the official Obsidian
 Markdown and file-management skills when available. For note creates, file
 moves, renames, deletes, Anki syncs, and link-sensitive operations, require
@@ -17,6 +20,10 @@ filesystem writes. When working from an installed skill, prefer
 `python3 scripts/obsidian_cli.py` for app-context CLI commands.
 
 ## Required References
+
+These paths ship with the install so the skill stands alone. Do not hand-edit
+them in an installed skill; contributors regenerate skill-local copies from the
+repo's shared references (see project AGENTS and install docs).
 
 - `references/doctrine.md`
 - `references/remediation-context.md`
@@ -33,7 +40,10 @@ filesystem writes. When working from an installed skill, prefer
    narrowing or splitting the hub merely because it spans a topic.
 3. Draft one DAE note: Definition paragraph, Analogy paragraph, Example
    paragraph. For non-Anki notes, write the DAE as plain prose after the H1
-   without `## Definition`, `## Analogy`, or `## Example` headings.
+   without `## Definition`, `## Analogy`, or `## Example` headings. If a formula
+   completes the definition, put it in the Definition with variable labels after
+   a prose-first sentence (filename source). Doctrine owns placement, labels,
+   and Anki visibility.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze
@@ -48,13 +58,20 @@ filesystem writes. When working from an installed skill, prefer
    exception unless the learner approves a migration. Do not describe it as
    another Networked Thinking naming style or use nearby inconsistencies to
    weaken the canonical rule.
-6. Add useful aliases and links; follow the doctrine for the optional `Reference:` section (bulleted links, figures, and compact reference material) and the numbered `Sources:` section (external provenance), plus agent-access dates.
+6. Add useful aliases and links. Follow doctrine for optional `Reference:`
+   (Obsidian-only extras; primary formula stays in Definition when it completes
+   the concept) and numbered `Sources:` (external provenance), plus agent-access
+   dates.
 7. Add Anki only when memorization serves the learner's stated goal. Factual
    recall and trivia are valid uses when the learner explicitly wants to
    practice them; still apply the learner-specific Anki-YAGNI check rather than
-   adding every available fact. For synced `Cloze` notes, preserve useful cloze
-   ordinals and put the Analogy plus Example behind `Extra:`; the Example must
-   be a separate paragraph beginning `For example,`.
+   adding every available fact. For `Basic`, Front is a retrieval question for
+   the central claim; title, H1, and Definition sentence are not the Front.
+   Put DAE (and any primary formula with labels) on Back, even when the same
+   DAE also appears before `START`. For `Cloze`, keep unclozed formulas off the
+   question side when they would reveal the deletion. For synced `Cloze` notes,
+   preserve useful cloze ordinals and put the Analogy plus Example behind
+   `Extra:`; the Example must be a separate paragraph beginning `For example,`.
 8. For Anki-intended notes, create the file through Obsidian app-context APIs and follow the doctrine's first-sync ID verification after writing. For existing synced notes, reducing or renumbering cloze deletions or changing between `Basic` and `Cloze` requires the remediation-context delete-sync-recreate flow so stale Anki cards or fields are not retained.
 9. Preview the note and both naming pairs before writing in a user's vault. If
    an existing filename/Definition mismatch is detected or a proposed change to

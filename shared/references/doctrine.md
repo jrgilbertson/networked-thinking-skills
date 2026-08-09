@@ -15,10 +15,10 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   use the actual local date when the note is created or edited, not a copied
   example date from prior work.
 - Optional `Reference:` section (singular label, bulleted) after the DAE prose,
-  or after the Anki `END` block when Anki is present, and before `Sources:`,
-  for links to related atomic notes, figures, and compact reference material
-  (formulas, lookup tables, commands) worth preserving but not worth testing
-  directly.
+  or after the Anki `END` block when Anki is present, and before `Sources:`, for
+  related atomic notes, figures, and compact Obsidian-only extras (alternate
+  formula forms, long displays, lookup tables, commands, worked-example steps)
+  that are not the claim tested on the card.
 
 ## Learner Purpose and Structure Notes
 
@@ -44,14 +44,32 @@ every available fact into one by default.
   reader sees, so `[[Target note|alias text]]` counts as `alias text`. When the
   concept has a common acronym or initialism that will be used in the note,
   introduce it on first use in the Definition's first sentence with the pattern
-  `<full term> (<ACRONYM>)`, then use the acronym later.
+  `<full term> (<ACRONYM>)`, then use the acronym later. When a formula completes
+  the concept, or the Definition cannot stand alone at review without one, put
+  the formula in the Definition after a prose-first sentence. Keep formula and
+  labels in the same Definition paragraph (plain-prose) or Definition section
+  (legacy-headed). Prefer inline math; a lone blank-line `$$...$$` paragraph is
+  not Definition prose for plain-prose DAE. Label each variable the formula uses
+  with a "where …" clause or short gloss in that paragraph. Filename source is
+  the first reader-visible Definition sentence for plain-prose and Basic DAE;
+  leave equation and gloss off that sentence. For Cloze-only DAE, the naming
+  table still uses the rendered cloze-bearing sentence. Stay inside 10-50
+  rendered words by tightening prose; keep the primary formula in Definition
+  rather than only in `Reference:`. Example, one paragraph, two sentences
+  (filename uses only the first): Binomial standard deviation measures spread
+  for a fixed number of independent trials. It is $\sqrt{np(1-p)}$, where $n$
+  is the number of trials and $p$ is the probability of success. Prefer a
+  Cloze on the same note when symbol recall is the goal (Anki-YAGNI); do not
+  auto-create a second Anki note for every formula.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
   relational structure in natural prose. Do not default to colon or semicolon
   templates; use punctuation only when the sentence would read naturally outside
   the note format.
 - Example: concrete and specific. It starts with `For example,` and uses named
-  tools, real numbers, real domains, or real situations.
+  tools, real numbers, real domains, or real situations. After the Definition
+  has labeled the formula's variables, reuse those symbols in the Example
+  without restating the full where-clause.
 - Use stable wording in generic DAE prose. Avoid temporal or support-status
   words such as `currently`, `latest`, `now`, and `supported` unless the note is
   intentionally making a claim that should be marked for factual-risk review.
@@ -114,10 +132,19 @@ Do not add `## Definition`, `## Analogy`, or `## Example` headings solely to
 mark DAE in non-Anki notes. When Anki markers are present, `START` and `END`
 blocks must be balanced and scoped to the note's concept.
 
-`Basic` cards can store the Definition, Analogy, and Example in the `Back:`
-content. `Cloze` cards can store the Definition in the cloze body and keep the
-Analogy and Example behind `Extra:` so Anki does not reveal them while testing
-the cloze fields.
+`Basic` Front is a retrieval question for the note's central claim. YAML title,
+H1, and Definition sentence identify the note; they are not the Front prompt.
+Store Definition, Analogy, and Example on `Back:`, including any primary formula
+and variable labels. When plain-prose DAE also appears before `START`, the
+Anki payload is still only Front/Back inside the Basic block: put the primary
+formula and labels on `Back:` (not only in the pre-`START` Definition), or the
+formula will not show during review.
+
+`Cloze` cards can store the Definition in the cloze body and keep the Analogy
+and Example behind `Extra:` so Anki does not reveal them while testing the cloze
+fields. Do not place an unclozed primary formula on the cloze question side if
+it would reveal the deletion; cloze the formula tokens, rephrase, or put the
+formula in `Extra:` when it would leak the answer.
 
 For `Cloze` cards, write the `Extra:` content as normal DAE prose. Put the
 Analogy immediately after `Extra:` or in the first paragraph after it, then put
@@ -183,13 +210,15 @@ the learner's decision before removing the card block or deleting the note.
 Do not use a `DELETE` marker for this repair, because there is no existing Anki
 note to delete.
 
-Reference material that should be available in Obsidian but not tested in Anki
-belongs in the `Reference:` section after the DAE prose, or outside the Anki
-block after `END` when Anki is present, and before `Sources:`. Write it as a
-bulleted list and keep it compact and exact.
-Typical uses are links to related atomic notes, figures, formulas, lookup
-tables, worked-example calculations, syntax snippets, and commands that support
-the concept but would make a poor flashcard.
+Obsidian material that is not tested in Anki goes in `Reference:` after the DAE
+prose, or after Anki `END` when Anki is present, and before `Sources:`. Write a
+compact bulleted list. Typical uses: related atomic notes, figures, alternate
+formula forms, long displays, edge-case displays, lookup tables, worked-example
+calculations, syntax snippets, and commands. When a formula completes the
+concept, put it in the Definition (with labels), not only in `Reference:`. On
+Anki `Basic`, text only after `END`, only in post-Anki `Reference:`, or only in
+pre-`START` prose while absent from `Back:`, is Obsidian-only and does not
+appear during review.
 
 ## Misfiled Notes
 
