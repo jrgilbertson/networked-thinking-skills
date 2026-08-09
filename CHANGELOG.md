@@ -6,7 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- Repository banner from the shared Networked Thinking visual system.
+- Repository banner from the shared Networked Thinking visual system, with
+  production framing that keeps the title and knowledge graph prominent.
 - `managing-obsidian-tasks`, a portable Obsidian CLI workflow for durable task
   notes, review-before-create capture, lifecycle transitions, and derived Bases.
 - Runner adapters for model judgments in the audit workflow.
