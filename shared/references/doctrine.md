@@ -16,9 +16,9 @@ An atomic note captures one durable concept in DAE format: Definition, Analogy, 
   example date from prior work.
 - Optional `Reference:` section (singular label, bulleted) after the DAE prose,
   or after the Anki `END` block when Anki is present, and before `Sources:`,
-  for links to related atomic notes, figures, and compact reference material
-  (formulas, lookup tables, commands) worth preserving but not worth testing
-  directly.
+  for links to related atomic notes, figures, and compact supporting material
+  (alternate formula forms, lookup tables, commands, worked-example steps)
+  that should stay in Obsidian but is not the primary claim tested on a card.
 
 ## Learner Purpose and Structure Notes
 
@@ -44,7 +44,22 @@ every available fact into one by default.
   reader sees, so `[[Target note|alias text]]` counts as `alias text`. When the
   concept has a common acronym or initialism that will be used in the note,
   introduce it on first use in the Definition's first sentence with the pattern
-  `<full term> (<ACRONYM>)`, then use the acronym later.
+  `<full term> (<ACRONYM>)`, then use the acronym later. When a formula completes
+  the concept or omitting it would force the learner to invent symbols at review,
+  put that formula in the Definition after a prose-first opening sentence, in the
+  same Definition paragraph (plain-prose notes) or the same Definition section
+  (legacy headed notes). Prefer inline math over a blank-line-separated display
+  `$$...$$` block; a lone display-math paragraph is not treated as Definition
+  prose for plain-prose DAE analysis. Label each variable the formula uses with a
+  following "where …" clause or equivalent compact gloss in that same paragraph.
+  The first reader-visible Definition sentence still drives the filename; keep
+  that sentence prose-first so variable labels do not change the filename source.
+  Keep the whole Definition within 10-50 rendered words—tighten wording rather
+  than moving the primary formula only into `Reference:`. Example:
+  `Binomial standard deviation is the square root of $np(1-p)$, where $n$ is
+  trials and $p$ is success probability.` Do not create a second Anki card solely
+  because a formula exists; Anki-YAGNI still applies, and a separate Cloze is for
+  when symbol recall is the explicit goal.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
   relational structure in natural prose. Do not default to colon or semicolon
@@ -187,9 +202,13 @@ Reference material that should be available in Obsidian but not tested in Anki
 belongs in the `Reference:` section after the DAE prose, or outside the Anki
 block after `END` when Anki is present, and before `Sources:`. Write it as a
 bulleted list and keep it compact and exact.
-Typical uses are links to related atomic notes, figures, formulas, lookup
-tables, worked-example calculations, syntax snippets, and commands that support
-the concept but would make a poor flashcard.
+Typical uses are links to related atomic notes, figures, alternate formula
+forms, edge-case displays, lookup tables, worked-example calculations, syntax
+snippets, and commands that support the concept but would make a poor flashcard.
+Do not park the primary formula only in `Reference:` when the Definition needs
+that formula to stand alone at review. For Anki `Basic` cards, text that lives
+only after `END` or only in post-Anki `Reference:` is Obsidian-only and will not
+appear during card review.
 
 ## Misfiled Notes
 

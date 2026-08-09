@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
+  variable labels, after a prose-first opening sentence; `Reference:` is for
+  alternate forms and non-tested extras, not the default home of the primary
+  formula. Audit finding codes are unchanged.
 - Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
   provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.

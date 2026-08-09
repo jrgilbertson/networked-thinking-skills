@@ -106,6 +106,25 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
             self.assertIn("short concept name", text)
             self.assertNotIn("proposition-style", text)
 
+    def test_guidance_puts_primary_formulas_in_definition_with_variable_labels(self):
+        doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+
+        self.assertIn("formula completes the concept", doctrine)
+        self.assertIn("where", doctrine.casefold())
+        self.assertIn("same Definition paragraph", doctrine)
+        self.assertIn("prose-first", doctrine)
+        self.assertIn("Obsidian-only", doctrine)
+        self.assertIn("Do not park the primary formula only in `Reference:`", doctrine)
+        self.assertNotIn(
+            "formulas, lookup tables, commands) worth preserving but not worth testing",
+            doctrine,
+        )
+
+        self.assertIn("formula completes the definition", skill)
+        self.assertIn("labels for each variable", skill)
+        self.assertIn("prose-first opening sentence", skill)
+
     def test_rendered_definition_filename_text_removes_markdown_wrappers(self):
         cases = (
             ("[Visible words](https://example.com).", "Visible words"),

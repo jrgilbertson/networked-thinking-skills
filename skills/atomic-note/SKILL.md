@@ -33,7 +33,11 @@ filesystem writes. When working from an installed skill, prefer
    narrowing or splitting the hub merely because it spans a topic.
 3. Draft one DAE note: Definition paragraph, Analogy paragraph, Example
    paragraph. For non-Anki notes, write the DAE as plain prose after the H1
-   without `## Definition`, `## Analogy`, or `## Example` headings.
+   without `## Definition`, `## Analogy`, or `## Example` headings. When a
+   formula completes the definition, include it in the Definition with labels
+   for each variable it uses, after a prose-first opening sentence that remains
+   the filename source; follow the doctrine for placement, Anki visibility, and
+   when `Reference:` is appropriate instead.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze
