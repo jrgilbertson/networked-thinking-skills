@@ -3,6 +3,8 @@
 [![CI](https://github.com/jrgilbertson/networked-thinking-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/jrgilbertson/networked-thinking-skills/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 
+![Networked Thinking Agent Skills banner showing a connected knowledge graph](docs/assets/networked-thinking-skills-readme-banner.webp)
+
 Agent Skills and deterministic helper scripts for Networked Thinking notes and tasks in Obsidian vaults.
 
 ## Purpose

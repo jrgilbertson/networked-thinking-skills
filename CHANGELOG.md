@@ -20,6 +20,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - Install and skill docs recommend `atomic-note` + `atomic-note-audit` as a pair
   and state that skill-local doctrine/remediation copies are generated from
   `shared/`.
+- Updated the repository banner from the shared Networked Thinking visual
+  system, removing proof marks and the border so the title and knowledge graph
+  remain prominent.
 - Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
   provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.
