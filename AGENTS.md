@@ -20,7 +20,10 @@ Thinking atomic notes in Obsidian vaults.
 - `shared/` is the canonical development source for generated runtime
   references, schemas, and helper scripts.
 - `skills/atomic-note` and `skills/atomic-note-audit` are checked-in,
-  self-contained installable skill directories.
+  self-contained installable skill directories. Shared files such as
+  `doctrine.md` and `remediation-context.md` appear in both as generated
+  copies so each skill can install alone; edit only under `shared/`, then sync.
+  Recommend installing both skills for full authoring-plus-audit workflows.
 - When changing generated skill-local references, schemas, or scripts, edit the
   corresponding file under `shared/` first, then run:
 

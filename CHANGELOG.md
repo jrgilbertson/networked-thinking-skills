@@ -14,9 +14,12 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 
 - Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
-  variable labels, after a prose-first opening sentence; `Reference:` is for
-  alternate forms and non-tested extras, not the default home of the primary
-  formula. Audit finding codes are unchanged.
+  variable labels after a prose-first sentence; `Reference:` holds alternate
+  forms and other Obsidian-only extras. Basic Front is a retrieval question for
+  the central claim. Audit finding codes are unchanged.
+- Install and skill docs recommend `atomic-note` + `atomic-note-audit` as a pair
+  and state that skill-local doctrine/remediation copies are generated from
+  `shared/`.
 - Model-judgment storage schema `2.0.0` now requires collector-stamped prompt
   provenance; resume and apply reject missing or stale prompt versions.
 - Doctrine names the optional `Reference:` section alongside numbered `Sources:`.

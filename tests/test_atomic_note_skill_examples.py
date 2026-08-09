@@ -116,7 +116,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("same Definition paragraph", doctrine)
         self.assertIn("prose-first", doctrine)
         self.assertIn("Obsidian-only", doctrine)
-        self.assertIn("Do not park the primary formula only in `Reference:`", doctrine)
+        self.assertIn("keep the primary formula in Definition", doctrine)
         self.assertIn("without restating the full where-clause", doctrine)
         self.assertNotIn(
             "formulas, lookup tables, commands) worth preserving but not worth testing",
@@ -124,8 +124,16 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         )
 
         self.assertIn("formula completes the definition", skill)
-        self.assertIn("labels for each variable", skill)
-        self.assertIn("prose-first opening sentence", skill)
+        self.assertIn("variable labels", skill)
+        self.assertIn("prose-first sentence", skill)
+        self.assertIn("Doctrine owns", skill)
+
+        self.assertIn("retrieval question", doctrine)
+        self.assertIn("central claim", doctrine)
+        self.assertIn("they are not the Front prompt", doctrine)
+        self.assertIn("retrieval question", skill)
+        self.assertIn("central claim", skill)
+        self.assertIn("are not the Front", skill)
 
     def test_rendered_definition_filename_text_removes_markdown_wrappers(self):
         cases = (
