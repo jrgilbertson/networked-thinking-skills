@@ -77,4 +77,3 @@ A complete implementation also needs audit-level tests, not just parser unit tes
 ## Related
 
 - GitHub issue #13: `https://github.com/jrgilbertson/networked-thinking-skills/issues/13`
-- Plan: `docs/plans/2026-07-03-001-fix-plain-prose-dae-plan.md`
