@@ -168,5 +168,4 @@ differently once the adapter process runs from the vault.
 ## Related
 
 - GitHub issue #1: `https://github.com/jrgilbertson/networked-thinking-skills/issues/1`
-- Plan: `docs/plans/2026-07-06-001-feat-runner-adapters-model-judgment-collection-plan.md`
 - Existing convention: `docs/solutions/conventions/plain-prose-dae-contract-migration.md`
