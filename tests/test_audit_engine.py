@@ -65,9 +65,9 @@ class AuditEngineTest(unittest.TestCase):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
         self.assertEqual(row["schema_version"], "1.0.0")
-        self.assertEqual(row["doctrine_version"], "1.0.5")
-        self.assertEqual(row["rubric_version"], "1.0.1")
-        self.assertEqual(row["prompt_version"], "1.0.2")
+        self.assertEqual(row["doctrine_version"], "1.0.6")
+        self.assertEqual(row["rubric_version"], "1.0.2")
+        self.assertEqual(row["prompt_version"], "1.0.3")
         self.assertEqual(manifest["schema_version"], "1.0.0")
 
     def test_doctrine_version_matches_pyproject_tool_table(self):
@@ -106,6 +106,95 @@ class AuditEngineTest(unittest.TestCase):
         self.assertEqual(row["priority"], "P0")
         self.assertLessEqual(row["score"], 49)
         self.assertIn("multi_note", {finding["code"] for finding in row["findings"]})
+
+    def test_lowercase_wikilink_alias_analogy_is_flagged(self):
+        row = self.audit_single_note(
+            """---
+title: Creatine
+---
+
+# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+[[202411271638 Creatine is a naturally occurring compound|creatine]] is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+""",
+            stem="202601010201 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
+        )
+
+        self.assertIn("analogy_sentence_case", finding_codes(row))
+        self.assertEqual(row["score"], 92)
+
+    def test_bare_lowercase_analogy_is_flagged(self):
+        row = self.audit_single_note(
+            """---
+title: Three-tier system
+---
+
+# Three-tier system
+
+A three-tier system organizes an application into presentation, logic, and data layers.
+
+a three-tier system is like a well-run restaurant with a dining room, kitchen, and pantry.
+
+For example, a web app can keep HTML in one layer, checkout rules in another, and orders in Postgres.
+""",
+            stem="202601010202 A three-tier system organizes an application into presentation, logic, and data layers",
+        )
+
+        self.assertIn("analogy_sentence_case", finding_codes(row))
+
+    def test_capitalized_wikilink_alias_analogy_is_clean(self):
+        row = self.audit_single_note(
+            """---
+title: Noise
+---
+
+# Noise
+
+Noise in data hides the underlying pattern a model is trying to learn.
+
+[[202312261341 Noise refers to random variation|Noise]] is like a blurry lens on a camera.
+
+For example, sensor jitter can hide a slow temperature trend in a lab log.
+""",
+            stem="202601010203 Noise in data hides the underlying pattern a model is trying to learn",
+        )
+
+        self.assertNotIn("analogy_sentence_case", finding_codes(row))
+        self.assertTrue(row["clean"])
+
+    def test_anki_lowercase_analogy_is_flagged_even_when_prose_is_capitalized(self):
+        row = self.audit_single_note(
+            """---
+title: Creatine
+---
+
+# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+
+START
+Basic
+How does creatine help muscles?
+
+Back: Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+[[202411271638 Creatine is a naturally occurring compound|creatine]] is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+END
+""",
+            stem="202601010204 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
+        )
+
+        self.assertIn("analogy_sentence_case", finding_codes(row))
 
     def test_clean_dae_note_is_clean(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")

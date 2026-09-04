@@ -71,6 +71,14 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         message="Replace the Analogy with a familiar concrete referent and shared relation.",
         recommendation_mode="improve-in-place",
     ),
+    "analogy_sentence_case": FindingCodeSpec(
+        loss=8,
+        message=(
+            "Capitalize the first visible letter of the Analogy, including a "
+            "leading wikilink alias."
+        ),
+        recommendation_mode="improve-in-place",
+    ),
     "weak_example": FindingCodeSpec(
         loss=15,
         message="Replace the Example with a concrete case that starts with 'For example,'.",

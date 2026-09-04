@@ -31,6 +31,7 @@ DETERMINISTIC_RETAINED_CODES = frozenset(
         "missing_parent",
         "malformed_anki",
         "duplicate_overlap",
+        "analogy_sentence_case",
     }
 )
 

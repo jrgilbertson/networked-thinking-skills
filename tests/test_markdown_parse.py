@@ -1,6 +1,7 @@
 import unittest
 
 from shared.scripts.markdown_parse import (
+    analogy_starts_lowercase,
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
@@ -523,6 +524,39 @@ END
 
         self.assertTrue(analysis.present)
         self.assertEqual(analysis.shape, "Cloze")
+
+    def test_analogy_starts_lowercase_for_wikilink_alias(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+[[202411271638 Creatine is a naturally occurring compound|creatine]] is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        self.assertTrue(analogy_starts_lowercase(markdown))
+
+    def test_analogy_sentence_case_accepts_capitalized_wikilink_alias(self):
+        markdown = """# Noise
+
+Noise in data hides the underlying pattern a model is trying to learn.
+
+[[202312261341 Noise refers to random variation|Noise]] is like a blurry lens on a camera.
+
+For example, sensor jitter can hide a slow temperature trend in a lab log.
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
+
+    def test_analogy_sentence_case_allows_leading_inline_math(self):
+        markdown = """# Sample size
+
+Sample size n is the number of independent observations in a dataset.
+
+$n$ is like the number of survey responses because each independent response adds evidence.
+
+For example, a poll of 1,000 voters has more stable estimates than a poll of 40 voters.
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
 
     def test_has_dae_sections_returns_false_without_example(self):
         markdown = "## Definition\n\n## Analogy\n"

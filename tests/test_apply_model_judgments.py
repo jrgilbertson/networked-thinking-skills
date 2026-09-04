@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from shared.scripts.apply_model_judgments import _read_jsonl, apply_model_judgments, main
+from shared.scripts.finding_codes import FINDING_MESSAGES
 from shared.scripts.schema_validation import (
     ValidationError,
     validate_audit_row,
@@ -35,7 +36,7 @@ def load_fixture_manifest() -> dict[str, object]:
 def judgment_for(
     note_path: str,
     *,
-    prompt_version: str = "1.0.2",
+    prompt_version: str = "1.0.3",
     findings: list[dict[str, object]] | None = None,
     dimension_adjustments: dict[str, int] | None = None,
     factual_risk: bool = False,
@@ -214,6 +215,24 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         changed = next(row for row in merged_rows if row["note_path"] == weak_dae_row["note_path"])
         self.assertEqual(changed["score"], 57)
         self.assertNotIn("weak_analogy", {finding["code"] for finding in changed["findings"]})
+
+    def test_analogy_sentence_case_survives_empty_model_findings(self):
+        rows = load_fixture_rows()
+        manifest = load_fixture_manifest()
+        rows[0] = deepcopy(rows[0])
+        rows[0]["findings"] = [
+            {
+                "code": "analogy_sentence_case",
+                "message": FINDING_MESSAGES["analogy_sentence_case"],
+            }
+        ]
+        judgments = judgments_for_rows(rows)
+
+        merged_rows, _ = apply_model_judgments(rows, manifest, judgments)
+
+        changed = next(row for row in merged_rows if row["note_path"] == rows[0]["note_path"])
+        self.assertIn("analogy_sentence_case", {finding["code"] for finding in changed["findings"]})
+        self.assertEqual(changed["score"], 92)
 
     def test_missing_judgment_fails_by_default(self):
         rows = load_fixture_rows()

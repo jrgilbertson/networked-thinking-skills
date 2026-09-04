@@ -63,9 +63,13 @@ every available fact into one by default.
   auto-create a second Anki note for every formula.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
-  relational structure in natural prose. Do not default to colon or semicolon
-  templates; use punctuation only when the sentence would read naturally outside
-  the note format.
+  relational structure in natural prose. The first visible letter of that
+  sentence is capitalized. If the sentence starts with a wikilink, capitalize
+  the visible alias (`[[Note|Creatine]] is like...`); keep mid-sentence aliases
+  lowercase. Analogies that open with inline math may keep the math token first
+  (`$n$ is like...`). Do not default to colon or semicolon templates; use
+  punctuation only when the sentence would read naturally outside the note
+  format.
 - Example: concrete and specific. It starts with `For example,` and uses named
   tools, real numbers, real domains, or real situations. After the Definition
   has labeled the formula's variables, reuse those symbols in the Example
