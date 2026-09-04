@@ -17,6 +17,8 @@ All notable changes to this project are documented here. The format follows [Kee
   sentence to start with a capital letter, including a leading wikilink alias.
   `analogy_sentence_case` is a deterministic finding that survives model
   judgment. Analogies that open with inline math may keep the math token first.
+- Model prompt `1.0.4` states that inline-math openers are exempt from
+  `analogy_sentence_case`, matching the detector and rubric.
 - Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
   variable labels after a prose-first sentence; `Reference:` holds alternate
   forms and other Obsidian-only extras. Basic Front is a retrieval question for

@@ -75,7 +75,8 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         loss=8,
         message=(
             "Capitalize the first visible letter of the Analogy, including a "
-            "leading wikilink alias."
+            "leading wikilink alias. Analogies that open with inline math may "
+            "keep the math token first."
         ),
         recommendation_mode="improve-in-place",
     ),

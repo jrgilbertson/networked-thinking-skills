@@ -43,8 +43,9 @@ repo's shared references (see project AGENTS and install docs).
    without `## Definition`, `## Analogy`, or `## Example` headings. If a formula
    completes the definition, put it in the Definition with variable labels after
    a prose-first sentence (filename source). Doctrine owns placement, labels,
-   and Anki visibility. Capitalize the Analogy's first visible letter; if it
-   starts with a wikilink, capitalize that alias only.
+   and Anki visibility. Capitalize the Analogy's first visible letter unless it
+   starts with inline math; if it starts with a wikilink, capitalize that alias
+   only.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze

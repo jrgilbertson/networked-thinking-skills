@@ -24,7 +24,7 @@ from scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_clean, compute_f
 SCHEMA_VERSION = "1.0.0"
 DOCTRINE_VERSION = "1.0.6"
 RUBRIC_VERSION = "1.0.2"
-PROMPT_VERSION = "1.0.3"
+PROMPT_VERSION = "1.0.4"
 DETERMINISTIC_FIXTURE_TIMESTAMP = "2000-01-01T00:00:00Z"
 DIMENSION_NAMES = (
     "structure",

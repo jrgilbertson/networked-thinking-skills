@@ -558,6 +558,70 @@ For example, a poll of 1,000 voters has more stable estimates than a poll of 40 
 """
         self.assertFalse(analogy_starts_lowercase(markdown))
 
+    def test_analogy_sentence_case_allows_emphasized_inline_math(self):
+        markdown = """# Sample size
+
+Sample size n is the number of independent observations in a dataset.
+
+**$n$** is like the number of survey responses because each independent response adds evidence.
+
+For example, a poll of 1,000 voters has more stable estimates than a poll of 40 voters.
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
+
+    def test_analogy_sentence_case_flags_unclosed_leading_dollar(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+$creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        self.assertTrue(analogy_starts_lowercase(markdown))
+
+    def test_anki_basic_does_not_treat_example_as_analogy(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+
+START
+Basic
+How does creatine help muscles?
+
+Back: Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+for example, a sprinter is like a car that taps a small battery for a 10-second start.
+END
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
+
+    def test_anki_cloze_extra_does_not_treat_example_as_analogy(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+
+START
+Cloze
+{{c1::Creatine}} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Extra: Creatine is like a backup power generator for muscles.
+
+for example, a sprinter is like a car that taps a small battery for a 10-second start.
+END
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
+
     def test_has_dae_sections_returns_false_without_example(self):
         markdown = "## Definition\n\n## Analogy\n"
         self.assertFalse(has_dae_sections(markdown))

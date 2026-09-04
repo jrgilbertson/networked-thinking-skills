@@ -25,6 +25,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
+LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
 
 
 @dataclass(frozen=True)
@@ -730,14 +731,22 @@ def analogy_paragraphs(markdown: str) -> list[str]:
             back_text = _extract_back_text(body)
             if back_text:
                 back_paragraphs = _prose_paragraphs(back_text)
-                analogy = _first_matching_paragraph(back_paragraphs[1:], _looks_like_analogy)
+                analogy = _first_matching_paragraph(
+                    back_paragraphs[1:],
+                    lambda paragraph: _looks_like_analogy(paragraph)
+                    and not _starts_with_example(paragraph),
+                )
                 if analogy is not None:
                     found.append(analogy)
         elif card_type == "cloze":
             _, extra = _split_extra_text(body)
             if extra:
                 extra_paragraphs = _prose_paragraphs(extra)
-                analogy = _first_matching_paragraph(extra_paragraphs, _looks_like_analogy)
+                analogy = _first_matching_paragraph(
+                    extra_paragraphs,
+                    lambda paragraph: _looks_like_analogy(paragraph)
+                    and not _starts_with_example(paragraph),
+                )
                 if analogy is not None:
                     found.append(analogy)
     return found
@@ -754,9 +763,9 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
     visible = visible.strip()
     visible = re.sub(r"^(?:Extra|Back):\s*", "", visible, flags=re.IGNORECASE).strip()
     visible = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+|>\s*)+", "", visible).strip()
-    if not visible or visible.startswith("$"):
+    visible = re.sub(r"^[*_`]+", "", visible).lstrip()
+    if not visible or LEADING_INLINE_MATH_RE.match(visible):
         return False
-    visible = re.sub(r"^[*_`]+", "", visible)
     for character in visible:
         if character.isalpha():
             return character.islower()

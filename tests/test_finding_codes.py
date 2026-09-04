@@ -25,6 +25,7 @@ class FindingCodeContractTest(unittest.TestCase):
 
         self.assertIn("Capitalize the first visible letter", message)
         self.assertIn("wikilink alias", message)
+        self.assertIn("inline math", message)
 
     def test_model_prompt_explains_canonical_filename_alignment(self):
         prompt = " ".join(
