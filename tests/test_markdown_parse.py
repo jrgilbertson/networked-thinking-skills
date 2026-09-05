@@ -580,6 +580,28 @@ For example, a sprinter can use stored phosphocreatine to recharge ATP during a 
 """
         self.assertTrue(analogy_starts_lowercase(markdown))
 
+    def test_analogy_sentence_case_ignores_leading_html_tags(self):
+        markdown = """# Capital
+
+Capital is money used to produce more value.
+
+<span>Capital</span> is like seed grain saved to plant next season's crop.
+
+For example, a baker spends cash on an oven that later bakes more loaves.
+"""
+        self.assertFalse(analogy_starts_lowercase(markdown))
+
+    def test_analogy_sentence_case_flags_lowercase_after_html_tags(self):
+        markdown = """# Capital
+
+Capital is money used to produce more value.
+
+<span>capital</span> is like seed grain saved to plant next season's crop.
+
+For example, a baker spends cash on an oven that later bakes more loaves.
+"""
+        self.assertTrue(analogy_starts_lowercase(markdown))
+
     def test_anki_basic_does_not_treat_example_as_analogy(self):
         markdown = """# Creatine
 

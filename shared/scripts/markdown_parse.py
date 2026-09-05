@@ -12,6 +12,7 @@ HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+([^\r\n]+?)[ \t]*\r?$", re.MULTIL
 FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1)[^\r\n])*?\1")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+HTML_TAG_RE = re.compile(r"<[^>]+>")
 LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+[.)])[ \t]+")
 WORD_RE = re.compile(r"\b[\w'-]+\b")
 CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
@@ -764,6 +765,7 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
     visible = re.sub(r"^(?:Extra|Back):\s*", "", visible, flags=re.IGNORECASE).strip()
     visible = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+|>\s*)+", "", visible).strip()
     visible = re.sub(r"^[*_`]+", "", visible).lstrip()
+    visible = HTML_TAG_RE.sub("", visible).lstrip()
     if not visible or LEADING_INLINE_MATH_RE.match(visible):
         return False
     for character in visible:
