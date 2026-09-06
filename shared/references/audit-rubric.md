@@ -52,6 +52,11 @@ DAE doctrine failures include missing DAE content and overlong Definitions. A
 Definition longer than 50 rendered words receives `definition_too_long` so it can
 be shortened without misclassifying the note as a multi-note or reference note.
 
+`analogy_sentence_case` is a deterministic polish check: the first visible
+letter of the Analogy must be capitalized, including a leading wikilink alias.
+Analogies that open with inline math may keep the math token first. Model
+judgment does not drop this finding.
+
 `factual_risk` means a sentence contains a claim that should be checked before it
 is relied on: empirical numbers, current or versioned claims, source-attributed
 claims, legal/medical/financial/security claims with a check-worthy predicate,

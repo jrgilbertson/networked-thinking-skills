@@ -12,6 +12,7 @@ HEADING_RE = re.compile(r"^[ ]{0,3}#{1,6}[ \t]+([^\r\n]+?)[ \t]*\r?$", re.MULTIL
 FENCE_START_RE = re.compile(r"^[ ]{0,3}(`{3,}|~{3,})")
 INLINE_CODE_RE = re.compile(r"(`+)(?:(?!\1)[^\r\n])*?\1")
 HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
+HTML_TAG_RE = re.compile(r"<[^>]+>")
 LIST_MARKER_RE = re.compile(r"(?:[-*+]|\d+[.)])[ \t]+")
 WORD_RE = re.compile(r"\b[\w'-]+\b")
 CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
@@ -25,6 +26,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
     re.IGNORECASE,
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
+LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
 
 
 @dataclass(frozen=True)
@@ -706,3 +708,67 @@ def _render_wikilinks_for_word_count(markdown: str) -> str:
         return visible.strip()
 
     return WIKILINK_RE.sub(replace, markdown)
+
+
+def analogy_paragraphs(markdown: str) -> list[str]:
+    """Return detected Analogy paragraphs from every DAE location in the note."""
+    found: list[str] = []
+    paragraphs = _prose_paragraphs(_plain_prose_dae_region(markdown))
+    if paragraphs:
+        analogy_index = _first_matching_index(
+            paragraphs[1:],
+            lambda paragraph: _looks_like_analogy(paragraph) and not _starts_with_example(paragraph),
+        )
+        if analogy_index is not None:
+            found.append(paragraphs[1:][analogy_index])
+    headed = _dae_heading_sections(markdown).get("analogy")
+    if headed:
+        headed_paragraphs = _prose_paragraphs(headed)
+        if headed_paragraphs:
+            found.append(headed_paragraphs[0])
+    for card in _extract_anki_card_texts(markdown):
+        card_type, body = _split_card_type(card)
+        if card_type == "basic":
+            back_text = _extract_back_text(body)
+            if back_text:
+                back_paragraphs = _prose_paragraphs(back_text)
+                analogy = _first_matching_paragraph(
+                    back_paragraphs[1:],
+                    lambda paragraph: _looks_like_analogy(paragraph)
+                    and not _starts_with_example(paragraph),
+                )
+                if analogy is not None:
+                    found.append(analogy)
+        elif card_type == "cloze":
+            _, extra = _split_extra_text(body)
+            if extra:
+                extra_paragraphs = _prose_paragraphs(extra)
+                analogy = _first_matching_paragraph(
+                    extra_paragraphs,
+                    lambda paragraph: _looks_like_analogy(paragraph)
+                    and not _starts_with_example(paragraph),
+                )
+                if analogy is not None:
+                    found.append(analogy)
+    return found
+
+
+def analogy_starts_lowercase(markdown: str) -> bool:
+    return any(_paragraph_starts_lowercase(paragraph) for paragraph in analogy_paragraphs(markdown))
+
+
+def _paragraph_starts_lowercase(paragraph: str) -> bool:
+    visible = _render_wikilinks_for_word_count(paragraph)
+    visible = CLOZE_RE.sub(lambda match: match.group(1), visible)
+    visible = HTML_COMMENT_RE.sub(" ", visible)
+    visible = visible.strip()
+    visible = re.sub(r"^(?:Extra|Back):\s*", "", visible, flags=re.IGNORECASE).strip()
+    visible = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+|>\s*)+", "", visible).strip()
+    visible = re.sub(r"^[*_`]+", "", visible).lstrip()
+    visible = HTML_TAG_RE.sub("", visible).lstrip()
+    if not visible or LEADING_INLINE_MATH_RE.match(visible):
+        return False
+    for character in visible:
+        if character.isalpha():
+            return character.islower()
+    return False

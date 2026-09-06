@@ -36,6 +36,11 @@ An overlong Definition is a P1 DAE doctrine failure reported as
 `definition_too_long`. This means the note should be shortened in place, not
 automatically split or rehomed.
 
+`analogy_sentence_case` flags an Analogy whose first visible letter is
+lowercase, including a leading wikilink alias. Inline-math openers such as
+`$n$ is like...` are allowed. The finding is deterministic and survives model
+judgment.
+
 `factual_risk` is for sentence-level claims that need verification before
 reliance: empirical numbers, current/versioned claims, source-attributed claims,
 sensitive-domain claims with a check-worthy predicate, causal claims, or named
