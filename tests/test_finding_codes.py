@@ -28,6 +28,7 @@ class FindingCodeContractTest(unittest.TestCase):
         self.assertIn("inline math", message)
         self.assertIn("Definition, Analogy, or Example", message)
         self.assertIn("mixed-case", message)
+        self.assertIn("inline code", message)
 
     def test_model_prompt_explains_canonical_filename_alignment(self):
         prompt = " ".join(

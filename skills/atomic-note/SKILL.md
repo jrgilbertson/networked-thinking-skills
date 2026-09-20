@@ -44,8 +44,8 @@ repo's shared references (see project AGENTS and install docs).
    completes the definition, put it in the Definition with variable labels after
    a prose-first sentence (filename source). Doctrine owns placement, labels,
    and Anki visibility. Capitalize the first visible letter of the Definition,
-   Analogy, and Example unless the section starts with inline math or a
-   mixed-case term such as gRPC; if it starts with a wikilink, capitalize that
+   Analogy, and Example unless the section starts with inline math, inline
+   code, or a mixed-case term such as gRPC; if it starts with a wikilink, capitalize that
    alias only.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final

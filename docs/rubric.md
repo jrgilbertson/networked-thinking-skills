@@ -38,7 +38,8 @@ automatically split or rehomed.
 
 `dae_sentence_case` flags a Definition, Analogy, or Example whose first visible
 letter is lowercase, including a leading wikilink alias. Inline-math openers
-such as `$n$ is like...` and mixed-case first words such as `gRPC` are allowed.
+such as `$n$ is like...`, inline-code openers such as `` `range` is like...``,
+and mixed-case first words such as `gRPC` are allowed.
 A note gets the finding once however many sections start lowercase. The finding
 is deterministic and survives model judgment.
 

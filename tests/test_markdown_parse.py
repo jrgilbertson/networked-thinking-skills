@@ -788,6 +788,22 @@ For example, a service can call another service as if it were a local function.
                     dae_section_starts_lowercase(template.format(definition=word, analogy="Term"))
                 )
 
+    def test_dae_sentence_case_exempts_leading_inline_code(self):
+        template = """# Range
+
+The range function generates a sequence of integers one at a time.
+
+{analogy} is like a ticket dispenser that hands out the next number on request.
+
+For example, a loop over ten items asks for each index only when it needs it.
+"""
+        for opener in ("`range`", "**`range`**", "`.join()`"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(analogy=opener)))
+        for opener in ("`range is", "range"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
+
     def test_dae_section_paragraphs_empty_without_dae(self):
         self.assertEqual(dae_section_paragraphs("# Title\n"), [])
         self.assertFalse(dae_section_starts_lowercase("# Title\n"))

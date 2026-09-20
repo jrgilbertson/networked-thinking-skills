@@ -27,6 +27,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
+LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*`[^`\r\n]+`")
 
 
 @dataclass(frozen=True)
@@ -767,6 +768,9 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
     visible = visible.strip()
     visible = re.sub(r"^(?:Extra|Back):\s*", "", visible, flags=re.IGNORECASE).strip()
     visible = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+|>\s*)+", "", visible).strip()
+    if LEADING_INLINE_CODE_RE.match(visible):
+        # Code is case-sensitive, so a closed leading code span stays as written.
+        return False
     visible = re.sub(r"^[*_`]+", "", visible).lstrip()
     visible = HTML_TAG_RE.sub("", visible).lstrip()
     if not visible or LEADING_INLINE_MATH_RE.match(visible):

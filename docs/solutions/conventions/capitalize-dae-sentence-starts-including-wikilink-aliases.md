@@ -54,7 +54,7 @@ Do not write:
 
 Bare lowercase openers are the same defect (`a three-tier system is like...`, `for example, a lifter...`).
 
-Two openers are exempt. A section that opens with closed inline math may keep the math token first (`$n$ is like...`). A mixed-case first word that is correctly lowercase-initial stays as written (`gRPC`, `pH`, `mRNA`, `iOS`); capitalizing it would misspell the term and break Definition-to-filename alignment. An all-lowercase first word such as `curl` gets no exemption.
+Three openers are exempt. A section that opens with closed inline math may keep the math token first (`$n$ is like...`). A section that opens with a closed inline code span keeps it as written (`` `range` is like...``), because code is case-sensitive and `Range` is not `range`. A mixed-case first word that is correctly lowercase-initial stays as written (`gRPC`, `pH`, `mRNA`, `iOS`); capitalizing it would misspell the term and break Definition-to-filename alignment. An all-lowercase first word such as `curl` gets no exemption.
 
 Audit this with `dae_sentence_case`, not `weak_analogy` or `weak_dae`. Keep it on the deterministic retain list so model judgment cannot drop it. A note gets the finding once however many sections start lowercase. Check every DAE location, including Anki `Back:` and the Cloze body and `Extra:`, because a capitalized vault paragraph can still hide a lowercase card.
 
@@ -82,6 +82,7 @@ Anki shows the rendered alias, not the wikilink target. A lowercase alias at the
 - Do not flag: `[[Note|Noise]] is like a blurry lens...`
 - Do not flag: `$n$ is like the number of survey responses...`
 - Do not flag: `gRPC is a framework...`
+- Do not flag: `` `range` is like a ticket dispenser...``
 
 ## Related
 
