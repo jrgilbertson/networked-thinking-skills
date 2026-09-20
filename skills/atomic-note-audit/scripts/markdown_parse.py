@@ -716,12 +716,13 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     headed = _dae_heading_sections(markdown)
     if headed:
+        # Read section bodies: a headed note's plain-prose region opens with the
+        # `## Definition` heading line, which is not a Definition sentence.
         for section in ("definition", "analogy", "example"):
             headed_paragraphs = _prose_paragraphs(headed.get(section, ""))
             if headed_paragraphs:
                 found.append((section, headed_paragraphs[0]))
     else:
-        # A headed note's plain-prose region starts with the heading line, not a Definition.
         found.extend(_dae_paragraphs(_prose_paragraphs(_plain_prose_dae_region(markdown)), has_definition=True))
     for card in _extract_anki_card_texts(markdown):
         card_type, body = _split_card_type(card)
@@ -731,7 +732,7 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
                 found.extend(_dae_paragraphs(_prose_paragraphs(back_text), has_definition=True))
         elif card_type == "cloze":
             before_extra, extra = _split_extra_text(body)
-            cloze_paragraphs = _prose_paragraphs(before_extra) if before_extra else []
+            cloze_paragraphs = _prose_paragraphs(before_extra)
             if cloze_paragraphs:
                 found.append(("definition", cloze_paragraphs[0]))
             if extra:
