@@ -27,7 +27,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
-LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*`[^`\r\n]+`")
+LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*(`+)(?:(?!\1)[^\r\n])+?\1")
 NON_PROSE_OPENER_RE = re.compile(r"^\s*(?:#|[-*+]\s|\d+[.)]\s|>|\||!\[|[\w-]+::)")
 
 
@@ -720,7 +720,7 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
         # Read section bodies: a headed note's plain-prose region opens with the
         # `## Definition` heading line, which is not a Definition sentence.
         for section in ("definition", "analogy", "example"):
-            headed_paragraphs = _prose_paragraphs(headed.get(section, ""))
+            headed_paragraphs = _drop_leading_non_prose(_prose_paragraphs(headed.get(section, "")))
             if headed_paragraphs:
                 found.append((section, headed_paragraphs[0]))
     else:
@@ -741,13 +741,19 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
     return found
 
 
+def _drop_leading_non_prose(paragraphs: list[str]) -> list[str]:
+    # Tag lines, lists, inline fields, images, tables, and callouts are not DAE sentences.
+    rest = paragraphs
+    while rest and NON_PROSE_OPENER_RE.match(rest[0]):
+        rest = rest[1:]
+    return rest
+
+
 def _dae_paragraphs(paragraphs: list[str], *, has_definition: bool) -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     rest = paragraphs
     if has_definition:
-        # Tag lines, lists, inline fields, images, tables, and callouts are not Definition sentences.
-        while rest and NON_PROSE_OPENER_RE.match(rest[0]):
-            rest = rest[1:]
+        rest = _drop_leading_non_prose(rest)
         if rest:
             found.append(("definition", rest[0]))
             rest = rest[1:]

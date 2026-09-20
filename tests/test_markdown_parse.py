@@ -804,6 +804,53 @@ For example, a loop over ten items asks for each index only when it needs it.
             with self.subTest(opener=opener):
                 self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
 
+    def test_dae_sentence_case_exempts_leading_multi_backtick_inline_code(self):
+        template = """# Range
+
+The range function generates a sequence of integers one at a time.
+
+{analogy} is like a ticket dispenser that hands out the next number on request.
+
+For example, a loop over ten items asks for each index only when it needs it.
+"""
+        for opener in ("``range``", "``a `b` c``", "**``range``**", "```range```"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(analogy=opener)))
+        # An unclosed run is not a code span, so the first word is still judged.
+        for opener in ("``range", "``range`"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
+
+    def test_dae_sentence_case_skips_non_prose_openers_in_headed_sections(self):
+        template = """# Creatine
+
+## Definition
+
+#topic/supplements
+
+{definition} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+## Analogy
+
+> [!note]
+> Kept for reviewers.
+
+Creatine is like a backup power generator for muscles.
+
+## Example
+
+![[creatine-chart.png]]
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        clean = template.format(definition="Creatine")
+        self.assertFalse(dae_section_starts_lowercase(clean))
+        self.assertEqual(
+            [paragraph.split(None, 1)[0] for _, paragraph in dae_section_paragraphs(clean)],
+            ["Creatine", "Creatine", "For"],
+        )
+        self.assertTrue(dae_section_starts_lowercase(template.format(definition="creatine")))
+
     def test_dae_sentence_case_ignores_numeral_and_url_openers(self):
         template = """# Term
 
