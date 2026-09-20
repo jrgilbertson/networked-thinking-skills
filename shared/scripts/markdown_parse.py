@@ -733,7 +733,7 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
                 found.extend(_dae_paragraphs(_prose_paragraphs(back_text), has_definition=True))
         elif card_type == "cloze":
             before_extra, extra = _split_extra_text(body)
-            cloze_paragraphs = _prose_paragraphs(before_extra)
+            cloze_paragraphs = _drop_leading_non_prose(_prose_paragraphs(before_extra))
             if cloze_paragraphs:
                 found.append(("definition", cloze_paragraphs[0]))
             if extra:

@@ -851,6 +851,47 @@ For example, a sprinter can use stored phosphocreatine to recharge ATP during a 
         )
         self.assertTrue(dae_section_starts_lowercase(template.format(definition="creatine")))
 
+    def test_dae_sentence_case_skips_non_prose_openers_in_cloze_body(self):
+        template = """# Creatine
+
+START
+Cloze
+{opener}
+
+{deletion} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Extra: Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+END
+"""
+        openers = (
+            "#topic/supplements",
+            "up:: [[Supplements]]",
+            "> [!note]\n> Kept for reviewers.",
+            "| Dose | 5 g |",
+            "- Kept for reviewers.",
+        )
+        for opener in openers:
+            with self.subTest(opener=opener):
+                # A non-prose line above the Definition is not the Definition, so it
+                # neither earns a finding of its own nor hides a lowercase Definition.
+                self.assertFalse(
+                    dae_section_starts_lowercase(
+                        template.format(opener=opener, deletion="{{c1::Creatine::hint}}")
+                    )
+                )
+                self.assertTrue(
+                    dae_section_starts_lowercase(
+                        template.format(opener=opener, deletion="{{c1::creatine}}")
+                    )
+                )
+        clean = template.format(opener="#topic/supplements", deletion="{{c1::Creatine::hint}}")
+        self.assertEqual(
+            [(section, paragraph.split(None, 1)[0]) for section, paragraph in dae_section_paragraphs(clean)],
+            [("definition", "{{c1::Creatine::hint}}"), ("analogy", "Creatine"), ("example", "For")],
+        )
+
     def test_dae_sentence_case_ignores_numeral_and_url_openers(self):
         template = """# Term
 
