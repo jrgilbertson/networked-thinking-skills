@@ -804,6 +804,22 @@ For example, a loop over ten items asks for each index only when it needs it.
             with self.subTest(opener=opener):
                 self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
 
+    def test_dae_sentence_case_ignores_numeral_and_url_openers(self):
+        template = """# Term
+
+{definition} the thing a reader looks up when a page cannot be found.
+
+Term is like a wrong street address on an envelope.
+
+For example, a typo in a link sends the browser to a page that does not exist.
+"""
+        for opener in ("404 is", "80/20 thinking is", "https://example.com is"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(definition=opener)))
+        for opener in ("the 404 status is", "(a) status is"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(definition=opener)))
+
     def test_dae_section_paragraphs_empty_without_dae(self):
         self.assertEqual(dae_section_paragraphs("# Title\n"), [])
         self.assertFalse(dae_section_starts_lowercase("# Title\n"))

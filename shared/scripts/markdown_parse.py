@@ -28,6 +28,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
 LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*`[^`\r\n]+`")
+NON_PROSE_OPENER_RE = re.compile(r"^\s*(?:#|[-*+]\s|\d+[.)]\s|>|\||!\[|[\w-]+::)")
 
 
 @dataclass(frozen=True)
@@ -743,9 +744,13 @@ def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
 def _dae_paragraphs(paragraphs: list[str], *, has_definition: bool) -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     rest = paragraphs
-    if has_definition and paragraphs:
-        found.append(("definition", paragraphs[0]))
-        rest = paragraphs[1:]
+    if has_definition:
+        # Tag lines, lists, inline fields, images, tables, and callouts are not Definition sentences.
+        while rest and NON_PROSE_OPENER_RE.match(rest[0]):
+            rest = rest[1:]
+        if rest:
+            found.append(("definition", rest[0]))
+            rest = rest[1:]
     analogy = _first_matching_paragraph(
         rest,
         lambda paragraph: _looks_like_analogy(paragraph) and not _starts_with_example(paragraph),
@@ -780,7 +785,10 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
     if any(character.isupper() for character in first_word):
         # Terms such as gRPC, pH, or iOS are correctly lowercase-initial.
         return False
-    for character in visible:
-        if character.isalpha():
-            return character.islower()
+    if "://" in first_word:
+        return False
+    # Judge only the first word: a numeral opener such as "404 is" has no letter to capitalize.
+    for character in first_word:
+        if character.isalnum():
+            return character.isalpha() and character.islower()
     return False

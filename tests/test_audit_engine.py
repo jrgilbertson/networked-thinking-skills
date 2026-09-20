@@ -223,6 +223,57 @@ For example, a checkout service can call a pricing service as if it were a local
 
         self.assertNotIn("dae_sentence_case", finding_codes(row))
 
+    def test_non_prose_opener_gets_no_sentence_case_finding(self):
+        for opener in (
+            "#os #concept",
+            "- [[alpha]]\n- [[beta]]",
+            "up:: [[Parent]]",
+            "![diagram](kernel.png)",
+            "> [!note] context",
+            "| a | b |\n| - | - |",
+        ):
+            with self.subTest(opener=opener):
+                row = self.audit_single_note(
+                    f"""---
+title: Kernel
+---
+
+# Kernel
+
+{opener}
+
+A kernel is the core program that manages hardware for every other program on a computer.
+
+A kernel is like a building manager who controls access to shared rooms and utilities.
+
+For example, Linux schedules which process gets the next slice of CPU time.
+""",
+                    stem="202601010208 A kernel is the core program that manages hardware for every other program on a computer",
+                )
+
+                self.assertNotIn("dae_sentence_case", finding_codes(row))
+
+    def test_lowercase_definition_below_a_tag_line_is_still_flagged(self):
+        row = self.audit_single_note(
+            """---
+title: Kernel
+---
+
+# Kernel
+
+#os #concept
+
+a kernel is the core program that manages hardware for every other program on a computer.
+
+A kernel is like a building manager who controls access to shared rooms and utilities.
+
+For example, Linux schedules which process gets the next slice of CPU time.
+""",
+            stem="202601010209 A kernel is the core program that manages hardware for every other program on a computer",
+        )
+
+        self.assertIn("dae_sentence_case", finding_codes(row))
+
     def test_capitalized_wikilink_alias_analogy_is_clean(self):
         row = self.audit_single_note(
             """---

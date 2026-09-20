@@ -58,6 +58,12 @@ Three openers are exempt. A section that opens with closed inline math may keep 
 
 Audit this with `dae_sentence_case`, not `weak_analogy` or `weak_dae`. Keep it on the deterministic retain list so model judgment cannot drop it. A note gets the finding once however many sections start lowercase. Check every DAE location, including Anki `Back:` and the Cloze body and `Extra:`, because a capitalized vault paragraph can still hide a lowercase card.
 
+## Detector pitfalls: judge the first word of a real sentence
+
+Judge only the first visible word. Scanning the whole paragraph for its first letter flags a numeral or URL opener (`404 is the status...`) on the `i` of `is`, and no edit can clear that finding. A first word with no letter to capitalize is not a sentence-case error.
+
+Take the Definition from the first paragraph that is a prose sentence. A tag line, list, inline field (`up:: [[Parent]]`), image, table, or callout above the DAE is not the Definition, and treating it as one tells the author to capitalize a Definition that is already capitalized. Do not gate the finding on a fully detected DAE to avoid this: a replay against real notes showed that gate hides genuine lowercase Analogies in notes whose DAE is incomplete for an unrelated reason.
+
 ## Collector pitfall: headed notes
 
 A collector that walks DAE locations must not treat the plain-prose region as a Definition source when the note uses `## Definition` / `## Analogy` / `## Example` headings. In a headed note the first plain-prose paragraph is the heading line itself, so the check would inspect `## Definition` and silently pass. Read headed notes from their section bodies.
@@ -83,6 +89,8 @@ Anki shows the rendered alias, not the wikilink target. A lowercase alias at the
 - Do not flag: `$n$ is like the number of survey responses...`
 - Do not flag: `gRPC is a framework...`
 - Do not flag: `` `range` is like a ticket dispenser...``
+- Do not flag: `404 is the status a server returns...`
+- Do not flag: a `#tag` line or `up:: [[Parent]]` field above a capitalized Definition
 
 ## Related
 
