@@ -9,10 +9,10 @@ from typing import Iterable
 from shared.scripts.config import resolve_config
 from shared.scripts.markdown_parse import (
     DaeAnalysis,
-    analogy_starts_lowercase,
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
+    dae_section_starts_lowercase,
     extract_structural_heading_lines,
     extract_frontmatter,
     extract_wikilinks,
@@ -299,7 +299,7 @@ def _findings_for_note(
         finding_codes.append("factual_risk")
     if _looks_like_duplicate_candidate(path, body):
         finding_codes.append("duplicate_overlap")
-    if analogy_starts_lowercase(content):
+    if dae_section_starts_lowercase(content):
         finding_codes.append("analogy_sentence_case")
 
     return [
