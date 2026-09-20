@@ -125,9 +125,9 @@ or mismatched `prompt_version` provenance are rejected.
 For reviewed rows, model findings replace deterministic semantic findings. The
 apply step keeps only deterministic audit checks a single-note model cannot
 reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`,
-`duplicate_overlap`, and `analogy_sentence_case`.
+`duplicate_overlap`, and `dae_sentence_case`.
 These checks depend on frontmatter presence, graph parentage, Anki marker
-integrity, rendered Analogy sentence case, or cross-note context that
+integrity, rendered DAE sentence case, or cross-note context that
 deterministic validation can verify more reliably than a single-note model
 judgment.
 
