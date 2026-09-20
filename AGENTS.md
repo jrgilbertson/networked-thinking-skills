@@ -1,8 +1,7 @@
 # AGENTS.md
 
-This is the canonical project instruction file. Codex reads `AGENTS.md`
-natively; Claude Code reads it through the `CLAUDE.md` import shim. Do not
-duplicate these instructions in `CLAUDE.md`.
+This is the canonical project instruction file. Codex and Claude Code read
+`AGENTS.md` natively.
 
 ## Project Context
 
