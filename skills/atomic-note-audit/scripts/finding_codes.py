@@ -76,8 +76,9 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         message=(
             "Capitalize the first visible letter of the Definition, Analogy, or Example, "
             "including a leading wikilink alias. A section that opens with inline math "
-            "or inline code may keep that token first, and a mixed-case first word such "
-            "as gRPC or pH stays as written."
+            "or inline code may keep that token first, a mixed-case first word such "
+            "as gRPC or pH stays as written, and a first word with no letter to "
+            "capitalize, such as a numeral or a URL, is exempt."
         ),
         recommendation_mode="improve-in-place",
     ),

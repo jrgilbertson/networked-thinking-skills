@@ -55,8 +55,9 @@ be shortened without misclassifying the note as a multi-note or reference note.
 `dae_sentence_case` is a deterministic polish check: the first visible letter
 of the Definition, Analogy, and Example must be capitalized, including a leading
 wikilink alias. A section that opens with inline math or inline code may keep
-that token first, and a mixed-case first word such as gRPC or pH stays as
-written. A note gets the finding once however many sections start lowercase.
+that token first, a mixed-case first word such as gRPC or pH stays as
+written, and a first word with no letter to capitalize, such as a numeral or a
+URL, is exempt. A note gets the finding once however many sections start lowercase.
 Model judgment does not drop this finding.
 
 `factual_risk` means a sentence contains a claim that should be checked before it

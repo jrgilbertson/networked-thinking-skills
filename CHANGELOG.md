@@ -17,8 +17,9 @@ All notable changes to this project are documented here. The format follows [Kee
   Definition, Analogy, and Example to start with a capital letter, including a
   leading wikilink alias. `dae_sentence_case` is one deterministic finding for
   all three sections that survives model judgment. A section that opens with
-  inline math or inline code may keep that token first, and a mixed-case first
-  word such as `gRPC` or `pH` is exempt. This replaces the Analogy-only rule and finding code
+  inline math or inline code may keep that token first, a mixed-case first
+  word such as `gRPC` or `pH` is exempt, and a first word with no letter to
+  capitalize, such as a numeral or a URL, is exempt. This replaces the Analogy-only rule and finding code
   from doctrine `1.0.6`, rubric `1.0.2`, and prompt `1.0.3`-`1.0.4`, which never
   shipped in a release. The prompt bump makes resume and apply reject stored
   judgments that carry the old code.

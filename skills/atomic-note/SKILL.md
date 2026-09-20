@@ -45,8 +45,9 @@ repo's shared references (see project AGENTS and install docs).
    a prose-first sentence (filename source). Doctrine owns placement, labels,
    and Anki visibility. Capitalize the first visible letter of the Definition,
    Analogy, and Example unless the section starts with inline math, inline
-   code, or a lowercase-initial mixed-case term such as gRPC; if it starts with a wikilink, capitalize that
-   alias only.
+   code, a lowercase-initial mixed-case term such as gRPC, or a first word with
+   no letter to capitalize such as a numeral or a URL; if it starts with a
+   wikilink, capitalize that alias only.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze

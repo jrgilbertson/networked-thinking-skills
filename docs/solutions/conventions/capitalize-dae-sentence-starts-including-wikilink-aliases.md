@@ -54,7 +54,7 @@ Do not write:
 
 Bare lowercase openers are the same defect (`a three-tier system is like...`, `for example, a lifter...`).
 
-Three openers are exempt. A section that opens with closed inline math may keep the math token first (`$n$ is like...`). A section that opens with a closed inline code span keeps it as written (`` `range` is like...``), because code is case-sensitive and `Range` is not `range`. A mixed-case first word that is correctly lowercase-initial stays as written (`gRPC`, `pH`, `mRNA`, `iOS`); capitalizing it would misspell the term and break Definition-to-filename alignment. An all-lowercase first word such as `curl` gets no exemption.
+Four openers are exempt. A section that opens with closed inline math may keep the math token first (`$n$ is like...`). A section that opens with a closed inline code span keeps it as written (`` `range` is like...``, including a multi-backtick span such as ``` ``range`` ```), because code is case-sensitive and `Range` is not `range`. A mixed-case first word that is correctly lowercase-initial stays as written (`gRPC`, `pH`, `mRNA`, `iOS`); capitalizing it would misspell the term and break Definition-to-filename alignment. A first word with no letter to capitalize, such as a numeral or a URL (`404 is...`, `https://example.com is...`), is exempt for the reason given under detector pitfalls below. An all-lowercase first word such as `curl` gets no exemption.
 
 Audit this with `dae_sentence_case`, not `weak_analogy` or `weak_dae`. Keep it on the deterministic retain list so model judgment cannot drop it. A note gets the finding once however many sections start lowercase. Check every DAE location, including Anki `Back:` and the Cloze body and `Extra:`, because a capitalized vault paragraph can still hide a lowercase card.
 
@@ -62,7 +62,7 @@ Audit this with `dae_sentence_case`, not `weak_analogy` or `weak_dae`. Keep it o
 
 Judge only the first visible word. Scanning the whole paragraph for its first letter flags a numeral or URL opener (`404 is the status...`) on the `i` of `is`, and no edit can clear that finding. A first word with no letter to capitalize is not a sentence-case error.
 
-Take the Definition from the first paragraph that is a prose sentence. A tag line, list, inline field (`up:: [[Parent]]`), image, table, or callout above the DAE is not the Definition, and treating it as one tells the author to capitalize a Definition that is already capitalized. Do not gate the finding on a fully detected DAE to avoid this: a replay against real notes showed that gate hides genuine lowercase Analogies in notes whose DAE is incomplete for an unrelated reason.
+Take the Definition from the first paragraph that is a prose sentence. A tag line, list, inline field (`up:: [[Parent]]`), image, table, or callout above the DAE is not the Definition, and treating it as one tells the author to capitalize a Definition that is already capitalized. Apply that same filter inside a headed `## Definition`, `## Analogy`, or `## Example` body: a heading tells you which section you are in, but not that the first paragraph under it is prose. Do not gate the finding on a fully detected DAE to avoid this: a replay against real notes showed that gate hides genuine lowercase Analogies in notes whose DAE is incomplete for an unrelated reason.
 
 ## Collector pitfall: headed notes
 

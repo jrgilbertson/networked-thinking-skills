@@ -42,11 +42,13 @@ every available fact into one by default.
 
 Each DAE section is a sentence, so its first visible letter is capitalized. If
 a section starts with a wikilink, capitalize the visible alias
-(`[[Note|Creatine]] is like...`); keep mid-sentence aliases lowercase. Three
+(`[[Note|Creatine]] is like...`); keep mid-sentence aliases lowercase. Four
 openers stay as written: inline math (`$n$ is like...`), inline code
-(`` `range` is like...``, because code is case-sensitive), and a mixed-case
-first word that is correctly lowercase-initial, such as `gRPC`, `pH`, or `iOS`.
-An all-lowercase first word such as `curl` is capitalized.
+(`` `range` is like...``, because code is case-sensitive), a mixed-case
+first word that is correctly lowercase-initial, such as `gRPC`, `pH`, or `iOS`,
+and a first word with no letter to capitalize, such as a numeral or a URL
+(`404 is...`, `https://example.com is...`). An all-lowercase first word such as
+`curl` is capitalized.
 
 - Definition: 10-50 rendered words. Rendered word counts use the visible text a
   reader sees, so `[[Target note|alias text]]` counts as `alias text`. When the
