@@ -65,9 +65,9 @@ class AuditEngineTest(unittest.TestCase):
         _, manifest = audit_vault(FIXTURE_VAULT, run_id="test-run")
 
         self.assertEqual(row["schema_version"], "1.0.0")
-        self.assertEqual(row["doctrine_version"], "1.0.6")
-        self.assertEqual(row["rubric_version"], "1.0.2")
-        self.assertEqual(row["prompt_version"], "1.0.4")
+        self.assertEqual(row["doctrine_version"], "1.0.7")
+        self.assertEqual(row["rubric_version"], "1.0.3")
+        self.assertEqual(row["prompt_version"], "1.0.5")
         self.assertEqual(manifest["schema_version"], "1.0.0")
 
     def test_doctrine_version_matches_pyproject_tool_table(self):
@@ -124,7 +124,7 @@ For example, a sprinter can use stored phosphocreatine to recharge ATP during a 
             stem="202601010201 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
         )
 
-        self.assertIn("analogy_sentence_case", finding_codes(row))
+        self.assertIn("dae_sentence_case", finding_codes(row))
         self.assertEqual(row["score"], 92)
 
     def test_bare_lowercase_analogy_is_flagged(self):
@@ -144,7 +144,84 @@ For example, a web app can keep HTML in one layer, checkout rules in another, an
             stem="202601010202 A three-tier system organizes an application into presentation, logic, and data layers",
         )
 
-        self.assertIn("analogy_sentence_case", finding_codes(row))
+        self.assertIn("dae_sentence_case", finding_codes(row))
+
+    def test_lowercase_definition_alias_is_flagged(self):
+        row = self.audit_single_note(
+            """---
+title: Creatine
+---
+
+# Creatine
+
+[[202411271638 Creatine is a naturally occurring compound|creatine]] helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+""",
+            stem="202601010204 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
+        )
+
+        self.assertIn("dae_sentence_case", finding_codes(row))
+
+    def test_lowercase_example_is_flagged(self):
+        row = self.audit_single_note(
+            """---
+title: Creatine
+---
+
+# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+for example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+""",
+            stem="202601010205 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
+        )
+
+        self.assertIn("dae_sentence_case", finding_codes(row))
+
+    def test_lowercase_starts_in_two_sections_report_one_finding(self):
+        row = self.audit_single_note(
+            """---
+title: Creatine
+---
+
+# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+creatine is like a backup power generator for muscles.
+
+for example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+""",
+            stem="202601010206 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
+        )
+
+        codes = [finding["code"] for finding in row["findings"]]
+        self.assertEqual(codes.count("dae_sentence_case"), 1)
+
+    def test_mixed_case_first_word_is_clean(self):
+        row = self.audit_single_note(
+            """---
+title: gRPC
+---
+
+# gRPC
+
+gRPC is a framework that lets one service call a function on another service over a network.
+
+gRPC is like a shared phone line between two offices that both speak the same language.
+
+For example, a checkout service can call a pricing service as if it were a local function.
+""",
+            stem="202601010207 gRPC is a framework that lets one service call a function on another service over a network",
+        )
+
+        self.assertNotIn("dae_sentence_case", finding_codes(row))
 
     def test_capitalized_wikilink_alias_analogy_is_clean(self):
         row = self.audit_single_note(
@@ -163,7 +240,7 @@ For example, sensor jitter can hide a slow temperature trend in a lab log.
             stem="202601010203 Noise in data hides the underlying pattern a model is trying to learn",
         )
 
-        self.assertNotIn("analogy_sentence_case", finding_codes(row))
+        self.assertNotIn("dae_sentence_case", finding_codes(row))
         self.assertTrue(row["clean"])
 
     def test_anki_lowercase_analogy_is_flagged_even_when_prose_is_capitalized(self):
@@ -194,7 +271,7 @@ END
             stem="202601010204 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work",
         )
 
-        self.assertIn("analogy_sentence_case", finding_codes(row))
+        self.assertIn("dae_sentence_case", finding_codes(row))
 
     def test_clean_dae_note_is_clean(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")

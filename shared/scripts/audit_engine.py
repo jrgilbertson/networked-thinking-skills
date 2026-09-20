@@ -22,9 +22,9 @@ from shared.scripts.scoring import NO_CHANGE_BUCKET, bucket_for_score, compute_c
 
 
 SCHEMA_VERSION = "1.0.0"
-DOCTRINE_VERSION = "1.0.6"
-RUBRIC_VERSION = "1.0.2"
-PROMPT_VERSION = "1.0.4"
+DOCTRINE_VERSION = "1.0.7"
+RUBRIC_VERSION = "1.0.3"
+PROMPT_VERSION = "1.0.5"
 DETERMINISTIC_FIXTURE_TIMESTAMP = "2000-01-01T00:00:00Z"
 DIMENSION_NAMES = (
     "structure",
@@ -43,7 +43,7 @@ DIMENSION_PENALTIES = {
     "multi_note": {"structure": 30, "atomicity": 70, "clarity": 20},
     "misfiled_reference": {"structure": 30, "atomicity": 40, "dae_quality": 50},
     "weak_dae": {"dae_quality": 25, "clarity": 15},
-    "analogy_sentence_case": {"dae_quality": 15, "clarity": 10},
+    "dae_sentence_case": {"dae_quality": 15, "clarity": 10},
     "factual_risk": {"clarity": 20, "metadata_card_safety": 10},
     "duplicate_overlap": {"atomicity": 25, "clarity": 10, "connections": 10},
 }
@@ -300,7 +300,7 @@ def _findings_for_note(
     if _looks_like_duplicate_candidate(path, body):
         finding_codes.append("duplicate_overlap")
     if dae_section_starts_lowercase(content):
-        finding_codes.append("analogy_sentence_case")
+        finding_codes.append("dae_sentence_case")
 
     return [
         {

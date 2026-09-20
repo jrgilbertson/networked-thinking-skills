@@ -20,12 +20,14 @@ class FindingCodeContractTest(unittest.TestCase):
         self.assertIn("when that pair differs", message)
         self.assertIn("concept if it differs from the Definition", message)
 
-    def test_analogy_sentence_case_mentions_visible_letter_and_wikilink_alias(self):
-        message = FINDING_MESSAGES["analogy_sentence_case"]
+    def test_dae_sentence_case_mentions_visible_letter_and_wikilink_alias(self):
+        message = FINDING_MESSAGES["dae_sentence_case"]
 
         self.assertIn("Capitalize the first visible letter", message)
         self.assertIn("wikilink alias", message)
         self.assertIn("inline math", message)
+        self.assertIn("Definition, Analogy, or Example", message)
+        self.assertIn("mixed-case", message)
 
     def test_model_prompt_explains_canonical_filename_alignment(self):
         prompt = " ".join(
