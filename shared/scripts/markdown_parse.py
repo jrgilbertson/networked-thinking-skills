@@ -27,6 +27,7 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
+INLINE_MATH_SPAN_RE = re.compile(r"\$[^$\r\n]+\$")
 LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*(`+)(?:(?!\1)[^\r\n])+?\1")
 NON_PROSE_OPENER_RE = re.compile(r"^\s*(?:#|[-*+]\s|\d+[.)]\s|>|\||!\[|[\w-]+::)")
 # Control character, the letters left behind, and the command they reconstruct
@@ -836,6 +837,12 @@ def decayed_latex_commands(markdown: str) -> list[str]:
         if _is_display_math_fence(line):
             inside_display_math = not inside_display_math
         if _is_table_row(line):
+            # A bare tab in a cell is alignment or quoted bytes, but a tab
+            # inside `$...$` is a command that decayed inside math, so scan
+            # the math spans and leave the rest of the row alone.
+            commands.update(
+                _decayed_commands_in_line(_inline_math_only(line), break_inside_math)
+            )
             continue
         # CommonMark reads a leading tab as indented code, but this corruption
         # produces one inside math, so context decides which it is.
@@ -856,6 +863,20 @@ def _is_display_math_fence(line: str) -> bool:
 
 def _leaves_inline_math_open(line: str) -> bool:
     return line.replace("$$", "").count("$") % 2 == 1
+
+
+def _inline_math_only(line: str) -> str:
+    """Blank everything outside `$...$`, keeping every offset where it was.
+
+    The stand-in is a space, which can neither carry a control character nor
+    open math, so a scan of the result reports only what sits inside inline
+    math. Offsets are preserved because the reconstruction guard reads the
+    characters around a match to decide whether it is genuinely decayed.
+    """
+    blanked = [" "] * len(line)
+    for span in INLINE_MATH_SPAN_RE.finditer(line):
+        blanked[span.start() : span.end()] = line[span.start() : span.end()]
+    return "".join(blanked)
 
 
 def _is_table_row(line: str) -> bool:

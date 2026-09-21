@@ -1195,6 +1195,30 @@ class DecayedLatexCommandsTest(unittest.TestCase):
         )
         self.assertEqual(decayed_latex_commands(markdown), [])
 
+    def test_tab_inside_inline_math_in_a_table_cell_matches(self):
+        """A cell can hold real math, and a tab inside it decayed there.
+
+        The bare-tab rule above keeps quoted bytes out. It must not also blank
+        a `$...$` span, or a table of probabilities hides its own corruption
+        from the finding and from the rescan that confirms the repair.
+        """
+        markdown = (
+            "# Note\n\n"
+            "| Outcome | X | P(X) |\n"
+            "| --- | --- | --- |\n"
+            "| HH | 2 | $" + TAB + "frac14$ |\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), ["\\tfrac"])
+
+    def test_quoted_and_real_decay_in_one_table_are_told_apart(self):
+        markdown = (
+            "# Note\n\n"
+            "| Quoted | Real |\n"
+            "| --- | --- |\n"
+            "| 3" + TAB + "imes 4 | $" + TAB + "frac12$ |\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), ["\\tfrac"])
+
     def test_tab_followed_by_letter_does_not_match(self):
         markdown = (
             "# Note\n\nDisplay $x " + TAB + "overline{y}$ and $p " + TAB + "answer$.\n"

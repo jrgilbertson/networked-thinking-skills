@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 
 from shared.scripts import remediate_notes
+from shared.scripts.markdown_parse import decayed_latex_commands
 from shared.scripts.obsidian_adapter import (
     CommandResult,
     ObsidianAdapter,
@@ -471,14 +472,15 @@ class ExecutePathTest(unittest.TestCase):
 
         Every other command decays to a tab, so restoring it cannot change the
         note's line structure. Restoring `\\neq` merges the broken line into
-        the line above, and if that line is a table row or tab-indented, the
-        whole merged line leaves the detector's view — taking any decay still
-        on it. Naming commands is not enough to see this: the operation here
-        legitimately repairs one `\\times`, which must not license hiding a
-        second one.
+        the line above, and if that line is tab-indented, the whole merged line
+        leaves the detector's view — taking any decay still on it. Naming
+        commands is not enough to see this: the operation here legitimately
+        repairs one `\\times`, which must not license hiding a second one.
+
+        A merge into a table row is no longer one of these, because the
+        detector reads a row's `$...$` spans; the test below holds that line.
         """
         cases = {
-            "merges-into-a-table-row": "# T\n\n| $a\neq b$ and $2\times3$ | $2\times f$ |\n",
             "merges-into-a-tab-indent": "# T\n\n\t$a\neq b$ and $2\times3$ then $2\times f$\n",
         }
         find = "\neq b$ and $2\times3$"
@@ -497,6 +499,35 @@ class ExecutePathTest(unittest.TestCase):
                 self.assertIn("\\times", str(raised.exception))
                 # The survivor is still decayed on disk, which is the point.
                 self.assertIn(b"\times f", (self.root / note_path).read_bytes())
+
+    def test_line_merging_repair_into_a_table_row_leaves_the_survivor_visible(self):
+        """The same merge into a table row is allowed, and must stay allowed.
+
+        A real vault note holds `$\\tfrac14$` in table cells, so a row's math
+        is scanned and a survivor there is reported rather than hidden. The
+        write is therefore honest: it repairs what it claimed and conceals
+        nothing. Re-broadening the row rule would turn this back into the
+        concealment the test above refuses.
+        """
+        note = "# T\n\n| $a\neq b$ and $2\times3$ | $2\times f$ |\n"
+        note_path = self.write_note("Merge-table-row.md", note)
+        adapter = FakeObsidianApp(self.root)
+        find = "\neq b$ and $2\times3$"
+        replace = "\\neq b$ and $2\\times3$"
+        plan = execute_plan_fixture(
+            [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+        )
+
+        self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+
+        landed = (self.root / note_path).read_bytes()
+        # The repair landed and the survivor is still on disk, still decayed.
+        self.assertIn(b"$a\\neq b$ and $2\\times3$", landed)
+        self.assertIn(b"\times f", landed)
+        # And the detector still reports it, which is what makes this safe.
+        self.assertEqual(
+            decayed_latex_commands(landed.decode("utf-8")), ["\\times"]
+        )
 
     def test_repair_that_reveals_existing_corruption_is_not_refused(self):
         """Revealing corruption already on disk must never halt a batch.
@@ -684,14 +715,20 @@ class ExecutePathTest(unittest.TestCase):
                 "# T\n\nvalue $2\times7$ and $x\theta y` end\n",
                 "\times",
                 "\\times`",
+                True,
             ),
+            # A `|` prefix no longer hides anything: the detector reads the
+            # `$...$` spans of a table row, so the surviving `\theta` stays
+            # reportable. Pre-flight still refuses this write on the
+            # reconstruction rule, which is the gate that actually owns it.
             "starts-a-table-row": (
                 "# T\n\nvalue $2\times7$ and $x\theta y$\n",
                 "value $2\times",
                 "|value $2\\times",
+                False,
             ),
         }
-        for label, (note, find, replace) in cases.items():
+        for label, (note, find, replace, conceals) in cases.items():
             with self.subTest(case=label):
                 note_path = self.write_note(f"Conceal-{label}.md", note)
                 adapter = FakeObsidianApp(self.root)
@@ -709,10 +746,13 @@ class ExecutePathTest(unittest.TestCase):
                 # The read-back stays as the backstop, for a concealment the
                 # static rule does not anticipate.
                 operation = {"note_path": note_path, "find": find, "replace": replace}
-                with self.assertRaises(RemediationError) as raised:
+                if conceals:
+                    with self.assertRaises(RemediationError) as raised:
+                        assert_repair_landed(operation, note, note.replace(find, replace))
+                    self.assertIn("concealed", str(raised.exception))
+                    self.assertIn("\\theta", str(raised.exception))
+                else:
                     assert_repair_landed(operation, note, note.replace(find, replace))
-                self.assertIn("concealed", str(raised.exception))
-                self.assertIn("\\theta", str(raised.exception))
 
     def test_warn_delivers_the_account_when_stderr_raises_a_non_os_error(self):
         note_path = self.write_note("Shim.md")
