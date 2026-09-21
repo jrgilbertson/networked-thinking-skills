@@ -22,13 +22,6 @@ EXECUTABLE_OPERATIONS = {"edit"}
 # The on-disk byte sequence each decayed command leaves behind, so a write
 # that hides one from the detector can be told from a write that repaired it.
 DECAYED_FORMS = {command: character + suffix for character, suffix, command in DECAYED_LATEX_SUFFIXES}
-# The decay applied longest command first, so no command is rewritten inside
-# another. Used to check a replacement against its find string: a repair that
-# restores the decay and changes nothing else reproduces the find string
-# exactly, and any other edit does not.
-DECAY_BY_LONGEST_COMMAND = tuple(
-    sorted(DECAYED_LATEX_SUFFIXES, key=lambda entry: len(entry[2]), reverse=True)
-)
 REQUIRED_EDIT_KEYS = ("note_path", "find", "replace", "expected_occurrences")
 REQUIRED_PLAN_KEYS = ("plan_version", "audit_run_id", "mode", "operations")
 
@@ -159,40 +152,102 @@ def _assert_replacement_repairs(operation: dict[str, Any], index: int) -> None:
             f"Operation {index} replacement carries non-printing character(s) {codepoints}; "
             "a replacement may contain only visible text"
         )
-    if _decayed(replace) != find:
+    if _restored(find) != replace:
         raise RemediationError(
             f"Operation {index} replacement is not its find string with the decay restored; "
             "a repair may change nothing else"
         )
 
 
-def _commands_matched_by(find: str) -> set[str]:
-    """The decayed commands a find string actually matches.
+def _commands_repaired_by(before: str, find: str) -> dict[str, int]:
+    """How many decayed occurrences this operation's spans actually repair.
 
-    Applies the detector's own guard, that the character following the suffix
-    must not be a letter, so a fragment holding `<tab>other` is not counted as
-    a `\\to` this operation repaired.
+    Counts rather than names, because one repair must not licence hiding a
+    second occurrence of the same command. Counted over every span the find
+    string covers in the note, which also gives the total directly rather than
+    multiplying by the asserted occurrence count.
+
+    Read against the note rather than the find string alone. The detector's
+    guard asks whether the character following a decayed form is a letter, and
+    for a form at the end of `find` that character lives in the note. A
+    one-character slice off the end of `find` is `""`, which is not a letter,
+    so every trailing form was credited as repaired whether the detector had
+    counted it or not — widening the set of commands a write may excuse.
     """
-    matched: set[str] = set()
+    repaired: dict[str, int] = {}
+    for span_start in _occurrences_of(before, find):
+        span_end = span_start + len(find)
+        for command, form in DECAYED_FORMS.items():
+            for start in _occurrences_of(before, form):
+                if start < span_start or start + len(form) > span_end:
+                    continue
+                following = before[start + len(form):start + len(form) + 1]
+                if not following.isalpha():
+                    repaired[command] = repaired.get(command, 0) + 1
+    return repaired
+
+
+def _visible_occurrences(text: str) -> dict[str, int]:
+    """How many decayed occurrences the detector actually reports.
+
+    Asks `decayed_latex_commands` rather than re-deriving its masking, so this
+    cannot drift from the rules the audit applies. Each occurrence is tested
+    by neutralising every other occurrence of the same command with a
+    stand-in of identical length that keeps the leading control character, so
+    the note's line structure and every mask stay exactly as they were and the
+    only thing that changes is which occurrence is left to report.
+    """
+    counts: dict[str, int] = {}
     for command, form in DECAYED_FORMS.items():
-        start = find.find(form)
-        while start != -1:
-            following = find[start + len(form):start + len(form) + 1]
-            if not following.isalpha():
-                matched.add(command)
-                break
-            start = find.find(form, start + 1)
-    return matched
+        starts = _occurrences_of(text, form)
+        if not starts:
+            continue
+        stand_in = form[0] + "Z" + form[2:]
+        for kept in starts:
+            probe = text
+            for start in starts:
+                if start != kept:
+                    probe = probe[:start] + stand_in + probe[start + len(form):]
+            if command in decayed_latex_commands(probe):
+                counts[command] = counts.get(command, 0) + 1
+    return counts
 
 
-def _decayed(text: str) -> str:
-    """Re-apply the decay to a restored string: the inverse of the repair.
+def _occurrences_of(text: str, form: str) -> list[int]:
+    starts: list[int] = []
+    start = text.find(form)
+    while start != -1:
+        starts.append(start)
+        start = text.find(form, start + 1)
+    return starts
 
-    Longest command first, so no command is rewritten inside another.
+
+def _restored(text: str) -> str:
+    """Turn each decayed form in a string into the command it reconstructs to.
+
+    The forward direction. Re-decaying the replacement and comparing it to the
+    find string looks equivalent and is not: it rewrites commands that were
+    already intact, so a find window holding one is refused although the
+    repair is correct. `DECAYED_LATEX_SUFFIXES` is ordered longest suffix
+    first, so no shorter form matches inside a longer one.
     """
-    for character, suffix, command in DECAY_BY_LONGEST_COMMAND:
-        text = text.replace(command, character + suffix)
-    return text
+    restored: list[str] = []
+    index = 0
+    while index < len(text):
+        for character, suffix, command in DECAYED_LATEX_SUFFIXES:
+            form = character + suffix
+            if not text.startswith(form, index):
+                continue
+            following = text[index + len(form):index + len(form) + 1]
+            if following.isalpha():
+                continue
+            restored.append(command)
+            index += len(form)
+            break
+        else:
+            restored.append(text[index])
+            index += 1
+    return "".join(restored)
 
 
 def _is_non_printing(character: str) -> bool:
@@ -249,32 +304,54 @@ def assert_repair_landed(operation: dict[str, Any], before: str, after: str) -> 
     if operation["find"] in after:
         raise RemediationError(f"{note_path}: write did not land, the matched string is still present")
 
-    visible_before = set(decayed_latex_commands(before))
-    visible_after = set(decayed_latex_commands(after))
-
-    introduced = visible_after - visible_before
-    if introduced:
-        raise RemediationError(
-            f"{note_path}: write introduced decayed command(s) {', '.join(sorted(introduced))}"
-        )
-
-    # The mirror of `introduced`. A command may leave the detector's view only
-    # by being repaired, because corruption the audit can no longer see is
-    # worse than corruption it reports.
+    # Every decayed occurrence the detector reported must still be reported
+    # afterwards, except the ones this operation repaired. Counting rather
+    # than naming is what makes that true: `\neq` is the only decay whose
+    # restoration deletes a line break, so it merges the broken line into the
+    # line above, and if that line is a table row or tab-indented the merged
+    # line leaves the detector's view with any decay still on it. Naming
+    # commands lets an operation that legitimately repairs one `\times`
+    # licence hiding a second.
     #
-    # The question is asked of what the detector reported, never of raw bytes.
-    # Decayed sequences it always ignored — masked, or failing its guard that
-    # the character after the suffix is not a letter — were never signal, so
-    # finding them afterwards proves nothing. `\to` is a tab and one letter
-    # and `\neq` a newline and two, so those sequences occur in ordinary prose
-    # and indented code; a byte test refuses correct repairs over them.
+    # The question is asked of what the detector reported, never of raw bytes,
+    # and it is asked by running the detector rather than re-deriving its
+    # rules. Decayed sequences it always ignored — masked, or failing its
+    # guard that the character after the suffix is not a letter — were never
+    # signal, so finding them afterwards proves nothing. `\to` is a tab and
+    # one letter and `\neq` a newline and two, so those sequences occur in
+    # ordinary prose and indented code; a byte test refuses correct repairs
+    # over them.
     #
     # One case this cannot speak for: in a note whose fences or code spans are
-    # unbalanced the detector reports nothing to begin with, so this check and
-    # `introduced` are both vacuous and only the equality below still holds.
-    # The guarantee there is that the transport obeyed the plan, not that the
-    # note's corruption semantics were verified.
-    concealed = sorted((visible_before - visible_after) - _commands_matched_by(operation["find"]))
+    # unbalanced the detector reports nothing to begin with, so this check is
+    # vacuous and only the equality below still holds. The guarantee there is
+    # that the transport obeyed the plan, not that the note's corruption
+    # semantics were verified.
+    before_counts = _visible_occurrences(before)
+    after_counts = _visible_occurrences(after)
+    repaired = _commands_repaired_by(before, operation["find"])
+    # A replacement carries no control character, so a write cannot put a
+    # decayed form into a note that did not already hold one. A command that
+    # gains visibility was therefore revealed, not introduced — the corruption
+    # was on disk all along and the audit can now see it, which is the outcome
+    # this work wants. Only bytes that were absent before count as introduced,
+    # and that can only come from a transport that ignored the plan.
+    present_before = {command for command, form in DECAYED_FORMS.items() if form in before}
+
+    concealed: list[str] = []
+    introduced: list[str] = []
+    for command in sorted(set(before_counts) | set(after_counts)):
+        expected = before_counts.get(command, 0) - repaired.get(command, 0)
+        actual = after_counts.get(command, 0)
+        if actual < expected:
+            concealed.append(command)
+        elif actual > expected and command not in present_before:
+            introduced.append(command)
+
+    if introduced:
+        raise RemediationError(
+            f"{note_path}: write introduced decayed command(s) {', '.join(introduced)}"
+        )
     if concealed:
         raise RemediationError(
             f"{note_path}: write concealed decayed command(s) {', '.join(concealed)} "

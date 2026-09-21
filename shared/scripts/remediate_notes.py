@@ -6,6 +6,7 @@ from copy import deepcopy
 import json
 import sys
 from pathlib import Path
+import signal
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -92,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     dispatched: list[str] = []
     operations = None
+    _install_termination_handler()
     try:
         plan = json.loads(args.plan.read_text(encoding="utf-8"))
         if args.execute:
@@ -126,10 +128,47 @@ def main(argv: list[str] | None = None) -> int:
         if dispatched:
             _report_dispatched(args.manifest, plan, dispatched, operations)
         raise
-    print(f"operation_count={manifest['operation_count']}")
+    _announce(f"operation_count={manifest['operation_count']}")
     if args.execute:
-        print(f"dispatched_note_count={len(dispatched)}")
+        _announce(f"dispatched_note_count={len(dispatched)}")
     return 0
+
+
+def _announce(message: str) -> None:
+    """Print a closing line without letting the stream fail the run.
+
+    The work is already done and persisted by the time these are written, so a
+    closed stdout — the run piped into `head`, say — must not turn a finished
+    remediation into a traceback and a non-zero exit. On this tool that is
+    worse than cosmetic: an operator who reads failure may run it again.
+    """
+    try:
+        print(message)
+    except OSError:
+        pass
+
+
+def _install_termination_handler() -> None:
+    """Route SIGTERM through the reporting path, where the platform allows it."""
+    try:
+        signal.signal(signal.SIGTERM, _raise_on_termination)
+    except (AttributeError, ValueError, OSError):
+        # No SIGTERM, or not the main thread. The run still works; only the
+        # account on a termination signal is lost, which is the status quo.
+        pass
+
+
+def _raise_on_termination(signal_number: int, frame: object) -> None:
+    """Turn SIGTERM into an exception so the account still gets written.
+
+    Python raises `KeyboardInterrupt` for SIGINT by itself, but SIGTERM
+    terminates the process without raising, so the handler that reports which
+    notes were dispatched never runs. A long vault repair is exactly what an
+    operator, a CI timeout or a supervisor kills, which makes this the more
+    likely interruption of the two. Raising `KeyboardInterrupt` funnels it
+    through the same path Ctrl-C already proved.
+    """
+    raise KeyboardInterrupt(f"terminated by signal {signal_number}")
 
 
 def _warn(message: str) -> None:

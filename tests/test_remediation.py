@@ -2,7 +2,9 @@ import base64
 import contextlib
 import io
 import json
+import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -19,6 +21,7 @@ from shared.scripts.obsidian_adapter import (
 from shared.scripts.remediate_notes import execute_plan
 from shared.scripts.remediation import (
     RemediationError,
+    _commands_repaired_by,
     assert_repair_landed,
     build_dry_run_manifest,
     validate_executable_plan,
@@ -370,10 +373,11 @@ class ExecutePathTest(unittest.TestCase):
         reader would have to guess whether the list is complete. Requiring the
         exact reconstruction has no list to be incomplete.
 
-        The read-back check behind this one is set-based on command names, so
-        it cannot see a write that masks one occurrence of a command while
-        another occurrence of the same command stays visible. This rule can,
-        because it never lets the note change in any other way.
+        This rule does not make the note unchangeable in every other respect,
+        and an earlier version of this docstring wrongly claimed it did.
+        Restoring `\\neq` deletes a line break, because that decay *is* a
+        newline, so a repair can still merge two lines and move the masks that
+        way. The read-back's occurrence counting is what covers that.
         """
         cases = {
             "adds-a-backtick": ("\times", "\\times`"),
@@ -461,6 +465,210 @@ class ExecutePathTest(unittest.TestCase):
 
                 self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
                 self.assertEqual((self.root / note_path).read_bytes(), expected.encode("utf-8"))
+
+    def test_line_merging_repair_that_masks_a_survivor_is_refused(self):
+        """`\\neq` is the one decay whose restoration deletes a line break.
+
+        Every other command decays to a tab, so restoring it cannot change the
+        note's line structure. Restoring `\\neq` merges the broken line into
+        the line above, and if that line is a table row or tab-indented, the
+        whole merged line leaves the detector's view — taking any decay still
+        on it. Naming commands is not enough to see this: the operation here
+        legitimately repairs one `\\times`, which must not license hiding a
+        second one.
+        """
+        cases = {
+            "merges-into-a-table-row": "# T\n\n| $a\neq b$ and $2\times3$ | $2\times f$ |\n",
+            "merges-into-a-tab-indent": "# T\n\n\t$a\neq b$ and $2\times3$ then $2\times f$\n",
+        }
+        find = "\neq b$ and $2\times3$"
+        replace = "\\neq b$ and $2\\times3$"
+        for label, note in cases.items():
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Merge-{label}.md", note)
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+                )
+
+                with self.assertRaises(RemediationError) as raised:
+                    execute_plan(plan, adapter, vault="test-vault")
+
+                self.assertIn("\\times", str(raised.exception))
+                # The survivor is still decayed on disk, which is the point.
+                self.assertIn(b"\times f", (self.root / note_path).read_bytes())
+
+    def test_repair_that_reveals_existing_corruption_is_not_refused(self):
+        """Revealing corruption already on disk must never halt a batch.
+
+        A replacement carries no control character, so a write cannot put a
+        decayed form into a note that did not hold one. Merging two lines can
+        move an occurrence out of an inline-code span, which the audit then
+        reports for the first time. That is the outcome this work wants, so
+        asking about visibility alone reported the tool as the culprit.
+        """
+        note = "# T\n\n`code\neq b$` $2\times f$ `tail`\n"
+        note_path = self.write_note("Reveal.md", note)
+        adapter = FakeObsidianApp(self.root)
+        plan = execute_plan_fixture(
+            [edit_operation(note_path, find="\neq b$", replace="\\neq b$", expected_occurrences=1)]
+        )
+
+        self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+        self.assertEqual(
+            (self.root / note_path).read_bytes(),
+            b"# T\n\n`code\\neq b$` $2\times f$ `tail`\n",
+        )
+
+    def test_a_trailing_decayed_form_is_credited_only_when_the_note_agrees(self):
+        """The guard reads the note, not the end of the find string.
+
+        A one-character slice past the end of `find` is `""`, which is not a
+        letter, so a trailing decayed form used to be credited as repaired
+        whether or not the detector had ever counted it — widening the set of
+        commands a write is allowed to excuse.
+        """
+        note = "# T\n\nthe $a\tother thing\n"
+
+        self.assertEqual(_commands_repaired_by(note, "$a\to"), {})
+        self.assertEqual(_commands_repaired_by("# T\n\nthe $a\to b$\n", "$a\to"), {"\\to": 1})
+
+    def test_transport_failure_is_reported_as_a_refusal_not_a_crash(self):
+        """A real transport fault, rather than an application-level rejection."""
+        note_path = self.write_note("Timeout.md")
+
+        class TimingOutApp(FakeObsidianApp):
+            def run(self, args: list[str]) -> CommandResult:
+                if payload_of(args)["action"] == "replace":
+                    return CommandResult(
+                        ok=False,
+                        stdout="",
+                        stderr="Obsidian CLI command timed out after 30 seconds.",
+                        returncode=124,
+                    )
+                return super().run(args)
+
+        adapter = TimingOutApp(self.root)
+        plan = execute_plan_fixture([edit_operation(note_path)])
+        dispatched: list[str] = []
+
+        with self.assertRaises(RemediationError) as raised:
+            execute_plan(plan, adapter, vault="test-vault", on_written=dispatched.append)
+
+        self.assertIn("timed out", str(raised.exception))
+        self.assertIn("inspect", str(raised.exception))
+        self.assertEqual(dispatched, [note_path])
+
+    def test_cli_reports_written_notes_when_terminated_by_a_signal(self):
+        """SIGTERM must reach the same account Ctrl-C already does.
+
+        Python raises `KeyboardInterrupt` for SIGINT on its own; SIGTERM ends
+        the process without raising, so a `kill`, a CI timeout or a supervisor
+        stopping a long batch would otherwise lose the whole account.
+        """
+        note_path = self.write_note("Signalled.md")
+        plan_path = self.root / "plan.json"
+        manifest_path = self.root / "manifest.json"
+        plan_path.write_text(json.dumps(execute_plan_fixture([edit_operation(note_path)])), encoding="utf-8")
+
+        class SignallingApp(FakeObsidianApp):
+            def run(self, args: list[str]) -> CommandResult:
+                result = super().run(args)
+                if payload_of(args)["action"] == "replace":
+                    os.kill(os.getpid(), signal.SIGTERM)
+                return result
+
+        adapter = SignallingApp(self.root)
+        previous = signal.getsignal(signal.SIGTERM)
+        self.addCleanup(signal.signal, signal.SIGTERM, previous)
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                with self.assertRaises(KeyboardInterrupt):
+                    remediate_notes.main(
+                        [
+                            "--plan", str(plan_path),
+                            "--manifest", str(manifest_path),
+                            "--execute",
+                            "--vault", "test-vault",
+                        ]
+                    )
+
+        self.assertIn(f"dispatched_note={note_path}", stderr.getvalue())
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["dispatched_note_paths"], [note_path])
+
+    def test_cli_success_survives_a_closed_stdout(self):
+        """The work is already persisted; a broken pipe must not report failure."""
+        note_path = self.write_note("Piped.md")
+        plan_path = self.root / "plan.json"
+        manifest_path = self.root / "manifest.json"
+        plan_path.write_text(json.dumps(execute_plan_fixture([edit_operation(note_path)])), encoding="utf-8")
+        adapter = FakeObsidianApp(self.root)
+
+        class BrokenStdout(io.StringIO):
+            def write(self, *args, **kwargs):
+                raise BrokenPipeError(32, "Broken pipe")
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stdout(BrokenStdout()):
+                return_code = remediate_notes.main(
+                    [
+                        "--plan", str(plan_path),
+                        "--manifest", str(manifest_path),
+                        "--execute",
+                        "--vault", "test-vault",
+                    ]
+                )
+
+        self.assertEqual(return_code, 0)
+        self.assertEqual((self.root / note_path).read_bytes(), CLEAN_NOTE.encode("utf-8"))
+
+    def test_newline_borne_repair_runs_through_the_real_transport(self):
+        """The form whose restoration changes line structure, end to end.
+
+        Every other read-back test uses a tab-decayed command, so this shape
+        never reached `assert_repair_landed` before.
+        """
+        note = "# B\n\nThe value is $a\neq b$ here.\n\nA later $2\times7$ stays.\n"
+        note_path = self.write_note("Newline.md", note)
+        adapter = FakeObsidianApp(self.root)
+        plan = execute_plan_fixture(
+            [edit_operation(note_path, find="\neq b$", replace="\\neq b$", expected_occurrences=1)]
+        )
+
+        self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+        self.assertEqual(
+            (self.root / note_path).read_bytes(),
+            b"# B\n\nThe value is $a\\neq b$ here.\n\nA later $2\times7$ stays.\n",
+        )
+
+    def test_find_window_holding_an_already_intact_command_is_accepted(self):
+        """The rule must be forward, not reverse.
+
+        Re-decaying the replacement and comparing to the find string refuses a
+        window that happens to contain a command which was never corrupted,
+        because re-decaying rewrites that intact command too.
+        """
+        note = "# T\n\nboth $2\times3$ and $2\\times4$ here\n"
+        note_path = self.write_note("Intact.md", note)
+        adapter = FakeObsidianApp(self.root)
+        plan = execute_plan_fixture(
+            [
+                edit_operation(
+                    note_path,
+                    find="$2\times3$ and $2\\times4$",
+                    replace="$2\\times3$ and $2\\times4$",
+                    expected_occurrences=1,
+                )
+            ]
+        )
+
+        self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+        self.assertEqual(
+            (self.root / note_path).read_bytes(),
+            b"# T\n\nboth $2\\times3$ and $2\\times4$ here\n",
+        )
 
     def test_write_that_conceals_another_decayed_command_is_refused(self):
         """The mirror of the `introduced` check, and the one it cannot see.
