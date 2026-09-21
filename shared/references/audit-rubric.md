@@ -52,10 +52,13 @@ DAE doctrine failures include missing DAE content and overlong Definitions. A
 Definition longer than 50 rendered words receives `definition_too_long` so it can
 be shortened without misclassifying the note as a multi-note or reference note.
 
-`analogy_sentence_case` is a deterministic polish check: the first visible
-letter of the Analogy must be capitalized, including a leading wikilink alias.
-Analogies that open with inline math may keep the math token first. Model
-judgment does not drop this finding.
+`dae_sentence_case` is a deterministic polish check: the first visible letter
+of the Definition, Analogy, and Example must be capitalized, including a leading
+wikilink alias. A section that opens with inline math or inline code may keep
+that token first, a mixed-case first word such as gRPC or pH stays as
+written, and a first word with no letter to capitalize, such as a numeral or a
+URL, is exempt. A note gets the finding once however many sections start lowercase.
+Model judgment does not drop this finding.
 
 `factual_risk` means a sentence contains a claim that should be checked before it
 is relied on: empirical numbers, current or versioned claims, source-attributed

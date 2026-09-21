@@ -13,12 +13,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
-- Doctrine `1.0.6`, rubric `1.0.2`, and model prompt `1.0.3` require the Analogy
-  sentence to start with a capital letter, including a leading wikilink alias.
-  `analogy_sentence_case` is a deterministic finding that survives model
-  judgment. Analogies that open with inline math may keep the math token first.
-- Model prompt `1.0.4` states that inline-math openers are exempt from
-  `analogy_sentence_case`, matching the detector and rubric.
+- Doctrine `1.0.7`, rubric `1.0.3`, and model prompt `1.0.5` require the
+  Definition, Analogy, and Example to start with a capital letter, including a
+  leading wikilink alias. `dae_sentence_case` is one deterministic finding for
+  all three sections that survives model judgment. A section that opens with
+  inline math or inline code may keep that token first, a mixed-case first
+  word such as `gRPC` or `pH` is exempt, and a first word with no letter to
+  capitalize, such as a numeral or a URL, is exempt. This replaces the Analogy-only rule and finding code
+  from doctrine `1.0.6`, rubric `1.0.2`, and prompt `1.0.3`-`1.0.4`, which never
+  shipped in a release. The prompt bump makes resume and apply reject stored
+  judgments that carry the old code.
 - Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
   variable labels after a prose-first sentence; `Reference:` holds alternate
   forms and other Obsidian-only extras. Basic Front is a retrieval question for

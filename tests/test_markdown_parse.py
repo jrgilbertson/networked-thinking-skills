@@ -1,7 +1,8 @@
 import unittest
 
 from shared.scripts.markdown_parse import (
-    analogy_starts_lowercase,
+    dae_section_paragraphs,
+    dae_section_starts_lowercase,
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
@@ -525,7 +526,7 @@ END
         self.assertTrue(analysis.present)
         self.assertEqual(analysis.shape, "Cloze")
 
-    def test_analogy_starts_lowercase_for_wikilink_alias(self):
+    def test_dae_sentence_case_flags_lowercase_analogy_alias(self):
         markdown = """# Creatine
 
 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
@@ -534,9 +535,9 @@ Creatine helps muscles regenerate adenosine triphosphate during short bursts of 
 
 For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
 """
-        self.assertTrue(analogy_starts_lowercase(markdown))
+        self.assertTrue(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_accepts_capitalized_wikilink_alias(self):
+    def test_dae_sentence_case_analogy_accepts_capitalized_wikilink_alias(self):
         markdown = """# Noise
 
 Noise in data hides the underlying pattern a model is trying to learn.
@@ -545,9 +546,9 @@ Noise in data hides the underlying pattern a model is trying to learn.
 
 For example, sensor jitter can hide a slow temperature trend in a lab log.
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        self.assertFalse(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_allows_leading_inline_math(self):
+    def test_dae_sentence_case_analogy_allows_leading_inline_math(self):
         markdown = """# Sample size
 
 Sample size n is the number of independent observations in a dataset.
@@ -556,9 +557,9 @@ $n$ is like the number of survey responses because each independent response add
 
 For example, a poll of 1,000 voters has more stable estimates than a poll of 40 voters.
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        self.assertFalse(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_allows_emphasized_inline_math(self):
+    def test_dae_sentence_case_analogy_allows_emphasized_inline_math(self):
         markdown = """# Sample size
 
 Sample size n is the number of independent observations in a dataset.
@@ -567,9 +568,9 @@ Sample size n is the number of independent observations in a dataset.
 
 For example, a poll of 1,000 voters has more stable estimates than a poll of 40 voters.
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        self.assertFalse(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_flags_unclosed_leading_dollar(self):
+    def test_dae_sentence_case_analogy_flags_unclosed_leading_dollar(self):
         markdown = """# Creatine
 
 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
@@ -578,9 +579,9 @@ $creatine is like a backup power generator for muscles.
 
 For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
 """
-        self.assertTrue(analogy_starts_lowercase(markdown))
+        self.assertTrue(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_ignores_leading_html_tags(self):
+    def test_dae_sentence_case_analogy_ignores_leading_html_tags(self):
         markdown = """# Capital
 
 Capital is money used to produce more value.
@@ -589,9 +590,9 @@ Capital is money used to produce more value.
 
 For example, a baker spends cash on an oven that later bakes more loaves.
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        self.assertFalse(dae_section_starts_lowercase(markdown))
 
-    def test_analogy_sentence_case_flags_lowercase_after_html_tags(self):
+    def test_dae_sentence_case_analogy_flags_lowercase_after_html_tags(self):
         markdown = """# Capital
 
 Capital is money used to produce more value.
@@ -600,9 +601,9 @@ Capital is money used to produce more value.
 
 For example, a baker spends cash on an oven that later bakes more loaves.
 """
-        self.assertTrue(analogy_starts_lowercase(markdown))
+        self.assertTrue(dae_section_starts_lowercase(markdown))
 
-    def test_anki_basic_does_not_treat_example_as_analogy(self):
+    def test_anki_basic_labels_lowercase_example_as_example_not_analogy(self):
         markdown = """# Creatine
 
 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
@@ -622,9 +623,15 @@ Creatine is like a backup power generator for muscles.
 for example, a sprinter is like a car that taps a small battery for a 10-second start.
 END
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        lowercase = [
+            section
+            for section, paragraph in dae_section_paragraphs(markdown)
+            if paragraph.lstrip().startswith("for example,")
+        ]
+        self.assertEqual(lowercase, ["example"])
+        self.assertTrue(dae_section_starts_lowercase(markdown))
 
-    def test_anki_cloze_extra_does_not_treat_example_as_analogy(self):
+    def test_anki_cloze_extra_labels_lowercase_example_as_example_not_analogy(self):
         markdown = """# Creatine
 
 Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
@@ -642,7 +649,268 @@ Extra: Creatine is like a backup power generator for muscles.
 for example, a sprinter is like a car that taps a small battery for a 10-second start.
 END
 """
-        self.assertFalse(analogy_starts_lowercase(markdown))
+        lowercase = [
+            section
+            for section, paragraph in dae_section_paragraphs(markdown)
+            if paragraph.lstrip().startswith("for example,")
+        ]
+        self.assertEqual(lowercase, ["example"])
+        self.assertTrue(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_flags_lowercase_definition_alias(self):
+        markdown = """# Creatine
+
+[[202411271638 Creatine is a naturally occurring compound|creatine]] is a compound that helps muscles regenerate adenosine triphosphate.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        self.assertTrue(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_flags_lowercase_example(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+for example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        self.assertTrue(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_checks_cloze_definition(self):
+        template = """# Creatine
+
+START
+Cloze
+{deletion} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Extra: Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+END
+"""
+        self.assertTrue(dae_section_starts_lowercase(template.format(deletion="{{c1::creatine}}")))
+        self.assertFalse(dae_section_starts_lowercase(template.format(deletion="{{c1::Creatine::hint}}")))
+        self.assertFalse(dae_section_starts_lowercase(template.format(deletion="{{c1::$n$}}")))
+
+    def test_dae_sentence_case_checks_cloze_definition_without_extra(self):
+        markdown = """# Creatine
+
+START
+Cloze
+{{c1::creatine}} helps muscles regenerate adenosine triphosphate during short bursts of work.
+END
+"""
+        self.assertTrue(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_reads_headed_section_bodies_not_heading_lines(self):
+        template = """# Creatine
+
+## Definition
+
+{definition} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+## Analogy
+
+Creatine is like a backup power generator for muscles.
+
+## Example
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        self.assertTrue(dae_section_starts_lowercase(template.format(definition="creatine")))
+        clean = template.format(definition="Creatine")
+        self.assertFalse(dae_section_starts_lowercase(clean))
+        self.assertEqual(
+            [section for section, _ in dae_section_paragraphs(clean)],
+            ["definition", "analogy", "example"],
+        )
+
+    def test_dae_sentence_case_flags_lowercase_back_definition_when_prose_is_capitalized(self):
+        markdown = """# Creatine
+
+Creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+
+START
+Basic
+How does creatine help muscles?
+
+Back: creatine helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+END
+"""
+        self.assertTrue(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_clean_openers_in_definition_and_example(self):
+        for opener in (
+            "[[202312261341 Noise refers to random variation|Noise]]",
+            "$n$",
+            "**$n$**",
+            "<span>Capital</span>",
+        ):
+            markdown = f"""# Term
+
+{opener} is the quantity a model is trying to estimate from data.
+
+Noise is like a blurry lens on a camera.
+
+For example, sensor jitter can hide a slow temperature trend in a lab log.
+"""
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(markdown))
+
+    def test_dae_sentence_case_exempts_mixed_case_first_word(self):
+        template = """# Term
+
+{definition} a widely used tool in its field.
+
+{analogy} is like a shared phone line between two offices.
+
+For example, a service can call another service as if it were a local function.
+"""
+        for word in ("gRPC is", "pH is", "iOS is", "[[202401011200 Messenger RNA carries instructions|mRNA]] is"):
+            with self.subTest(word=word):
+                self.assertFalse(
+                    dae_section_starts_lowercase(template.format(definition=word, analogy=word.rsplit(" ", 1)[0]))
+                )
+        for word in ("curl is", "k-means is", "e.g. this is"):
+            with self.subTest(word=word):
+                self.assertTrue(
+                    dae_section_starts_lowercase(template.format(definition=word, analogy="Term"))
+                )
+
+    def test_dae_sentence_case_exempts_leading_inline_code(self):
+        template = """# Range
+
+The range function generates a sequence of integers one at a time.
+
+{analogy} is like a ticket dispenser that hands out the next number on request.
+
+For example, a loop over ten items asks for each index only when it needs it.
+"""
+        for opener in ("`range`", "**`range`**", "`.join()`"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(analogy=opener)))
+        for opener in ("`range is", "range"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
+
+    def test_dae_sentence_case_exempts_leading_multi_backtick_inline_code(self):
+        template = """# Range
+
+The range function generates a sequence of integers one at a time.
+
+{analogy} is like a ticket dispenser that hands out the next number on request.
+
+For example, a loop over ten items asks for each index only when it needs it.
+"""
+        for opener in ("``range``", "``a `b` c``", "**``range``**", "```range```"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(analogy=opener)))
+        # An unclosed run is not a code span, so the first word is still judged.
+        for opener in ("``range", "``range`"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(analogy=opener)))
+
+    def test_dae_sentence_case_skips_non_prose_openers_in_headed_sections(self):
+        template = """# Creatine
+
+## Definition
+
+#topic/supplements
+
+{definition} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+## Analogy
+
+> [!note]
+> Kept for reviewers.
+
+Creatine is like a backup power generator for muscles.
+
+## Example
+
+![[creatine-chart.png]]
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+"""
+        clean = template.format(definition="Creatine")
+        self.assertFalse(dae_section_starts_lowercase(clean))
+        self.assertEqual(
+            [paragraph.split(None, 1)[0] for _, paragraph in dae_section_paragraphs(clean)],
+            ["Creatine", "Creatine", "For"],
+        )
+        self.assertTrue(dae_section_starts_lowercase(template.format(definition="creatine")))
+
+    def test_dae_sentence_case_skips_non_prose_openers_in_cloze_body(self):
+        template = """# Creatine
+
+START
+Cloze
+{opener}
+
+{deletion} helps muscles regenerate adenosine triphosphate during short bursts of work.
+
+Extra: Creatine is like a backup power generator for muscles.
+
+For example, a sprinter can use stored phosphocreatine to recharge ATP during a 10-second start.
+END
+"""
+        openers = (
+            "#topic/supplements",
+            "up:: [[Supplements]]",
+            "> [!note]\n> Kept for reviewers.",
+            "| Dose | 5 g |",
+            "- Kept for reviewers.",
+        )
+        for opener in openers:
+            with self.subTest(opener=opener):
+                # A non-prose line above the Definition is not the Definition, so it
+                # neither earns a finding of its own nor hides a lowercase Definition.
+                self.assertFalse(
+                    dae_section_starts_lowercase(
+                        template.format(opener=opener, deletion="{{c1::Creatine::hint}}")
+                    )
+                )
+                self.assertTrue(
+                    dae_section_starts_lowercase(
+                        template.format(opener=opener, deletion="{{c1::creatine}}")
+                    )
+                )
+        clean = template.format(opener="#topic/supplements", deletion="{{c1::Creatine::hint}}")
+        self.assertEqual(
+            [(section, paragraph.split(None, 1)[0]) for section, paragraph in dae_section_paragraphs(clean)],
+            [("definition", "{{c1::Creatine::hint}}"), ("analogy", "Creatine"), ("example", "For")],
+        )
+
+    def test_dae_sentence_case_ignores_numeral_and_url_openers(self):
+        template = """# Term
+
+{definition} the thing a reader looks up when a page cannot be found.
+
+Term is like a wrong street address on an envelope.
+
+For example, a typo in a link sends the browser to a page that does not exist.
+"""
+        for opener in ("404 is", "80/20 thinking is", "https://example.com is"):
+            with self.subTest(opener=opener):
+                self.assertFalse(dae_section_starts_lowercase(template.format(definition=opener)))
+        for opener in ("the 404 status is", "(a) status is"):
+            with self.subTest(opener=opener):
+                self.assertTrue(dae_section_starts_lowercase(template.format(definition=opener)))
+
+    def test_dae_section_paragraphs_empty_without_dae(self):
+        self.assertEqual(dae_section_paragraphs("# Title\n"), [])
+        self.assertFalse(dae_section_starts_lowercase("# Title\n"))
 
     def test_has_dae_sections_returns_false_without_example(self):
         markdown = "## Definition\n\n## Analogy\n"

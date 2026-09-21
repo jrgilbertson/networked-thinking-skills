@@ -36,7 +36,7 @@ def load_fixture_manifest() -> dict[str, object]:
 def judgment_for(
     note_path: str,
     *,
-    prompt_version: str = "1.0.4",
+    prompt_version: str = "1.0.5",
     findings: list[dict[str, object]] | None = None,
     dimension_adjustments: dict[str, int] | None = None,
     factual_risk: bool = False,
@@ -216,14 +216,14 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         self.assertEqual(changed["score"], 57)
         self.assertNotIn("weak_analogy", {finding["code"] for finding in changed["findings"]})
 
-    def test_analogy_sentence_case_survives_empty_model_findings(self):
+    def test_dae_sentence_case_survives_empty_model_findings(self):
         rows = load_fixture_rows()
         manifest = load_fixture_manifest()
         rows[0] = deepcopy(rows[0])
         rows[0]["findings"] = [
             {
-                "code": "analogy_sentence_case",
-                "message": FINDING_MESSAGES["analogy_sentence_case"],
+                "code": "dae_sentence_case",
+                "message": FINDING_MESSAGES["dae_sentence_case"],
             }
         ]
         judgments = judgments_for_rows(rows)
@@ -231,7 +231,7 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         merged_rows, _ = apply_model_judgments(rows, manifest, judgments)
 
         changed = next(row for row in merged_rows if row["note_path"] == rows[0]["note_path"])
-        self.assertIn("analogy_sentence_case", {finding["code"] for finding in changed["findings"]})
+        self.assertIn("dae_sentence_case", {finding["code"] for finding in changed["findings"]})
         self.assertEqual(changed["score"], 92)
 
     def test_missing_judgment_fails_by_default(self):
