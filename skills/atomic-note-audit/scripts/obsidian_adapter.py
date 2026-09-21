@@ -119,7 +119,6 @@ class ObsidianAdapter:
             raise ObsidianTransportError(f"Unable to write {note_path}: {_failure_text(result)}")
 
 
-
 def build_read_note_code(note_path: str) -> str:
     return _eval_code(
         {"action": "read", "path": note_path},

@@ -816,32 +816,45 @@ def decayed_latex_commands(markdown: str) -> list[str]:
 
 
 def _is_table_row(line: str) -> bool:
-    return line.lstrip(" \t").startswith("|")
+    for character in line:
+        if character in " \t":
+            continue
+        return character == "|"
+    return False
 
 
 def _has_tab_indent(line: str) -> bool:
-    return "\t" in line[: len(line) - len(line.lstrip(" \t"))]
+    for character in line:
+        if character == "\t":
+            return True
+        if character != " ":
+            return False
+    return False
 
 
 def _decayed_commands_in_line(line: str) -> set[str]:
     commands: set[str] = set()
-    command = _reconstructed_command("\n", line)
+    command = _reconstructed_command("\n", line, 0)
     if command is not None:
         commands.add(command)
     for index, character in enumerate(line):
         if character != "\t":
             continue
-        command = _reconstructed_command("\t", line[index + 1:])
+        command = _reconstructed_command("\t", line, index + 1)
         if command is not None:
             commands.add(command)
     return commands
 
 
-def _reconstructed_command(decoded: str, remainder: str) -> str | None:
+def _reconstructed_command(decoded: str, line: str, start: int) -> str | None:
+    # Matching by offset rather than by slicing: a decayed line carries runs of
+    # tabs, and slicing the remainder per tab makes this quadratic in line
+    # length on exactly the shape this detector exists to find.
     for decayed_character, suffix, command in DECAYED_LATEX_SUFFIXES:
-        if decayed_character != decoded or not remainder.startswith(suffix):
+        if decayed_character != decoded or not line.startswith(suffix, start):
             continue
-        following = remainder[len(suffix):len(suffix) + 1]
+        following_index = start + len(suffix)
+        following = line[following_index:following_index + 1]
         # Without this guard `\to` fires on a tab before `overline` and `\neq`
         # on a line beginning `equation`.
         if following.isalpha():
