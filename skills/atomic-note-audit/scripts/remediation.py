@@ -3,8 +3,9 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
+import unicodedata
 
-from markdown_parse import decayed_latex_commands
+from markdown_parse import DECAYED_LATEX_SUFFIXES, decayed_latex_commands
 
 
 class RemediationError(Exception):
@@ -18,6 +19,9 @@ class RemediationError(Exception):
 DESTRUCTIVE_OPERATIONS = {"split", "delete", "rename", "move"}
 SUPPORTED_OPERATIONS = {"edit", "split", "delete", "rename", "move", "relink"}
 EXECUTABLE_OPERATIONS = {"edit"}
+# The on-disk byte sequence each decayed command leaves behind, so a write
+# that hides one from the detector can be told from a write that repaired it.
+DECAYED_FORMS = {command: character + suffix for character, suffix, command in DECAYED_LATEX_SUFFIXES}
 REQUIRED_EDIT_KEYS = ("note_path", "find", "replace", "expected_occurrences")
 REQUIRED_PLAN_KEYS = ("plan_version", "audit_run_id", "mode", "operations")
 
@@ -106,17 +110,50 @@ def _assert_replacement_repairs(operation: dict[str, Any], index: int) -> None:
     the note has already been written. The likeliest authoring slip produces
     `find == replace`, because `"\\times"` in JSON is a tab followed by
     `imes` and only `"\\\\times"` is the command.
+
+    The two halves are a matched pair. `find` matches decayed LaTeX so it must
+    carry a control character, and `replace` restores the literal backslash
+    sequence so it must carry none. Requiring the first narrows this path to
+    control-character repairs (KTD5a, recorded so a later non-repair edit
+    widens the gate deliberately rather than meeting a surprise refusal), and
+    it also moves the refusal earlier: a `find` matching nothing would
+    otherwise be caught only by the count gate, after the note was read.
+
+    The rules ask about raw control characters rather than about decayed
+    commands because `decayed_latex_commands` reads a note: it masks code
+    spans, table rows and tab-indented lines. Those exemptions are right for a
+    note and wrong for a bare fragment, where a leading tab or pipe means
+    something else entirely once the fragment is spliced mid-line.
     """
     find, replace = operation["find"], operation["replace"]
     if find in replace:
         raise RemediationError(
             f"Operation {index} replacement contains the string it replaces, so it cannot repair"
         )
-    carried = decayed_latex_commands(replace)
-    if carried:
+    if not any(unicodedata.category(character) == "Cc" for character in find):
         raise RemediationError(
-            f"Operation {index} replacement itself carries decayed command(s) {', '.join(carried)}"
+            f"Operation {index} find carries no control character, "
+            "so it does not match the corruption this execute path repairs"
         )
+    carried = sorted({character for character in replace if _is_non_printing(character)})
+    if carried:
+        codepoints = ", ".join(f"U+{ord(character):04X}" for character in carried)
+        raise RemediationError(
+            f"Operation {index} replacement carries non-printing character(s) {codepoints}; "
+            "a replacement may contain only visible text"
+        )
+
+
+def _is_non_printing(character: str) -> bool:
+    """Control, format and line or paragraph separator characters.
+
+    The range matters beyond the C0 block this repair removes, because
+    `str.splitlines()` also breaks on U+0085, U+2028 and U+2029 while the
+    app's own `split("\\n")` does not. A replacement carrying one of those
+    moves the detector's line boundaries without moving the note's, which can
+    push an unrepaired command into a line the detector skips.
+    """
+    return unicodedata.category(character) in {"Cc", "Cf", "Zl", "Zp"}
 
 
 def _assert_executable_operation_names(operations: Any) -> None:
@@ -161,10 +198,31 @@ def assert_repair_landed(operation: dict[str, Any], before: str, after: str) -> 
     if operation["find"] in after:
         raise RemediationError(f"{note_path}: write did not land, the matched string is still present")
 
-    introduced = set(decayed_latex_commands(after)) - set(decayed_latex_commands(before))
+    visible_before = set(decayed_latex_commands(before))
+    visible_after = set(decayed_latex_commands(after))
+
+    introduced = visible_after - visible_before
     if introduced:
         raise RemediationError(
             f"{note_path}: write introduced decayed command(s) {', '.join(sorted(introduced))}"
+        )
+
+    # The mirror of `introduced`, and the half a set difference cannot see. A
+    # command may leave the detector's view only by being repaired: if its
+    # bytes are still in the note, the write hid corruption rather than fixing
+    # it, and corruption the audit can no longer see is worse than corruption
+    # it reports. Closing an inline-code span or starting a table row does
+    # this without any non-printing character, so the rules on `replace`
+    # cannot catch it.
+    concealed = sorted(
+        command
+        for command in visible_before - visible_after
+        if DECAYED_FORMS[command] in after
+    )
+    if concealed:
+        raise RemediationError(
+            f"{note_path}: write concealed decayed command(s) {', '.join(concealed)} "
+            "from the audit, leaving their bytes in the note"
         )
 
     if after != before.replace(operation["find"], operation["replace"]):

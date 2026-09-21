@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from copy import deepcopy
 import json
 import sys
 from pathlib import Path
@@ -89,11 +90,18 @@ def execute_plan(
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
-    written: list[str] = []
+    dispatched: list[str] = []
+    operations = None
     try:
         plan = json.loads(args.plan.read_text(encoding="utf-8"))
-        validate_plan(plan, destructive_allowed=args.destructive_allowed)
         if args.execute:
+            # The execute gate runs first and alone. It calls `validate_plan`
+            # itself, and running that first here would refuse an unexecutable
+            # operation with authoring advice — telling an operator to
+            # authorise or repair something that can never execute. Holding
+            # the returned list also lets the manifest document what the gates
+            # checked rather than a second reading of the plan.
+            operations = validate_executable_plan(plan)
             execute_plan(
                 plan,
                 ObsidianAdapter(
@@ -101,48 +109,86 @@ def main(argv: list[str] | None = None) -> int:
                     timeout_seconds=COMMAND_TIMEOUT_SECONDS,
                 ),
                 vault=args.vault,
-                on_written=written.append,
+                on_written=dispatched.append,
             )
-        manifest = _manifest(plan, executed=args.execute, written=written)
+        else:
+            validate_plan(plan, destructive_allowed=args.destructive_allowed)
+        manifest = _manifest(plan, executed=args.execute, dispatched=dispatched, operations=operations)
         _write_manifest(args.manifest, manifest)
     except (RemediationError, OSError, json.JSONDecodeError) as exc:
-        print(str(exc), file=sys.stderr)
-        if written:
-            _report_written(args.manifest, plan, written)
+        _warn(str(exc))
+        if dispatched:
+            _report_dispatched(args.manifest, plan, dispatched, operations)
         return 1
     except BaseException:
         # An interrupt or an unexpected error still leaves changed notes
         # behind, and the operator needs their names to roll them back.
-        if written:
-            _report_written(args.manifest, plan, written)
+        if dispatched:
+            _report_dispatched(args.manifest, plan, dispatched, operations)
         raise
     print(f"operation_count={manifest['operation_count']}")
     if args.execute:
-        print(f"written_note_count={len(written)}")
+        print(f"dispatched_note_count={len(dispatched)}")
     return 0
 
 
-def _report_written(manifest_path: Path, plan: dict, written: list[str]) -> None:
-    """Account for the notes a halted batch already changed.
+def _warn(message: str) -> None:
+    """Emit an operator-facing line, falling back when stderr itself fails.
 
-    The vault has changed, so this reports to stderr whether or not the
+    A broken pipe, a full disk, or a capture shim raising on write must not be
+    what loses the record of which notes changed, so stdout is tried next and
+    a failure of both is swallowed rather than raised over the account it was
+    trying to deliver. An interrupt still propagates, so a second Ctrl-C can
+    always stop the run.
+    """
+    for stream in (sys.stderr, sys.stdout):
+        try:
+            print(message, file=stream)
+            return
+        except Exception:
+            continue
+
+
+def _report_dispatched(
+    manifest_path: Path,
+    plan: dict,
+    dispatched: list[str],
+    operations: list[dict] | None,
+) -> None:
+    """Account for the notes a halted batch sent a write for.
+
+    The vault has changed, so the names are reported whether or not the
     manifest can be saved. Losing the account to a second failure would leave
     the operator without the list of notes to roll back.
     """
-    for note_path in written:
-        print(f"written_note={note_path}", file=sys.stderr)
-    print(f"written_note_count={len(written)}", file=sys.stderr)
+    for note_path in dispatched:
+        _warn(f"dispatched_note={note_path}")
+    _warn(f"dispatched_note_count={len(dispatched)}")
     try:
-        _write_manifest(manifest_path, _manifest(plan, executed=True, written=written))
+        _write_manifest(
+            manifest_path,
+            _manifest(plan, executed=True, dispatched=dispatched, operations=operations),
+        )
     except OSError as exc:
-        print(f"Unable to write manifest: {exc}", file=sys.stderr)
+        _warn(f"Unable to write manifest: {exc}")
 
 
-def _manifest(plan: dict, *, executed: bool, written: list[str]) -> dict:
+def _manifest(
+    plan: dict,
+    *,
+    executed: bool,
+    dispatched: list[str],
+    operations: list[dict] | None = None,
+) -> dict:
     manifest = build_dry_run_manifest(plan)
+    if operations is not None:
+        manifest["operations"] = deepcopy(operations)
+        manifest["operation_count"] = len(operations)
     if executed:
         manifest["executed"] = True
-        manifest["written_note_paths"] = list(written)
+        # Every note the run sent a write for. On a clean run each one is also
+        # a verified repair; on a halt the last one may not be.
+        manifest["dispatched_note_paths"] = list(dispatched)
     return manifest
 
 

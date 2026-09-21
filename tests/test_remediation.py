@@ -21,6 +21,7 @@ from shared.scripts.remediation import (
     RemediationError,
     assert_repair_landed,
     build_dry_run_manifest,
+    validate_executable_plan,
     validate_plan,
 )
 from shared.scripts.split_note import propose_split
@@ -300,16 +301,218 @@ class ExecutePathTest(unittest.TestCase):
         self.assertIn("replacement", str(raised.exception))
         self.assertEqual(adapter.calls, [])
 
-    def test_replacement_carrying_a_decayed_command_is_refused_before_any_write(self):
-        note_path = self.write_note("Carrier.md")
+    def test_replacement_carrying_a_control_character_is_refused_before_any_write(self):
+        """A replacement may never carry the corruption this repair removes.
+
+        The shapes below all read as clean to `decayed_latex_commands`, which
+        masks code spans, table rows and tab-indented lines. That masking is
+        right for a note and wrong for a bare fragment, whose leading tab or
+        pipe means something else entirely once spliced mid-line. The gate
+        therefore asks about raw control characters, not about commands.
+        """
+        cases = {
+            "mid-string": ("\\times \theta", "U+0009"),
+            "code-span-masked": ("`\theta`", "U+0009"),
+            "leading-tab-masked": ("\theta", "U+0009"),
+            "table-row-masked": ("|\theta", "U+0009"),
+            "bare-carriage-return": ("\\times\r", "U+000D"),
+            "injected-newline": ("\\times\nX", "U+000A"),
+        }
+        for label, (replace, codepoint) in cases.items():
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Carrier-{label}.md")
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture([edit_operation(note_path, replace=replace)])
+
+                with self.assertRaises(RemediationError) as raised:
+                    execute_plan(plan, adapter, vault="test-vault")
+
+                self.assertIn(codepoint, str(raised.exception))
+                self.assertEqual(adapter.calls, [])
+                self.assertEqual((self.root / note_path).read_bytes(), CORRUPTED_NOTE.encode("utf-8"))
+
+    def test_replacement_carrying_a_line_breaking_or_invisible_character_is_refused(self):
+        """Above U+007F sit the characters Python splits lines on.
+
+        `decayed_latex_commands` reads the note with `str.splitlines()`, which
+        breaks on U+0085, U+2028 and U+2029 where the app's `split("\\n")`
+        does not. A replacement carrying one moves the detector's line
+        boundaries and can push a decayed command into a skipped line.
+        """
+        for label, character in (
+            ("line-separator", " "),
+            ("paragraph-separator", " "),
+            ("next-line", "\u0085"),
+            ("c1-control", "\u0080"),
+            ("zero-width-space", "​"),
+            ("byte-order-mark", "﻿"),
+        ):
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Invisible-{label}.md")
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, replace=f"\\times{character}")]
+                )
+
+                with self.assertRaises(RemediationError) as raised:
+                    execute_plan(plan, adapter, vault="test-vault")
+
+                self.assertIn("U+", str(raised.exception))
+                self.assertEqual(adapter.calls, [])
+
+    def test_write_that_conceals_another_decayed_command_is_refused(self):
+        """The mirror of the `introduced` check, and the one it cannot see.
+
+        A set difference only catches commands added. These replacements
+        contain no control character and change exactly the bytes the plan
+        asked for, yet each one hides a second decayed command from the audit
+        by closing an inline-code span or starting a table row. Corruption the
+        detector can no longer see is worse than corruption it reports.
+        """
+        cases = {
+            "closes-a-code-span": (
+                "# T\n\nvalue $2\times7$ and $x\theta y` end\n",
+                "\times",
+                "\\times`",
+            ),
+            "starts-a-table-row": (
+                "# T\n\nvalue $2\times7$ and $x\theta y$\n",
+                "value $2\times",
+                "|value $2\\times",
+            ),
+        }
+        for label, (note, find, replace) in cases.items():
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Conceal-{label}.md", note)
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+                )
+
+                with self.assertRaises(RemediationError) as raised:
+                    execute_plan(plan, adapter, vault="test-vault")
+
+                self.assertIn("concealed", str(raised.exception))
+                self.assertIn("\\theta", str(raised.exception))
+
+    def test_warn_delivers_the_account_when_stderr_raises_a_non_os_error(self):
+        note_path = self.write_note("Shim.md")
+        plan_path = self.root / "plan.json"
+        blocked_manifest = self.root / "blocked"
+        blocked_manifest.mkdir()
+        plan_path.write_text(json.dumps(execute_plan_fixture([edit_operation(note_path)])), encoding="utf-8")
         adapter = FakeObsidianApp(self.root)
-        plan = execute_plan_fixture([edit_operation(note_path, replace="\\times \theta")])
+
+        class ShimStream(io.StringIO):
+            def write(self, *args, **kwargs):
+                raise RuntimeError("logging shim")
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stderr(ShimStream()):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    return_code = remediate_notes.main(
+                        [
+                            "--plan", str(plan_path),
+                            "--manifest", str(blocked_manifest),
+                            "--execute",
+                            "--vault", "test-vault",
+                        ]
+                    )
+
+        self.assertEqual(return_code, 1)
+        self.assertIn(note_path, stdout.getvalue())
+
+    def test_cli_names_the_real_reason_an_operation_cannot_execute(self):
+        """An operator must not be told to authorise an unexecutable operation."""
+        plan_path = self.root / "plan.json"
+        manifest_path = self.root / "manifest.json"
+        plan_path.write_text(
+            json.dumps(
+                execute_plan_fixture(
+                    [{"operation": "delete", "note_path": "Atomic Notes/Gone.md"}],
+                    mode="split-multi-note",
+                )
+            ),
+            encoding="utf-8",
+        )
+        adapter = FakeObsidianApp(self.root)
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                return_code = remediate_notes.main(
+                    [
+                        "--plan", str(plan_path),
+                        "--manifest", str(manifest_path),
+                        "--execute",
+                        "--vault", "test-vault",
+                    ]
+                )
+
+        self.assertEqual(return_code, 1)
+        self.assertIn("not an executable operation", stderr.getvalue())
+        self.assertEqual(adapter.calls, [])
+
+    def test_find_without_a_control_character_is_refused_before_any_write(self):
+        """KTD5a: this execute path is for control-character repairs only.
+
+        The refusal also moves earlier than the count gate would put it. A
+        `find` that matches nothing is otherwise caught only after the note
+        has been read, so requiring the corruption up front means an operation
+        that is not this repair never reaches the adapter at all.
+        """
+        note_path = self.write_note("PlainEdit.md", "# T\n\nPOTATO here\n")
+        adapter = FakeObsidianApp(self.root)
+        plan = execute_plan_fixture(
+            [edit_operation(note_path, find="POTATO", replace="CARROT", expected_occurrences=1)]
+        )
 
         with self.assertRaises(RemediationError) as raised:
             execute_plan(plan, adapter, vault="test-vault")
 
-        self.assertIn("\\theta", str(raised.exception))
+        self.assertIn("control character", str(raised.exception))
         self.assertEqual(adapter.calls, [])
+        self.assertEqual((self.root / note_path).read_bytes(), b"# T\n\nPOTATO here\n")
+
+    def test_both_decay_shapes_pass_the_replacement_rule(self):
+        for label, find, replace in (
+            ("tab-borne", "\times", "\\times"),
+            ("newline-borne", "\neq b$", "\\neq b$"),
+        ):
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Contract-{label}.md", f"# T\n\n$a{find}$\n")
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+                )
+
+                self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+                self.assertEqual(
+                    (self.root / note_path).read_bytes(),
+                    f"# T\n\n$a{replace}$\n".encode("utf-8"),
+                )
+
+    def test_manifest_documents_the_same_operations_that_were_executed(self):
+        """A plan may not hand the gates one list and the manifest another."""
+
+        class SplitBrain(dict):
+            def __getitem__(self, key):
+                if key == "operations":
+                    return [edit_operation("Atomic Notes/Decoy.md", find="ZZZZ")]
+                return super().__getitem__(key)
+
+        note_path = self.write_note("Real.md")
+        plan = SplitBrain(execute_plan_fixture([edit_operation(note_path)]))
+        adapter = FakeObsidianApp(self.root)
+
+        operations = validate_executable_plan(plan)
+        execute_plan(plan, adapter, vault="test-vault")
+        manifest = remediate_notes._manifest(
+            plan, executed=True, dispatched=[note_path], operations=operations
+        )
+
+        self.assertEqual(manifest["operations"][0]["note_path"], note_path)
+        self.assertEqual(manifest["operation_count"], 1)
+        self.assertEqual((self.root / note_path).read_bytes(), CLEAN_NOTE.encode("utf-8"))
 
     def test_read_back_hazards_are_checked_even_when_the_transport_obeyed_the_plan(self):
         """The backstop behind the pre-flight refusals above.
@@ -488,9 +691,60 @@ class ExecutePathTest(unittest.TestCase):
                         ]
                     )
 
-        self.assertIn(f"written_note={first}", stderr.getvalue())
+        self.assertIn(f"dispatched_note={first}", stderr.getvalue())
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        self.assertEqual(manifest["written_note_paths"], [first])
+        self.assertEqual(manifest["dispatched_note_paths"], [first])
+
+    def test_cli_falls_back_to_stdout_when_stderr_itself_fails(self):
+        note_path = self.write_note("Pipe.md")
+        plan_path = self.root / "plan.json"
+        blocked_manifest = self.root / "blocked"
+        blocked_manifest.mkdir()
+        plan_path.write_text(json.dumps(execute_plan_fixture([edit_operation(note_path)])), encoding="utf-8")
+        adapter = FakeObsidianApp(self.root)
+
+        class BrokenStream(io.StringIO):
+            def write(self, *args, **kwargs):
+                raise BrokenPipeError(32, "Broken pipe")
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stderr(BrokenStream()):
+                with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                    return_code = remediate_notes.main(
+                        [
+                            "--plan", str(plan_path),
+                            "--manifest", str(blocked_manifest),
+                            "--execute",
+                            "--vault", "test-vault",
+                        ]
+                    )
+
+        # Neither the refusal nor the account may be lost to a broken stderr.
+        self.assertEqual(return_code, 1)
+        self.assertIn(note_path, stdout.getvalue())
+
+    def test_cli_manifest_documents_the_operations_that_were_executed(self):
+        note_path = self.write_note("Documented.md")
+        plan_path = self.root / "plan.json"
+        manifest_path = self.root / "manifest.json"
+        plan_path.write_text(json.dumps(execute_plan_fixture([edit_operation(note_path)])), encoding="utf-8")
+        adapter = FakeObsidianApp(self.root)
+
+        with patch("shared.scripts.remediate_notes.ObsidianAdapter", lambda **kwargs: adapter):
+            with contextlib.redirect_stdout(io.StringIO()):
+                remediate_notes.main(
+                    [
+                        "--plan", str(plan_path),
+                        "--manifest", str(manifest_path),
+                        "--execute",
+                        "--vault", "test-vault",
+                    ]
+                )
+
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        # Built from the list the gates validated, not re-read from the plan.
+        self.assertEqual(manifest["operations"][0]["find"], "\times")
+        self.assertEqual(manifest["dispatched_note_paths"], [note_path])
 
     def test_cli_reports_written_notes_when_the_manifest_cannot_be_saved(self):
         note_path = self.write_note("Stranded.md")
@@ -616,10 +870,10 @@ class ExecutePathTest(unittest.TestCase):
                 )
 
         self.assertEqual(return_code, 0)
-        self.assertIn("written_note_count=1", stdout.getvalue())
+        self.assertIn("dispatched_note_count=1", stdout.getvalue())
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertTrue(manifest["executed"])
-        self.assertEqual(manifest["written_note_paths"], [note_path])
+        self.assertEqual(manifest["dispatched_note_paths"], [note_path])
         self.assertEqual((self.root / note_path).read_bytes(), CLEAN_NOTE.encode("utf-8"))
 
     def test_cli_execute_refuses_unapproved_plan_without_traceback(self):
