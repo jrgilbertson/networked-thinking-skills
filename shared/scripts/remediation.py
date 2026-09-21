@@ -22,6 +22,11 @@ EXECUTABLE_OPERATIONS = {"edit"}
 # The on-disk byte sequence each decayed command leaves behind, so a write
 # that hides one from the detector can be told from a write that repaired it.
 DECAYED_FORMS = {command: character + suffix for character, suffix, command in DECAYED_LATEX_SUFFIXES}
+# The characters the detector's masking turns on. A replacement may not change
+# how many of these a note holds, because moving a mask can hide corruption
+# that the note still carries. A replacement cannot introduce a line break --
+# non-printing characters are refused -- so these are the only masks reachable.
+MASKING_CHARACTERS = {"`": "backtick", "|": "table pipe"}
 REQUIRED_EDIT_KEYS = ("note_path", "find", "replace", "expected_occurrences")
 REQUIRED_PLAN_KEYS = ("plan_version", "audit_run_id", "mode", "operations")
 
@@ -142,6 +147,12 @@ def _assert_replacement_repairs(operation: dict[str, Any], index: int) -> None:
             f"Operation {index} replacement carries non-printing character(s) {codepoints}; "
             "a replacement may contain only visible text"
         )
+    for character, structure in MASKING_CHARACTERS.items():
+        if find.count(character) != replace.count(character):
+            raise RemediationError(
+                f"Operation {index} replacement changes the note's masking structure: "
+                f"it does not keep the {structure} count of its find string"
+            )
 
 
 def _is_non_printing(character: str) -> bool:

@@ -360,6 +360,60 @@ class ExecutePathTest(unittest.TestCase):
                 self.assertIn("U+", str(raised.exception))
                 self.assertEqual(adapter.calls, [])
 
+    def test_replacement_that_changes_masking_structure_is_refused_before_any_write(self):
+        """Close the masking vectors at the source, not at the read-back.
+
+        A replacement may not add or remove a backtick or a table pipe. Those
+        are the characters the detector's masking turns on, and a replacement
+        cannot introduce a line break — control characters are already refused
+        — so they are the only way a write can move a mask.
+
+        The read-back check behind this one is set-based on command names, so
+        it cannot see a write that masks one occurrence of a command while
+        another occurrence of the same command stays visible. This rule can,
+        because it never lets the masking move at all.
+        """
+        cases = {
+            "adds-a-backtick": ("\times", "\\times`"),
+            "adds-a-table-pipe": ("\times", "|\\times"),
+            "adds-a-fence": ("\times", "\\times```"),
+            "removes-a-backtick": ("`\times", "\\times"),
+        }
+        for label, (find, replace) in cases.items():
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Masking-{label}.md")
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+                )
+
+                with self.assertRaises(RemediationError) as raised:
+                    execute_plan(plan, adapter, vault="test-vault")
+
+                self.assertIn("masking", str(raised.exception))
+                self.assertEqual(adapter.calls, [])
+
+    def test_write_that_hides_one_occurrence_of_a_still_visible_command_is_refused(self):
+        """The case the set-based concealment check structurally cannot see.
+
+        Two `\\theta` occurrences, one visible and one already inside a code
+        span. Adding a single backtick re-pairs every later backtick and flips
+        which one is masked, so the command stays in `decayed_latex_commands`
+        both before and after while a previously visible occurrence is hidden.
+        """
+        note = "# T\n\n$2\times7$ A \theta B `code` C \theta D\n"
+        note_path = self.write_note("Flip.md", note)
+        adapter = FakeObsidianApp(self.root)
+        plan = execute_plan_fixture(
+            [edit_operation(note_path, replace="\\times`", expected_occurrences=1)]
+        )
+
+        with self.assertRaises(RemediationError):
+            execute_plan(plan, adapter, vault="test-vault")
+
+        self.assertEqual(adapter.calls, [])
+        self.assertEqual((self.root / note_path).read_bytes(), note.encode("utf-8"))
+
     def test_write_that_conceals_another_decayed_command_is_refused(self):
         """The mirror of the `introduced` check, and the one it cannot see.
 
@@ -389,9 +443,18 @@ class ExecutePathTest(unittest.TestCase):
                     [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
                 )
 
+                # The masking rule now stops both of these in pre-flight, so
+                # no write is attempted at all.
                 with self.assertRaises(RemediationError) as raised:
                     execute_plan(plan, adapter, vault="test-vault")
+                self.assertIn("masking", str(raised.exception))
+                self.assertEqual(adapter.calls, [])
 
+                # The read-back stays as the backstop, for a concealment the
+                # static rule does not anticipate.
+                operation = {"note_path": note_path, "find": find, "replace": replace}
+                with self.assertRaises(RemediationError) as raised:
+                    assert_repair_landed(operation, note, note.replace(find, replace))
                 self.assertIn("concealed", str(raised.exception))
                 self.assertIn("\\theta", str(raised.exception))
 
