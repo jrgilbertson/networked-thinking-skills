@@ -1119,12 +1119,18 @@ class ExecutePathTest(unittest.TestCase):
         and reads back the bytes that arrived.
         """
         landed = self.root / "argv.bin"
+        eval_code = build_replace_in_note_code(
+            "Atomic Notes/A.md",
+            find="\times",
+            replace="\\times",
+            expected_occurrences=2,
+        )
         code = ObsidianAdapter(binary=sys.executable).run(
             [
                 "-c",
                 "import sys, pathlib; pathlib.Path(sys.argv[1]).write_bytes(sys.argv[2].encode())",
                 str(landed),
-                f"code={build_replace_in_note_code('Atomic Notes/A.md', find='\times', replace='\\times', expected_occurrences=2)}",
+                "code=" + eval_code,
             ]
         )
 
