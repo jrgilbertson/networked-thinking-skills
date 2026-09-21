@@ -32,10 +32,10 @@ class ReportGenerationTest(unittest.TestCase):
 
         self.assertIn("# Atomic Note Audit", report)
         self.assertIn("- Run ID: fixture-run", report)
-        self.assertIn("- Total notes: 10", report)
-        self.assertIn("- Average score: 73.3 / 100", report)
-        self.assertIn("- No-change notes: 3 / 10 (30.0%)", report)
-        self.assertIn("- Bucket counts: P0 2, P1 1, P2 2, P3 2, No changes 3", report)
+        self.assertIn("- Total notes: 13", report)
+        self.assertIn("- Average score: 76.7 / 100", report)
+        self.assertIn("- No-change notes: 4 / 13 (30.8%)", report)
+        self.assertIn("- Bucket counts: P0 2, P1 1, P2 4, P3 2, No changes 4", report)
         self.assertIn("- Model judgment: not run; deterministic audit complete", report)
         for heading in [
             "## P0 Critical Remediation",

@@ -41,7 +41,7 @@ def load_fixture_manifest() -> dict[str, object]:
 def judgment_for(
     note_path: str,
     *,
-    prompt_version: str = "1.0.4",
+    prompt_version: str = "1.0.5",
     findings: list[dict[str, object]] | None = None,
     dimension_adjustments: dict[str, int] | None = None,
     factual_risk: bool = False,
@@ -112,7 +112,7 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         self.assertEqual(changed["dimensions"]["dae_quality"], 90)
         self.assertEqual(changed["model_judgment"]["findings"][0]["code"], "weak_analogy")
         self.assertEqual(merged_manifest["priority_counts"]["P3"], 7)
-        self.assertEqual(merged_manifest["priority_counts"]["no_change"], 2)
+        self.assertEqual(merged_manifest["priority_counts"]["no_change"], 3)
         self.assertEqual(merged_manifest["validation_status"], "passed")
 
         for row in merged_rows:

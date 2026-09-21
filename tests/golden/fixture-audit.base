@@ -21,6 +21,9 @@ views:
         - 'file.path == "Atomic Notes/202601010108 Malformed Anki note.md"'
         - 'file.path == "Atomic Notes/202601010109 Duplicate candidate note.md"'
         - 'file.path == "Atomic Notes/202601010110 A source-backed atomic note keeps one durable idea in DAE form and adds optional trailing sections for connections and provenance.md"'
+        - 'file.path == "Atomic Notes/202601010111 Tab decayed equation note.md"'
+        - 'file.path == "Atomic Notes/202601010112 Newline decayed equation note.md"'
+        - 'file.path == "Atomic Notes/202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it.md"'
     order:
       - file.name
       - file.path
@@ -50,6 +53,8 @@ views:
       or:
         - 'file.path == "Atomic Notes/202601010106 Factual risk note.md"'
         - 'file.path == "Atomic Notes/202601010108 Malformed Anki note.md"'
+        - 'file.path == "Atomic Notes/202601010111 Tab decayed equation note.md"'
+        - 'file.path == "Atomic Notes/202601010112 Newline decayed equation note.md"'
     order:
       - file.name
       - file.path
@@ -71,6 +76,7 @@ views:
         - 'file.path == "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples.md"'
         - 'file.path == "Atomic Notes/202601010107 Optional Anki cards can reinforce an atomic note when the prompt tests the central claim instead of repeating the heading.md"'
         - 'file.path == "Atomic Notes/202601010110 A source-backed atomic note keeps one durable idea in DAE form and adds optional trailing sections for connections and provenance.md"'
+        - 'file.path == "Atomic Notes/202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it.md"'
     order:
       - file.name
       - file.path
