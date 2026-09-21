@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Deterministic detection of LaTeX commands that decayed into control
+  characters, reported as `decayed_latex_command` with the command it
+  reconstructs.
+- `remediate_notes.py --execute`, with `--vault` and `--obsidian-binary`, which
+  applies approved `edit` operations through the running Obsidian app behind
+  per-note occurrence-count and read-back gates.
 - `managing-obsidian-tasks`, a portable Obsidian CLI workflow for durable task
   notes, review-before-create capture, lifecycle transitions, and derived Bases.
 - Runner adapters for model judgments in the audit workflow.
@@ -13,6 +19,18 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Rubric `1.0.3` and model prompt `1.0.5` add `decayed_latex_command`, loss 18,
+  for a LaTeX command that decayed into the control character its escape
+  sequence decodes to. The rubric changed because the loss table gained a code;
+  the prompt changed because its finding table now carries that code and its
+  message. `decayed_latex_command` is deterministic and survives model judgment.
+- Doctrine `1.0.7` states that equations are written as LaTeX and that replacing
+  a corrupted equation with plain text is not an acceptable response to a
+  transport failure.
+- Remediation context names the Obsidian CLI's `content=` escape decoding as the
+  cause of decayed LaTeX commands, replacing an incorrect attribution to Python
+  triple-quoted strings, and cites the audit command that finds the defect
+  instead of describing a manual control-character scan.
 - Doctrine `1.0.6`, rubric `1.0.2`, and model prompt `1.0.3` require the Analogy
   sentence to start with a capital letter, including a leading wikilink alias.
   `analogy_sentence_case` is a deterministic finding that survives model

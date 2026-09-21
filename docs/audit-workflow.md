@@ -160,4 +160,5 @@ matching audit row.
 For reviewed rows, model findings are the final semantic quality judgment. The
 apply step retains only deterministic audit findings the single-note model
 cannot reliably infer: `missing_frontmatter`, `missing_parent`,
-`malformed_anki`, `duplicate_overlap`, and `analogy_sentence_case`.
+`malformed_anki`, `duplicate_overlap`, `analogy_sentence_case`, and
+`decayed_latex_command`.

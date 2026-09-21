@@ -61,6 +61,10 @@ every available fact into one by default.
   is the number of trials and $p$ is the probability of success. Prefer a
   Cloze on the same note when symbol recall is the goal (Anki-YAGNI); do not
   auto-create a second Anki note for every formula.
+- Equations: write mathematics as LaTeX inside Markdown math delimiters. If a
+  write or a sync corrupts an equation, restore the LaTeX command it decayed
+  from. Replacing the equation with a plain-text description is not an
+  acceptable response to a transport failure.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
   relational structure in natural prose. The first visible letter of that

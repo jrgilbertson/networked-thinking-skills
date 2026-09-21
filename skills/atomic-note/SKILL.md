@@ -45,7 +45,8 @@ repo's shared references (see project AGENTS and install docs).
    a prose-first sentence (filename source). Doctrine owns placement, labels,
    and Anki visibility. Capitalize the Analogy's first visible letter unless it
    starts with inline math; if it starts with a wikilink, capitalize that alias
-   only.
+   only. Write equations as LaTeX, and if a transport corrupts one, restore the
+   LaTeX command rather than substituting a plain-text description.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze

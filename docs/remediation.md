@@ -44,6 +44,43 @@ python3 scripts/remediate_notes.py --plan /path/to/remediation-plan.json --manif
   merge, remove Anki markers, or rewrite the held note until the learner
   approves the specific outcome.
 
+## Execute Approved Edits
+
+`--execute` applies a plan's `edit` operations to the vault. Every write goes
+through the running Obsidian app; there is no filesystem fallback. It requires
+`--vault`, and `--obsidian-binary` overrides the default `obsidian` when that
+name resolves to the GUI app binary rather than the CLI:
+
+```bash
+python3 scripts/remediate_notes.py --plan /path/to/remediation-plan.json --manifest /tmp/networked-thinking-remediation/execute-manifest.json --execute --vault "My Vault" --obsidian-binary obsidian-cli
+```
+
+Execution is narrower than dry-run validation. `edit` is the only executable
+operation, so a plan carrying any other operation writes nothing. Each
+operation must state `approved: true`, even though `edit` passes dry-run
+validation unapproved, and must carry `note_path`, `find`, `replace`, and a
+positive `expected_occurrences`. The whole plan is checked before the first
+write. `find` and `replace` are checked as a matched pair: `find` must carry a
+control character, because that is the corruption being matched, and `replace`
+must carry none, because it restores the literal backslash sequence. A
+`replace` that still contains `find` is refused too, since it cannot repair.
+
+Two gates then guard each note. Immediately before the write, the note's
+current content must contain exactly `expected_occurrences` of `find`; a note
+that changed since the plan was written is refused rather than repaired
+blindly. Immediately after the write, the note is read back and must have the
+matched string gone, no newly introduced decayed commands, and no change beyond
+the replacement itself.
+
+A failed gate halts the batch and leaves the completed writes in place. The
+command then reports `dispatched_note=<path>` for each note it sent a write
+for and `dispatched_note_count=<count>`, and the manifest records
+`executed: true` with `dispatched_note_paths`. That list is the operator's
+account of what to roll back. It names every note a write was sent for, including
+one whose write may not have completed, so inspect each rather than assuming it
+changed. On success the command prints `operation_count=` and
+`dispatched_note_count=`.
+
 ## Obsidian CLI Routing
 
 Run preflight before any vault mutation:
