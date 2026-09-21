@@ -799,10 +799,15 @@ def decayed_latex_commands(markdown: str) -> list[str]:
     masked = _mask_inline_code_spans(_mask_fenced_code_blocks(body))
     commands: set[str] = set()
     inside_display_math = False
+    previous_line_leaves_math_open = False
 
     for line in masked.splitlines():
         starts_inside_display_math = inside_display_math
-        if line.count("$$") % 2 == 1:
+        # The line break before this line carried the decoded `\n`, so only a
+        # break the surrounding math had already opened can be a decayed one.
+        break_inside_math = starts_inside_display_math or previous_line_leaves_math_open
+        previous_line_leaves_math_open = _leaves_inline_math_open(line)
+        if _is_display_math_fence(line):
             inside_display_math = not inside_display_math
         if _is_table_row(line):
             continue
@@ -810,9 +815,21 @@ def decayed_latex_commands(markdown: str) -> list[str]:
         # produces one inside math, so context decides which it is.
         if _has_tab_indent(line) and not starts_inside_display_math:
             continue
-        commands.update(_decayed_commands_in_line(line))
+        commands.update(_decayed_commands_in_line(line, break_inside_math))
 
     return sorted(commands)
+
+
+def _is_display_math_fence(line: str) -> bool:
+    # Counting `$$` by parity instead would let one stray marker, such as the
+    # `$$$` of a price tier, invert display math for the rest of the note. A
+    # single-line `$$...$$` equation opens and closes on its own line, so
+    # tracking only the fence form still reads it correctly.
+    return line.strip() == "$$"
+
+
+def _leaves_inline_math_open(line: str) -> bool:
+    return line.replace("$$", "").count("$") % 2 == 1
 
 
 def _is_table_row(line: str) -> bool:
@@ -832,11 +849,12 @@ def _has_tab_indent(line: str) -> bool:
     return False
 
 
-def _decayed_commands_in_line(line: str) -> set[str]:
+def _decayed_commands_in_line(line: str, break_inside_math: bool) -> set[str]:
     commands: set[str] = set()
-    command = _reconstructed_command("\n", line, 0)
-    if command is not None:
-        commands.add(command)
+    if break_inside_math:
+        command = _reconstructed_command("\n", line, 0)
+        if command is not None:
+            commands.add(command)
     for index, character in enumerate(line):
         if character != "\t":
             continue

@@ -983,6 +983,22 @@ class DecayedLatexCommandsTest(unittest.TestCase):
         )
         self.assertEqual(decayed_latex_commands(markdown), [r"\text"])
 
+    def test_space_then_tab_indented_line_outside_math_does_not_match(self):
+        # The partner of the test above it: outside display math a line whose
+        # tab follows a space is still indented code, so a tab-only reading of
+        # the indent would report it.
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "Example code:",
+                "",
+                " " + TAB + "ext{total} = 5",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
     def test_tab_indented_line_outside_math_does_not_match(self):
         markdown = "\n".join(
             [
@@ -991,6 +1007,54 @@ class DecayedLatexCommandsTest(unittest.TestCase):
                 "Example code:",
                 "",
                 TAB + "an = compute(3)",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_prose_dollars_do_not_silence_a_later_display_block(self):
+        # `$$$` carries an odd count of `$$`, so reading display math by parity
+        # leaves the real block below it closed and the corruption unreported.
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "Price tiers run from $ to $$$ in the guide.",
+                "",
+                "$$",
+                TAB + "frac{a}{b} + 1",
+                "$$",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\tfrac"])
+
+    def test_prose_dollars_do_not_open_math_over_a_later_indented_line(self):
+        # The same parity inversion the other way: indented code after the
+        # prose reads as display math and its tab reports a command.
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "Price tiers run from $ to $$$ in the guide.",
+                "",
+                "Example code:",
+                "",
+                TAB + "an = compute(3)",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_prose_beginning_with_eq_and_a_period_does_not_match(self):
+        # Nothing opened a math span, so `eq.` here is ordinary prose rather
+        # than the tail of an equation broken across a line.
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "The bound holds for every pair.",
+                "eq. 3 shows the result.",
                 "",
             ]
         )
