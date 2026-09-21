@@ -4,6 +4,13 @@ import argparse
 from pathlib import Path
 
 
+# A bare tab standing where a LaTeX command should begin is the defect the
+# `decayed_latex_command` finding detects, so the fixtures name it rather than
+# hiding a control character inside the note text. The newline-borne form is
+# written as a real line break in the note body it corrupts.
+DECAYED_TAB = "\t"
+
+
 NOTE_CONTENT: dict[str, str] = {
     "Atomic Notes/202601010101 A clean atomic note explains one durable idea in plain language and keeps the claim small enough to test against examples.md": """---
 aliases:
@@ -240,6 +247,94 @@ Sources:
 
 1. Synthetic fixture handbook, 2026.
 """,
+    "Atomic Notes/202601010111 Tab decayed equation note.md": rf"""---
+aliases:
+  - tab decayed equation
+tags:
+  - atomic-note
+---
+
+# Tab decayed equation note
+
+A LaTeX command whose name begins with t can reach the file as a bare tab
+followed by the rest of its letters, so the equation still matches every math
+pattern the audit checks.
+
+It is like a price tag that lost its currency symbol: the number survives, and
+the thing that gave the number meaning does not.
+
+For example, a note meant to carry $3 \times 4 = 12$ instead holds
+$3 {DECAYED_TAB}imes 4 = 12$, and the card built from it renders 3imes4.
+
+Reference:
+
+- [[Atomic Note Quality]]
+
+Sources:
+
+1. Synthetic fixture handbook, 2026.
+""",
+    "Atomic Notes/202601010112 Newline decayed equation note.md": r"""---
+aliases:
+  - newline decayed equation
+tags:
+  - atomic-note
+---
+
+# Newline decayed equation note
+
+A LaTeX command whose name begins with n reaches the file as a line feed, so
+the equation holding it splits across two lines and its opening dollar sign
+never closes.
+
+It is like a sentence cut in half by a page break: both halves survive, and
+neither half reads.
+
+For example, a note meant to carry $a\neq b$ instead ends one line at $a
+eq b$, which leaves the comparison as plain letters on the card.
+
+Reference:
+
+- [[Atomic Note Quality]]
+
+Sources:
+
+1. Synthetic fixture handbook, 2026.
+""",
+    "Atomic Notes/202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it.md": rf"""---
+aliases:
+  - quoted control character
+tags:
+  - atomic-note
+---
+
+# Quoted control character note
+
+A tab inside a fenced code block or a table cell is quoted data rather than a
+command that decayed into it.
+
+It is like a photograph of a broken window: the frame says the damage is being
+shown rather than happening here.
+
+For example, this note quotes the corrupted bytes so a reader can recognize
+them on sight:
+
+```text
+3{DECAYED_TAB}imes 4
+```
+
+| Quoted bytes | Reading |
+|---|---|
+| 3{DECAYED_TAB}imes 4 | a tab standing where `\times` should begin |
+
+Reference:
+
+- [[Atomic Note Quality]]
+
+Sources:
+
+1. Synthetic fixture handbook, 2026.
+""",
     "Structure Notes/Atomic Note Quality.md": """---
 aliases:
   - atomic note review hub
@@ -260,6 +355,12 @@ Use this synthetic hub to compare notes that pass or fail atomic-note review.
 ## Review candidates
 
 - [[202601010109 Duplicate candidate note]]
+
+## Transport corruption examples
+
+- [[202601010111 Tab decayed equation note]]
+- [[202601010112 Newline decayed equation note]]
+- [[202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it]]
 """,
     "Templates/Atomic Note Template.md": """---
 aliases: []

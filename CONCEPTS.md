@@ -34,6 +34,9 @@ The project-specific contract for valid Atomic Note shape, authoring rules, Anki
 ### Deterministic Audit
 The non-model review path that evaluates Atomic Notes from structural and textual rules before any model judgment is involved.
 
+### Decayed LaTeX Command
+A LaTeX command that reached the vault as the control character its escape sequence decodes to, such as `\times` stored as a tab followed by `imes`. The Obsidian CLI decodes `\t` and `\n` in its `content=` argument, so commands whose names start with `t` or `n` are the ones at risk. Deterministic audit reports these as `decayed_latex_command` and names the command it reconstructs, which is also the repair.
+
 ### Model Judgment Runner
 A local agent invocation path for model judgment collection that executes the shared audit prompt and returns validated model judgment objects without changing downstream JSONL contracts.
 

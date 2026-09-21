@@ -289,6 +289,26 @@ class SchemaValidationTest(unittest.TestCase):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(schema["properties"]["factual_risk"]["type"], "boolean")
 
+    def test_row_carrying_a_decayed_latex_command_finding_validates(self):
+        row = dict(VALID_ROW)
+        row["findings"] = [
+            {
+                "code": "decayed_latex_command",
+                "message": (
+                    "Restore `\\times`, which decayed into a control character, "
+                    "and write the note so the escape is not decoded again."
+                ),
+            }
+        ]
+        row["recommendations"] = [
+            {
+                "mode": FINDING_RECOMMENDATION_MODES["decayed_latex_command"],
+                "message": row["findings"][0]["message"],
+            }
+        ]
+
+        validate_audit_row(row, default_scan=True)
+
     def test_schema_finding_code_enums_match_source_of_truth(self):
         audit_schema = json.loads(AUDIT_ROW_SCHEMA_PATH.read_text(encoding="utf-8"))
         model_schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))

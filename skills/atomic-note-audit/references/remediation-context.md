@@ -28,11 +28,52 @@ target strings, or replacement strings in shell quotes when they may contain
 apostrophes, backticks, shell substitutions, or wikilinks; even small code-span
 replacements can be interpreted by the shell before Obsidian sees them.
 If a helper language builds the payload, also make the payload escape-safe for
-Markdown math and backslashes. For example, Python triple-quoted strings can
-turn LaTeX commands such as `\frac`, `\begin`, or `\text` into control
-characters unless they are raw strings or otherwise escaped. Before running
-Obsidian-to-Anki after a bulk write, scan the touched files for unexpected
-control characters so corrupted formulas do not sync into Anki.
+Markdown math and backslashes. The Obsidian CLI decodes `\t` and `\n` in its
+`content=` argument after the shell has already parsed the command line, so
+any LaTeX command whose name starts with `t` or `n` reaches the vault
+corrupted — `\theta`, one of the seven commands the audit detects, lands as a
+bare tab followed by `heta`. A raw string in the helper language does not
+prevent this; the decoding happens inside the CLI, after the helper has
+handed the argument over. GitHub issue #44 tracks the LaTeX-safe `content=`
+write path for app-context writes.
+
+The audit detects exactly seven of those commands — `\times`, `\text`,
+`\tfrac`, `\theta`, `\to`, `\tan`, and `\neq` — listed in
+`DECAYED_LATEX_SUFFIXES` in `scripts/markdown_parse.py`. Other
+`t`/`n`-leading commands decay by the same mechanism but are outside that
+detected set; issue #44 names `\nabla`, `\nu`, and `\tilde` as commands it
+also corrupts, and `\top` decays the same way. A note corrupted only by one
+of those audits as clean. A clean audit proves none of the seven detected
+commands decayed; it does not prove the note carries no decayed LaTeX at
+all.
+
+After a bulk write, and before running Obsidian-to-Anki, audit the vault for
+this defect:
+
+```bash
+python3 scripts/audit_notes.py --vault /path/to/vault --run-id post-write-YYYYMMDDHHMM --jsonl /tmp/networked-thinking-audit/post-write.jsonl --manifest /tmp/networked-thinking-audit/post-write-manifest.json
+```
+
+Rows carrying `decayed_latex_command` name the commands that decayed. This
+command ships with `atomic-note-audit`; install both skills to use it.
+Obsidian-to-Anki syncs only notes that carry a card block, so this atomic-note
+scan already covers everything that can reach a card.
+
+## Approve LaTeX Repairs Before Execute
+
+`scripts/remediate_notes.py --execute` is the only path that writes a
+decayed-LaTeX repair into a note. `edit` is deliberately not one of
+`DESTRUCTIVE_OPERATIONS`, so it does not need `--destructive-allowed` and
+passes dry-run validation unapproved; the code's only approval check is
+`validate_executable_plan`, which refuses any operation lacking
+`approved: true` immediately before `--execute` runs it.
+
+Set `approved: true` only from an owner-approved plan. Before setting it on
+any `edit` operation, present the owner a batch preview naming each note
+path, the decayed command being repaired, and the occurrence count. Obtain
+the owner's explicit approval before setting `approved: true`. Never
+self-approve an `edit` operation on the owner's behalf; the owner, not the
+agent, decides whether a repair is written to the vault.
 
 ## Improve In Place
 

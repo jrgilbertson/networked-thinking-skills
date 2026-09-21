@@ -30,6 +30,13 @@ class FindingCodeContractTest(unittest.TestCase):
         self.assertIn("mixed-case", message)
         self.assertIn("inline code", message)
 
+    def test_decayed_latex_command_message_is_generic(self):
+        message = FINDING_MESSAGES["decayed_latex_command"]
+
+        self.assertIn("control character", message)
+        self.assertIn("LaTeX command", message)
+        self.assertNotIn(r"\times", message)
+
     def test_model_prompt_explains_canonical_filename_alignment(self):
         prompt = " ".join(
             (ROOT / "shared/references/model-judgment-prompt.md")

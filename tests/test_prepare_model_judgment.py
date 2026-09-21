@@ -42,7 +42,7 @@ class PrepareModelJudgmentTest(unittest.TestCase):
         rows = [json.loads(line) for line in collector_input.splitlines()]
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["note_path"], NOTE_PATH)
-        self.assertEqual(rows[0]["prompt_version"], "1.0.5")
+        self.assertEqual(rows[0]["prompt_version"], "1.0.6")
 
     def test_cli_writes_output_when_requested(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -18,3 +18,9 @@ Use this synthetic hub to compare notes that pass or fail atomic-note review.
 ## Review candidates
 
 - [[202601010109 Duplicate candidate note]]
+
+## Transport corruption examples
+
+- [[202601010111 Tab decayed equation note]]
+- [[202601010112 Newline decayed equation note]]
+- [[202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it]]

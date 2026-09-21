@@ -36,6 +36,14 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         message="Balance START and END markers for Anki card blocks.",
         recommendation_mode="improve-in-place",
     ),
+    "decayed_latex_command": FindingCodeSpec(
+        loss=18,
+        message=(
+            "Restore the LaTeX command a control character decayed into, and "
+            "write the note so the transport cannot decode the escape again."
+        ),
+        recommendation_mode="improve-in-place",
+    ),
     "anki_yagni": FindingCodeSpec(
         loss=5,
         message="Confirm this Anki card is worth memorizing for the intended learner before keeping it.",

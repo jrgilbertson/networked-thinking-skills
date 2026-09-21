@@ -52,6 +52,13 @@ DAE doctrine failures include missing DAE content and overlong Definitions. A
 Definition longer than 50 rendered words receives `definition_too_long` so it can
 be shortened without misclassifying the note as a multi-note or reference note.
 
+`decayed_latex_command` means a LaTeX command in the note decayed into the
+control character its escape sequence decodes to, so `\times` is stored as a tab
+followed by `imes`. The corrupted span still reads as math to every other check,
+so the finding reports the command it reconstructs. Remediation restores that
+command; substituting plain text for the equation is not a repair. The finding
+is deterministic and survives model judgment.
+
 `dae_sentence_case` is a deterministic polish check: the first visible letter
 of the Definition, Analogy, and Example must be capitalized, including a leading
 wikilink alias. A section that opens with inline math or inline code may keep

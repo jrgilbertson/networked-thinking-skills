@@ -32,6 +32,7 @@ DETERMINISTIC_RETAINED_CODES = frozenset(
         "malformed_anki",
         "duplicate_overlap",
         "dae_sentence_case",
+        "decayed_latex_command",
     }
 )
 

@@ -31,6 +31,7 @@ Do not preserve an issue unless it truly applies to the note content you reviewe
 | `definition_too_long` | 20 | Shorten the Definition to 10-50 rendered words. |
 | `missing_parent` | 8 | Link this note from a structure note. |
 | `malformed_anki` | 18 | Balance START and END markers for Anki card blocks. |
+| `decayed_latex_command` | 18 | Restore the LaTeX command a control character decayed into, and write the note so the transport cannot decode the escape again. |
 | `anki_yagni` | 5 | Confirm this Anki card is worth memorizing for the intended learner before keeping it. |
 | `multi_note` | 45 | Split bundled ideas into separate atomic notes. |
 | `misfiled_reference` | 35 | Move source-material notes out of Atomic Notes or rewrite them as DAE notes. |

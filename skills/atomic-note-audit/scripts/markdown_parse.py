@@ -27,8 +27,21 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
+INLINE_MATH_SPAN_RE = re.compile(r"\$[^$\r\n]+\$")
 LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*(`+)(?:(?!\1)[^\r\n])+?\1")
 NON_PROSE_OPENER_RE = re.compile(r"^\s*(?:#|[-*+]\s|\d+[.)]\s|>|\||!\[|[\w-]+::)")
+# Control character, the letters left behind, and the command they reconstruct
+# to. Longest suffix first, so the guard on the following character decides
+# only the genuinely ambiguous tails.
+DECAYED_LATEX_SUFFIXES = (
+    ("\t", "imes", r"\times"),
+    ("\t", "frac", r"\tfrac"),
+    ("\t", "heta", r"\theta"),
+    ("\t", "ext", r"\text"),
+    ("\t", "an", r"\tan"),
+    ("\n", "eq", r"\neq"),
+    ("\t", "o", r"\to"),
+)
 
 
 @dataclass(frozen=True)
@@ -798,3 +811,118 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
         if character.isalnum():
             return character.isalpha() and character.islower()
     return False
+
+
+def decayed_latex_commands(markdown: str) -> list[str]:
+    """Return the LaTeX commands a note's control characters reconstruct to.
+
+    A decoder that expands ``\\t`` and ``\\n`` in the text it writes turns a
+    command whose name starts with ``t`` or ``n`` into a bare control character
+    followed by the rest of its letters, so ``\\times`` lands on disk as a tab
+    followed by ``imes``. The corrupted span still matches every math pattern
+    the audit uses, so only the control character itself reveals it.
+    """
+    _, body = extract_frontmatter(markdown)
+    masked = _mask_inline_code_spans(_mask_fenced_code_blocks(body))
+    commands: set[str] = set()
+    inside_display_math = False
+    previous_line_leaves_math_open = False
+
+    for line in masked.splitlines():
+        starts_inside_display_math = inside_display_math
+        # The line break before this line carried the decoded `\n`, so only a
+        # break the surrounding math had already opened can be a decayed one.
+        break_inside_math = starts_inside_display_math or previous_line_leaves_math_open
+        previous_line_leaves_math_open = _leaves_inline_math_open(line)
+        if _is_display_math_fence(line):
+            inside_display_math = not inside_display_math
+        if _is_table_row(line):
+            # A bare tab in a cell is alignment or quoted bytes, but a tab
+            # inside `$...$` is a command that decayed inside math, so scan
+            # the math spans and leave the rest of the row alone.
+            commands.update(
+                _decayed_commands_in_line(_inline_math_only(line), break_inside_math)
+            )
+            continue
+        # CommonMark reads a leading tab as indented code, but this corruption
+        # produces one inside math, so context decides which it is.
+        if _has_tab_indent(line) and not starts_inside_display_math:
+            continue
+        commands.update(_decayed_commands_in_line(line, break_inside_math))
+
+    return sorted(commands)
+
+
+def _is_display_math_fence(line: str) -> bool:
+    # Counting `$$` by parity instead would let one stray marker, such as the
+    # `$$$` of a price tier, invert display math for the rest of the note. A
+    # single-line `$$...$$` equation opens and closes on its own line, so
+    # tracking only the fence form still reads it correctly.
+    return line.strip() == "$$"
+
+
+def _leaves_inline_math_open(line: str) -> bool:
+    return line.replace("$$", "").count("$") % 2 == 1
+
+
+def _inline_math_only(line: str) -> str:
+    """Blank everything outside `$...$`, keeping every offset where it was.
+
+    The stand-in is a space, which can neither carry a control character nor
+    open math, so a scan of the result reports only what sits inside inline
+    math. Offsets are preserved because the reconstruction guard reads the
+    characters around a match to decide whether it is genuinely decayed.
+    """
+    blanked = [" "] * len(line)
+    for span in INLINE_MATH_SPAN_RE.finditer(line):
+        blanked[span.start() : span.end()] = line[span.start() : span.end()]
+    return "".join(blanked)
+
+
+def _is_table_row(line: str) -> bool:
+    for character in line:
+        if character in " \t":
+            continue
+        return character == "|"
+    return False
+
+
+def _has_tab_indent(line: str) -> bool:
+    for character in line:
+        if character == "\t":
+            return True
+        if character != " ":
+            return False
+    return False
+
+
+def _decayed_commands_in_line(line: str, break_inside_math: bool) -> set[str]:
+    commands: set[str] = set()
+    if break_inside_math:
+        command = _reconstructed_command("\n", line, 0)
+        if command is not None:
+            commands.add(command)
+    for index, character in enumerate(line):
+        if character != "\t":
+            continue
+        command = _reconstructed_command("\t", line, index + 1)
+        if command is not None:
+            commands.add(command)
+    return commands
+
+
+def _reconstructed_command(decoded: str, line: str, start: int) -> str | None:
+    # Matching by offset rather than by slicing: a decayed line carries runs of
+    # tabs, and slicing the remainder per tab makes this quadratic in line
+    # length on exactly the shape this detector exists to find.
+    for decayed_character, suffix, command in DECAYED_LATEX_SUFFIXES:
+        if decayed_character != decoded or not line.startswith(suffix, start):
+            continue
+        following_index = start + len(suffix)
+        following = line[following_index:following_index + 1]
+        # Without this guard `\to` fires on a tab before `overline` and `\neq`
+        # on a line beginning `equation`.
+        if following.isalpha():
+            continue
+        return command
+    return None

@@ -36,6 +36,12 @@ An overlong Definition is a P1 DAE doctrine failure reported as
 `definition_too_long`. This means the note should be shortened in place, not
 automatically split or rehomed.
 
+`decayed_latex_command` flags a LaTeX command that decayed into the control
+character its escape sequence decodes to, such as `\times` stored as a tab
+followed by `imes`. The finding names the command it reconstructs so the repair
+restores the equation rather than replacing it with prose. It is deterministic
+and survives model judgment.
+
 `dae_sentence_case` flags a Definition, Analogy, or Example whose first visible
 letter is lowercase, including a leading wikilink alias. Inline-math openers
 such as `$n$ is like...`, inline-code openers such as `` `range` is like...``,
