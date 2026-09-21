@@ -42,10 +42,13 @@ followed by `imes`. The finding names the command it reconstructs so the repair
 restores the equation rather than replacing it with prose. It is deterministic
 and survives model judgment.
 
-`analogy_sentence_case` flags an Analogy whose first visible letter is
-lowercase, including a leading wikilink alias. Inline-math openers such as
-`$n$ is like...` are allowed. The finding is deterministic and survives model
-judgment.
+`dae_sentence_case` flags a Definition, Analogy, or Example whose first visible
+letter is lowercase, including a leading wikilink alias. Inline-math openers
+such as `$n$ is like...`, inline-code openers such as `` `range` is like...``,
+mixed-case first words such as `gRPC`, and first words with no letter to
+capitalize such as `404 is...` or `https://example.com is...` are allowed.
+A note gets the finding once however many sections start lowercase. The finding
+is deterministic and survives model judgment.
 
 `factual_risk` is for sentence-level claims that need verification before
 reliance: empirical numbers, current/versioned claims, source-attributed claims,

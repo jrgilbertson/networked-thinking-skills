@@ -39,7 +39,7 @@ Do not preserve an issue unless it truly applies to the note content you reviewe
 | `not_atomic` | 25 | Rewrite the note around one durable concept. |
 | `weak_definition` | 18 | Rewrite the Definition so it is complete, concise, and standalone. |
 | `weak_analogy` | 15 | Replace the Analogy with a familiar concrete referent and shared relation. |
-| `analogy_sentence_case` | 8 | Capitalize the first visible letter of the Analogy, including a leading wikilink alias. Analogies that open with inline math may keep the math token first. |
+| `dae_sentence_case` | 8 | Capitalize the first visible letter of the Definition, Analogy, or Example, including a leading wikilink alias. A section that opens with inline math or inline code may keep that token first, a mixed-case first word such as gRPC or pH stays as written, and a first word with no letter to capitalize, such as a numeral or a URL, is exempt. |
 | `weak_example` | 15 | Replace the Example with a concrete case that starts with 'For example,'. |
 | `unclear` | 15 | Rewrite unclear or misleading prose before relying on the note. |
 | `title_body_mismatch` | 15 | Align each mismatched naming pair: make the timestamp-stripped filename exactly match the reader-visible applicable Definition source without its final period, using the approved rename flow when that pair differs; make the YAML title and H1 use the same short concept name, and correct that concept if it differs from the Definition. |

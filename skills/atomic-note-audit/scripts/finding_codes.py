@@ -79,12 +79,14 @@ FINDING_CODE_SPECS: dict[str, FindingCodeSpec] = {
         message="Replace the Analogy with a familiar concrete referent and shared relation.",
         recommendation_mode="improve-in-place",
     ),
-    "analogy_sentence_case": FindingCodeSpec(
+    "dae_sentence_case": FindingCodeSpec(
         loss=8,
         message=(
-            "Capitalize the first visible letter of the Analogy, including a "
-            "leading wikilink alias. Analogies that open with inline math may "
-            "keep the math token first."
+            "Capitalize the first visible letter of the Definition, Analogy, or Example, "
+            "including a leading wikilink alias. A section that opens with inline math "
+            "or inline code may keep that token first, a mixed-case first word such "
+            "as gRPC or pH stays as written, and a first word with no letter to "
+            "capitalize, such as a numeral or a URL, is exempt."
         ),
         recommendation_mode="improve-in-place",
     ),

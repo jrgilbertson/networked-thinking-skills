@@ -27,6 +27,8 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
+LEADING_INLINE_CODE_RE = re.compile(r"^[*_]*(`+)(?:(?!\1)[^\r\n])+?\1")
+NON_PROSE_OPENER_RE = re.compile(r"^\s*(?:#|[-*+]\s|\d+[.)]\s|>|\||!\[|[\w-]+::)")
 # Control character, the letters left behind, and the command they reconstruct
 # to. Longest suffix first, so the guard on the following character decides
 # only the genuinely ambiguous tails.
@@ -722,51 +724,65 @@ def _render_wikilinks_for_word_count(markdown: str) -> str:
     return WIKILINK_RE.sub(replace, markdown)
 
 
-def analogy_paragraphs(markdown: str) -> list[str]:
-    """Return detected Analogy paragraphs from every DAE location in the note."""
-    found: list[str] = []
-    paragraphs = _prose_paragraphs(_plain_prose_dae_region(markdown))
-    if paragraphs:
-        analogy_index = _first_matching_index(
-            paragraphs[1:],
-            lambda paragraph: _looks_like_analogy(paragraph) and not _starts_with_example(paragraph),
-        )
-        if analogy_index is not None:
-            found.append(paragraphs[1:][analogy_index])
-    headed = _dae_heading_sections(markdown).get("analogy")
+def dae_section_paragraphs(markdown: str) -> list[tuple[str, str]]:
+    """Return (section, first paragraph) pairs from every DAE location in the note."""
+    found: list[tuple[str, str]] = []
+    headed = _dae_heading_sections(markdown)
     if headed:
-        headed_paragraphs = _prose_paragraphs(headed)
-        if headed_paragraphs:
-            found.append(headed_paragraphs[0])
+        # Read section bodies: a headed note's plain-prose region opens with the
+        # `## Definition` heading line, which is not a Definition sentence.
+        for section in ("definition", "analogy", "example"):
+            headed_paragraphs = _drop_leading_non_prose(_prose_paragraphs(headed.get(section, "")))
+            if headed_paragraphs:
+                found.append((section, headed_paragraphs[0]))
+    else:
+        found.extend(_dae_paragraphs(_prose_paragraphs(_plain_prose_dae_region(markdown)), has_definition=True))
     for card in _extract_anki_card_texts(markdown):
         card_type, body = _split_card_type(card)
         if card_type == "basic":
             back_text = _extract_back_text(body)
             if back_text:
-                back_paragraphs = _prose_paragraphs(back_text)
-                analogy = _first_matching_paragraph(
-                    back_paragraphs[1:],
-                    lambda paragraph: _looks_like_analogy(paragraph)
-                    and not _starts_with_example(paragraph),
-                )
-                if analogy is not None:
-                    found.append(analogy)
+                found.extend(_dae_paragraphs(_prose_paragraphs(back_text), has_definition=True))
         elif card_type == "cloze":
-            _, extra = _split_extra_text(body)
+            before_extra, extra = _split_extra_text(body)
+            cloze_paragraphs = _drop_leading_non_prose(_prose_paragraphs(before_extra))
+            if cloze_paragraphs:
+                found.append(("definition", cloze_paragraphs[0]))
             if extra:
-                extra_paragraphs = _prose_paragraphs(extra)
-                analogy = _first_matching_paragraph(
-                    extra_paragraphs,
-                    lambda paragraph: _looks_like_analogy(paragraph)
-                    and not _starts_with_example(paragraph),
-                )
-                if analogy is not None:
-                    found.append(analogy)
+                found.extend(_dae_paragraphs(_prose_paragraphs(extra), has_definition=False))
     return found
 
 
-def analogy_starts_lowercase(markdown: str) -> bool:
-    return any(_paragraph_starts_lowercase(paragraph) for paragraph in analogy_paragraphs(markdown))
+def _drop_leading_non_prose(paragraphs: list[str]) -> list[str]:
+    # Tag lines, lists, inline fields, images, tables, and callouts are not DAE sentences.
+    rest = paragraphs
+    while rest and NON_PROSE_OPENER_RE.match(rest[0]):
+        rest = rest[1:]
+    return rest
+
+
+def _dae_paragraphs(paragraphs: list[str], *, has_definition: bool) -> list[tuple[str, str]]:
+    found: list[tuple[str, str]] = []
+    rest = paragraphs
+    if has_definition:
+        rest = _drop_leading_non_prose(rest)
+        if rest:
+            found.append(("definition", rest[0]))
+            rest = rest[1:]
+    analogy = _first_matching_paragraph(
+        rest,
+        lambda paragraph: _looks_like_analogy(paragraph) and not _starts_with_example(paragraph),
+    )
+    if analogy is not None:
+        found.append(("analogy", analogy))
+    example = _first_matching_paragraph(rest, _starts_with_example)
+    if example is not None:
+        found.append(("example", example))
+    return found
+
+
+def dae_section_starts_lowercase(markdown: str) -> bool:
+    return any(_paragraph_starts_lowercase(paragraph) for _, paragraph in dae_section_paragraphs(markdown))
 
 
 def _paragraph_starts_lowercase(paragraph: str) -> bool:
@@ -776,13 +792,23 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
     visible = visible.strip()
     visible = re.sub(r"^(?:Extra|Back):\s*", "", visible, flags=re.IGNORECASE).strip()
     visible = re.sub(r"^(?:[-*+]\s+|\d+[.)]\s+|>\s*)+", "", visible).strip()
+    if LEADING_INLINE_CODE_RE.match(visible):
+        # Code is case-sensitive, so a closed leading code span stays as written.
+        return False
     visible = re.sub(r"^[*_`]+", "", visible).lstrip()
     visible = HTML_TAG_RE.sub("", visible).lstrip()
     if not visible or LEADING_INLINE_MATH_RE.match(visible):
         return False
-    for character in visible:
-        if character.isalpha():
-            return character.islower()
+    first_word = visible.split(None, 1)[0]
+    if any(character.isupper() for character in first_word):
+        # Terms such as gRPC, pH, or iOS are correctly lowercase-initial.
+        return False
+    if "://" in first_word:
+        return False
+    # Judge only the first word: a numeral opener such as "404 is" has no letter to capitalize.
+    for character in first_word:
+        if character.isalnum():
+            return character.isalpha() and character.islower()
     return False
 
 

@@ -10,6 +10,6 @@ dependencies = []
 
 [tool.networked-thinking]
 schema_version = "1.0.0"
-doctrine_version = "1.0.7"
-rubric_version = "1.0.3"
-prompt_version = "1.0.5"
+doctrine_version = "1.0.8"
+rubric_version = "1.0.4"
+prompt_version = "1.0.6"

@@ -19,24 +19,28 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
-- Rubric `1.0.3` and model prompt `1.0.5` add `decayed_latex_command`, loss 18,
+- Doctrine `1.0.8`, rubric `1.0.4`, and model prompt `1.0.6` require the
+  Definition, Analogy, and Example to start with a capital letter, including a
+  leading wikilink alias. `dae_sentence_case` is one deterministic finding for
+  all three sections that survives model judgment. A section that opens with
+  inline math or inline code may keep that token first, a mixed-case first
+  word such as `gRPC` or `pH` is exempt, and a first word with no letter to
+  capitalize, such as a numeral or a URL, is exempt. This replaces the Analogy-only rule and finding code
+  from doctrine `1.0.6`, rubric `1.0.2`, and prompt `1.0.3`-`1.0.4`, which never
+  shipped in a release. The prompt bump makes resume and apply reject stored
+  judgments that carry the old code.
+- Rubric `1.0.4` and model prompt `1.0.6` add `decayed_latex_command`, loss 18,
   for a LaTeX command that decayed into the control character its escape
   sequence decodes to. The rubric changed because the loss table gained a code;
   the prompt changed because its finding table now carries that code and its
   message. `decayed_latex_command` is deterministic and survives model judgment.
-- Doctrine `1.0.7` states that equations are written as LaTeX and that replacing
+- Doctrine `1.0.8` states that equations are written as LaTeX and that replacing
   a corrupted equation with plain text is not an acceptable response to a
   transport failure.
 - Remediation context names the Obsidian CLI's `content=` escape decoding as the
   cause of decayed LaTeX commands, replacing an incorrect attribution to Python
   triple-quoted strings, and cites the audit command that finds the defect
   instead of describing a manual control-character scan.
-- Doctrine `1.0.6`, rubric `1.0.2`, and model prompt `1.0.3` require the Analogy
-  sentence to start with a capital letter, including a leading wikilink alias.
-  `analogy_sentence_case` is a deterministic finding that survives model
-  judgment. Analogies that open with inline math may keep the math token first.
-- Model prompt `1.0.4` states that inline-math openers are exempt from
-  `analogy_sentence_case`, matching the detector and rubric.
 - Doctrine `1.0.5` puts formulas that complete a concept in the Definition with
   variable labels after a prose-first sentence; `Reference:` holds alternate
   forms and other Obsidian-only extras. Basic Front is a retrieval question for

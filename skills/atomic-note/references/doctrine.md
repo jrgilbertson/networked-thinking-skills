@@ -40,6 +40,16 @@ every available fact into one by default.
 
 ## DAE Rules
 
+Each DAE section is a sentence, so its first visible letter is capitalized. If
+a section starts with a wikilink, capitalize the visible alias
+(`[[Note|Creatine]] is like...`); keep mid-sentence aliases lowercase. Four
+openers stay as written: inline math (`$n$ is like...`), inline code
+(`` `range` is like...``, because code is case-sensitive), a mixed-case
+first word that is correctly lowercase-initial, such as `gRPC`, `pH`, or `iOS`,
+and a first word with no letter to capitalize, such as a numeral or a URL
+(`404 is...`, `https://example.com is...`). An all-lowercase first word such as
+`curl` is capitalized.
+
 - Definition: 10-50 rendered words. Rendered word counts use the visible text a
   reader sees, so `[[Target note|alias text]]` counts as `alias text`. When the
   concept has a common acronym or initialism that will be used in the note,
@@ -67,13 +77,9 @@ every available fact into one by default.
   acceptable response to a transport failure.
 - Analogy: map the concept to a familiar concrete pattern. Start with a clear
   `<concept> is like <familiar referent>` mapping, then explain the shared
-  relational structure in natural prose. The first visible letter of that
-  sentence is capitalized. If the sentence starts with a wikilink, capitalize
-  the visible alias (`[[Note|Creatine]] is like...`); keep mid-sentence aliases
-  lowercase. Analogies that open with inline math may keep the math token first
-  (`$n$ is like...`). Do not default to colon or semicolon templates; use
-  punctuation only when the sentence would read naturally outside the note
-  format.
+  relational structure in natural prose. Do not default to colon or semicolon
+  templates; use punctuation only when the sentence would read naturally outside
+  the note format.
 - Example: concrete and specific. It starts with `For example,` and uses named
   tools, real numbers, real domains, or real situations. After the Definition
   has labeled the formula's variables, reuse those symbols in the Example

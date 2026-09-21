@@ -10,7 +10,7 @@ An individual Networked Thinking note that captures one durable concept in a sel
 ### DAE
 The required explanatory shape for an Atomic Note: Definition, Analogy, and Example content that can be read by a person and checked by deterministic audit rules.
 
-The Analogy is a sentence whose first visible letter is capitalized, including a leading wikilink alias. Mid-sentence aliases stay lowercase. Analogies that open with inline math may keep the math token first.
+Each DAE section is a sentence whose first visible letter is capitalized, including a leading wikilink alias. Mid-sentence aliases stay lowercase. A section that opens with inline math or inline code may keep that token first, a mixed-case first word such as gRPC stays as written, and a first word with no letter to capitalize, such as a numeral or a URL, is exempt.
 
 ### Non-Anki Atomic Note
 An Atomic Note whose DAE content lives directly in visible note prose rather than inside an Anki card block.
