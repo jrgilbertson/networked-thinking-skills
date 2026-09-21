@@ -45,8 +45,16 @@ repo's shared references (see project AGENTS and install docs).
    a prose-first sentence (filename source). Doctrine owns placement, labels,
    and Anki visibility. Capitalize the Analogy's first visible letter unless it
    starts with inline math; if it starts with a wikilink, capitalize that alias
-   only. Write equations as LaTeX, and if a transport corrupts one, restore the
-   LaTeX command rather than substituting a plain-text description.
+   only. Write equations as LaTeX. If the Obsidian CLI's `content=` decoding
+   corrupts one — a command whose name starts with `t` or `n`, such as
+   `\times`, lands as a bare tab or newline followed by the rest of its
+   letters — restore the LaTeX command rather than substituting a plain-text
+   description: rewrite the affected span through the quote-safe, escape-safe
+   transport in `references/remediation-context.md`, then read the note back
+   and verify the command is a literal backslash sequence again, not a
+   control character. This skill alone can fix the note being authored;
+   install `atomic-note-audit` as well for a vault-wide scan or a batch
+   repair of notes already written.
 4. Apply the two naming pairs. The timestamp-prefixed filename uses the
    reader-visible wording of the applicable Definition source without its final
    period. The timestamp, `.md` extension, Markdown wrappers, and Anki cloze

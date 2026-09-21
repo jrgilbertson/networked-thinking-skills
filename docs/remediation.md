@@ -69,8 +69,9 @@ Two gates then guard each note. Immediately before the write, the note's
 current content must contain exactly `expected_occurrences` of `find`; a note
 that changed since the plan was written is refused rather than repaired
 blindly. Immediately after the write, the note is read back and must have the
-matched string gone, no newly introduced decayed commands, and no change beyond
-the replacement itself.
+matched string gone, no newly introduced decayed commands, no decayed command
+concealed from the audit rather than repaired, and no change beyond the
+replacement itself.
 
 A failed gate halts the batch and leaves the completed writes in place. The
 command then reports `dispatched_note=<path>` for each note it sent a write

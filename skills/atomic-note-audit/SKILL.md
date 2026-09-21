@@ -138,14 +138,31 @@ remediation plan, or produce an explicit per-note destructive dry run for a
 single user-directed operation. Load `references/remediation-context.md`
 before planning any vault mutation.
 
+Validate a plan and produce a dry-run manifest with `scripts/remediate_notes.py
+--plan <plan.json> --manifest <manifest.json>`, adding `--destructive-allowed`
+to let a `split`, `delete`, `rename`, or `move` operation pass validation
+without writing anything. The only path that writes a repair into the vault is
+`scripts/remediate_notes.py --execute --vault "<Vault Name>"`, with
+`--obsidian-binary` to override the default `obsidian` when that name resolves
+to the GUI app binary rather than the CLI. `edit` is the only executable
+operation, and every operation it runs must already carry `approved: true`
+under the gate in `references/remediation-context.md`. The command reports
+`operation_count=` and, on `--execute`, `dispatched_note_count=`; a halted
+batch also prints `dispatched_note=<path>` for each note it sent a write for,
+and the manifest's `dispatched_note_paths` is the operator's account of what
+to inspect and roll back.
+
 Require official Obsidian skills and preflight before vault mutations. Use the
 actual Obsidian CLI binary; the registered `obsidian` command is the default,
 and the bundled resolver rejects the macOS GUI executable before using its CLI
-fallback. Require approval before destructive
-operations. If a sandboxed agent cannot attach to the running Obsidian app,
-rerun the Obsidian CLI step in an approved unsandboxed context instead of using
-raw filesystem edits for app-context operations. When working from an installed
-skill, prefer `python3 scripts/obsidian_cli.py` for app-context CLI commands.
+fallback. Require approval before destructive operations. `edit` operations
+that repair decayed LaTeX are not destructive, but still require the owner's
+explicit approval before `--execute`; see the repair approval gate in
+`references/remediation-context.md`. If a sandboxed agent cannot attach to the
+running Obsidian app, rerun the Obsidian CLI step in an approved unsandboxed
+context instead of using raw filesystem edits for app-context operations. When
+working from an installed skill, prefer `python3 scripts/obsidian_cli.py` for
+app-context CLI commands.
 
 For delete, split, move, or rename dry runs, report the target path, Anki
 status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
