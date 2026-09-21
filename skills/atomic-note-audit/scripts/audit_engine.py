@@ -13,6 +13,7 @@ from markdown_parse import (
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
+    decayed_latex_commands,
     extract_structural_heading_lines,
     extract_frontmatter,
     extract_wikilinks,
@@ -40,6 +41,7 @@ DIMENSION_PENALTIES = {
     "definition_too_long": {"structure": 20, "dae_quality": 35, "clarity": 25},
     "missing_parent": {"connections": 60},
     "malformed_anki": {"metadata_card_safety": 50, "clarity": 10},
+    "decayed_latex_command": {"metadata_card_safety": 40, "clarity": 30},
     "multi_note": {"structure": 30, "atomicity": 70, "clarity": 20},
     "misfiled_reference": {"structure": 30, "atomicity": 40, "dae_quality": 50},
     "weak_dae": {"dae_quality": 25, "clarity": 15},
@@ -277,6 +279,7 @@ def _findings_for_note(
     has_dae = dae_analysis.present
     anki_counts = count_anki_blocks(content)
     finding_codes: list[str] = []
+    composed_messages: dict[str, str] = {}
 
     if frontmatter is None:
         finding_codes.append("missing_frontmatter")
@@ -301,14 +304,37 @@ def _findings_for_note(
         finding_codes.append("duplicate_overlap")
     if analogy_starts_lowercase(content):
         finding_codes.append("analogy_sentence_case")
+    decayed_commands = decayed_latex_commands(content)
+    if decayed_commands:
+        finding_codes.append("decayed_latex_command")
+        composed_messages["decayed_latex_command"] = _decayed_latex_message(decayed_commands)
 
     return [
         {
             "code": code,
-            "message": FINDING_MESSAGES[code],
+            "message": composed_messages.get(code, FINDING_MESSAGES[code]),
         }
         for code in finding_codes
     ]
+
+
+def _decayed_latex_message(commands: list[str]) -> str:
+    """Name the commands this note's control characters reconstruct to.
+
+    The repair needs the command name, and a finding carries only a code and a
+    message, so the message is the only place a per-note name can live.
+    """
+    quoted = [f"`{command}`" for command in commands]
+    if len(quoted) == 1:
+        named = quoted[0]
+        standing = "A control character stands where the command should begin."
+    else:
+        named = f"{', '.join(quoted[:-1])} and {quoted[-1]}"
+        standing = "Control characters stand where the commands should begin."
+    return (
+        f"Restore {named}. {standing} Write the note so the transport cannot "
+        "decode the escape again."
+    )
 
 
 def _load_structure_targets(structure_folder: Path) -> set[str]:

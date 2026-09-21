@@ -19,6 +19,11 @@ from shared.scripts.schema_validation import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AUDIT_JSONL = REPO_ROOT / "tests" / "golden" / "fixture-audit.jsonl"
 MANIFEST_JSON = REPO_ROOT / "tests" / "golden" / "fixture-manifest.json"
+# A per-note message of the shape the audit composes, naming one command.
+DECAYED_LATEX_NOTE_MESSAGE = (
+    "Restore `\\times`, which decayed into a control character, and write the "
+    "note so the escape is not decoded again."
+)
 
 
 def load_fixture_rows() -> list[dict[str, object]]:
@@ -233,6 +238,51 @@ class ApplyModelJudgmentsTest(unittest.TestCase):
         changed = next(row for row in merged_rows if row["note_path"] == rows[0]["note_path"])
         self.assertIn("analogy_sentence_case", {finding["code"] for finding in changed["findings"]})
         self.assertEqual(changed["score"], 92)
+
+    def test_decayed_latex_command_survives_empty_model_findings(self):
+        rows = load_fixture_rows()
+        manifest = load_fixture_manifest()
+        rows[0] = deepcopy(rows[0])
+        rows[0]["findings"] = [
+            {
+                "code": "decayed_latex_command",
+                "message": DECAYED_LATEX_NOTE_MESSAGE,
+            }
+        ]
+        judgments = judgments_for_rows(rows)
+
+        merged_rows, _ = apply_model_judgments(rows, manifest, judgments)
+
+        changed = next(row for row in merged_rows if row["note_path"] == rows[0]["note_path"])
+        self.assertIn("decayed_latex_command", {finding["code"] for finding in changed["findings"]})
+
+    def test_retained_decayed_latex_message_still_names_the_command(self):
+        rows = load_fixture_rows()
+        manifest = load_fixture_manifest()
+        rows[0] = deepcopy(rows[0])
+        rows[0]["findings"] = [
+            {
+                "code": "decayed_latex_command",
+                "message": DECAYED_LATEX_NOTE_MESSAGE,
+            }
+        ]
+        judgments = judgments_for_rows(rows)
+
+        merged_rows, _ = apply_model_judgments(rows, manifest, judgments)
+
+        changed = next(row for row in merged_rows if row["note_path"] == rows[0]["note_path"])
+        message = next(
+            finding["message"]
+            for finding in changed["findings"]
+            if finding["code"] == "decayed_latex_command"
+        )
+        self.assertEqual(message, DECAYED_LATEX_NOTE_MESSAGE)
+        self.assertIn(r"\times", message)
+        self.assertNotEqual(message, FINDING_MESSAGES["decayed_latex_command"])
+        self.assertIn(
+            DECAYED_LATEX_NOTE_MESSAGE,
+            [recommendation["message"] for recommendation in changed["recommendations"]],
+        )
 
     def test_missing_judgment_fails_by_default(self):
         rows = load_fixture_rows()

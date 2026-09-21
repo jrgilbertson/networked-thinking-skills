@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 
 from shared.scripts.audit_engine import (
+    DIMENSION_NAMES,
     audit_vault,
     _dae_section_word_counts,
     _factual_risk_sentences,
@@ -36,6 +37,48 @@ For example, an audit test can create a temporary note called Test Note and link
 END
 """
 
+# These are plain Python strings, so `\times` and `\tfrac` below are literally
+# the tab-plus-letters the transport leaves behind, not the LaTeX commands.
+DECAYED_TIMES_MARKDOWN = """---
+aliases: []
+title: Square side doubling
+---
+
+# Square side doubling
+
+START
+Basic
+Front: What happens to the area of a square when each side doubles?
+
+Back: Doubling each side of a square scales its area by $2 \times 2$, so the area quadruples.
+
+Square side doubling is like widening a rug along both edges: the floor it hides grows quicker than the trim around it.
+
+For example, a square with sides of three units hides nine units of floor, and doubling both sides hides thirty-six.
+END
+"""
+
+CLEAN_TIMES_MARKDOWN = DECAYED_TIMES_MARKDOWN.replace("\times", r"\times")
+
+DECAYED_TFRAC_MARKDOWN = """---
+aliases: []
+title: Half-step interval
+---
+
+# Half-step interval
+
+START
+Basic
+Front: What does a half-step interval divide?
+
+Back: A half-step interval divides a whole step into $\tfrac{1}{2}$ of its width.
+
+A half-step interval is like a stair tread cut in two: each part carries you the same way, only half as far.
+
+For example, a ladder whose rungs sit a half-step apart needs twice as many rungs to reach the same height.
+END
+"""
+
 
 def rows_by_stem(rows):
     return {Path(row["note_path"]).stem: row for row in rows}
@@ -43,6 +86,10 @@ def rows_by_stem(rows):
 
 def finding_codes(row):
     return {finding["code"] for finding in row["findings"]}
+
+
+def finding_message(row, code):
+    return next(finding["message"] for finding in row["findings"] if finding["code"] == code)
 
 
 class AuditEngineTest(unittest.TestCase):
@@ -195,6 +242,50 @@ END
         )
 
         self.assertIn("analogy_sentence_case", finding_codes(row))
+
+    def test_decayed_latex_command_is_flagged(self):
+        row = self.audit_single_note(
+            DECAYED_TIMES_MARKDOWN,
+            stem="202601010205 Doubling each side of a square scales its area",
+        )
+
+        self.assertIn("decayed_latex_command", finding_codes(row))
+
+    def test_clean_twin_of_a_decayed_note_keeps_its_score_and_dimensions(self):
+        row = self.audit_single_note(
+            CLEAN_TIMES_MARKDOWN,
+            stem="202601010206 Doubling each side of a square scales its area",
+        )
+
+        self.assertNotIn("decayed_latex_command", finding_codes(row))
+        self.assertTrue(row["clean"])
+        self.assertEqual(row["score"], 100)
+        self.assertEqual(row["dimensions"], {name: 100 for name in DIMENSION_NAMES})
+
+    def test_decayed_latex_command_message_names_the_reconstructed_command(self):
+        row = self.audit_single_note(
+            DECAYED_TIMES_MARKDOWN,
+            stem="202601010207 Doubling each side of a square scales its area",
+        )
+
+        self.assertIn(r"\times", finding_message(row, "decayed_latex_command"))
+
+    def test_notes_decayed_from_different_commands_carry_different_messages(self):
+        times_row = self.audit_single_note(
+            DECAYED_TIMES_MARKDOWN,
+            stem="202601010208 Doubling each side of a square scales its area",
+        )
+        tfrac_row = self.audit_single_note(
+            DECAYED_TFRAC_MARKDOWN,
+            stem="202601010209 A half-step interval divides a whole step",
+        )
+
+        times_message = finding_message(times_row, "decayed_latex_command")
+        tfrac_message = finding_message(tfrac_row, "decayed_latex_command")
+
+        self.assertIn(r"\tfrac", tfrac_message)
+        self.assertNotIn(r"\times", tfrac_message)
+        self.assertNotEqual(times_message, tfrac_message)
 
     def test_clean_dae_note_is_clean(self):
         rows, _ = audit_vault(FIXTURE_VAULT, run_id="test-run")
