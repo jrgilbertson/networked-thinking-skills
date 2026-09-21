@@ -360,24 +360,30 @@ class ExecutePathTest(unittest.TestCase):
                 self.assertIn("U+", str(raised.exception))
                 self.assertEqual(adapter.calls, [])
 
-    def test_replacement_that_changes_masking_structure_is_refused_before_any_write(self):
+    def test_replacement_that_is_not_the_exact_reconstruction_is_refused(self):
         """Close the masking vectors at the source, not at the read-back.
 
-        A replacement may not add or remove a backtick or a table pipe. Those
-        are the characters the detector's masking turns on, and a replacement
-        cannot introduce a line break — control characters are already refused
-        — so they are the only way a write can move a mask.
+        A replacement must be its find string with the decay restored, and
+        nothing else. Enumerating the characters that move a mask does not
+        close this: backtick and table pipe were the first two, tilde fences,
+        HTML comments and display-math delimiters are three more, and the next
+        reader would have to guess whether the list is complete. Requiring the
+        exact reconstruction has no list to be incomplete.
 
         The read-back check behind this one is set-based on command names, so
         it cannot see a write that masks one occurrence of a command while
         another occurrence of the same command stays visible. This rule can,
-        because it never lets the masking move at all.
+        because it never lets the note change in any other way.
         """
         cases = {
             "adds-a-backtick": ("\times", "\\times`"),
             "adds-a-table-pipe": ("\times", "|\\times"),
-            "adds-a-fence": ("\times", "\\times```"),
+            "adds-a-backtick-fence": ("\times", "\\times```"),
+            "adds-a-tilde-fence": ("\times", "~~~\\times"),
+            "opens-an-html-comment": ("\times", "\\times<!--"),
+            "toggles-display-math": ("\times", "$$\\times"),
             "removes-a-backtick": ("`\times", "\\times"),
+            "adds-plain-text": ("\times", "\\times and more"),
         }
         for label, (find, replace) in cases.items():
             with self.subTest(case=label):
@@ -390,7 +396,7 @@ class ExecutePathTest(unittest.TestCase):
                 with self.assertRaises(RemediationError) as raised:
                     execute_plan(plan, adapter, vault="test-vault")
 
-                self.assertIn("masking", str(raised.exception))
+                self.assertIn("decay restored", str(raised.exception))
                 self.assertEqual(adapter.calls, [])
 
     def test_write_that_hides_one_occurrence_of_a_still_visible_command_is_refused(self):
@@ -413,6 +419,48 @@ class ExecutePathTest(unittest.TestCase):
 
         self.assertEqual(adapter.calls, [])
         self.assertEqual((self.root / note_path).read_bytes(), note.encode("utf-8"))
+
+    def test_correct_repair_is_not_refused_over_bytes_the_detector_never_counted(self):
+        """Decayed bytes the detector always ignored were never signal.
+
+        `\\to` is a tab and one letter, `\\neq` a newline and two, so the raw
+        sequences turn up in ordinary prose and code. The detector skips them
+        by its masking and by the guard that the character after the suffix
+        must not be a letter. A check that reads raw bytes instead sees
+        corruption everywhere and refuses correct repairs — and because the
+        note is recorded before the write, it halts the batch after modifying
+        it, accusing the tool of hiding what it just fixed.
+        """
+        cases = {
+            "tab-indented-line-starting-o": (
+                "# Map\n\nThe map $a\to b$ is total.\n\n\toutput = f(x)\n",
+                "\to b$",
+                "\\to b$",
+                "# Map\n\nThe map $a\\to b$ is total.\n\n\toutput = f(x)\n",
+            ),
+            "prose-line-starting-eq": (
+                "# Bound\n\nThe value is $a\neq b$ here.\n\nequation three is tight.\n",
+                "\neq b$",
+                "\\neq b$",
+                "# Bound\n\nThe value is $a\\neq b$ here.\n\nequation three is tight.\n",
+            ),
+            "already-masked-table-row": (
+                "# Sym\n\nIn prose $2\times7$ holds.\n\n| $2\times3$ | product |\n",
+                "In prose $2\times7$",
+                "In prose $2\\times7$",
+                "# Sym\n\nIn prose $2\\times7$ holds.\n\n| $2\times3$ | product |\n",
+            ),
+        }
+        for label, (note, find, replace, expected) in cases.items():
+            with self.subTest(case=label):
+                note_path = self.write_note(f"Legit-{label}.md", note)
+                adapter = FakeObsidianApp(self.root)
+                plan = execute_plan_fixture(
+                    [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
+                )
+
+                self.assertEqual(execute_plan(plan, adapter, vault="test-vault"), [note_path])
+                self.assertEqual((self.root / note_path).read_bytes(), expected.encode("utf-8"))
 
     def test_write_that_conceals_another_decayed_command_is_refused(self):
         """The mirror of the `introduced` check, and the one it cannot see.
@@ -443,11 +491,11 @@ class ExecutePathTest(unittest.TestCase):
                     [edit_operation(note_path, find=find, replace=replace, expected_occurrences=1)]
                 )
 
-                # The masking rule now stops both of these in pre-flight, so
-                # no write is attempted at all.
+                # The reconstruction rule stops both of these in pre-flight,
+                # so no write is attempted at all.
                 with self.assertRaises(RemediationError) as raised:
                     execute_plan(plan, adapter, vault="test-vault")
-                self.assertIn("masking", str(raised.exception))
+                self.assertIn("decay restored", str(raised.exception))
                 self.assertEqual(adapter.calls, [])
 
                 # The read-back stays as the backstop, for a concealment the
@@ -516,7 +564,7 @@ class ExecutePathTest(unittest.TestCase):
         self.assertEqual(adapter.calls, [])
 
     def test_find_without_a_control_character_is_refused_before_any_write(self):
-        """KTD5a: this execute path is for control-character repairs only.
+        """This execute path is for control-character repairs only, by design.
 
         The refusal also moves earlier than the count gate would put it. A
         `find` that matches nothing is otherwise caught only after the note

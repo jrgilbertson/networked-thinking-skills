@@ -22,11 +22,13 @@ EXECUTABLE_OPERATIONS = {"edit"}
 # The on-disk byte sequence each decayed command leaves behind, so a write
 # that hides one from the detector can be told from a write that repaired it.
 DECAYED_FORMS = {command: character + suffix for character, suffix, command in DECAYED_LATEX_SUFFIXES}
-# The characters the detector's masking turns on. A replacement may not change
-# how many of these a note holds, because moving a mask can hide corruption
-# that the note still carries. A replacement cannot introduce a line break --
-# non-printing characters are refused -- so these are the only masks reachable.
-MASKING_CHARACTERS = {"`": "backtick", "|": "table pipe"}
+# The decay applied longest command first, so no command is rewritten inside
+# another. Used to check a replacement against its find string: a repair that
+# restores the decay and changes nothing else reproduces the find string
+# exactly, and any other edit does not.
+DECAY_BY_LONGEST_COMMAND = tuple(
+    sorted(DECAYED_LATEX_SUFFIXES, key=lambda entry: len(entry[2]), reverse=True)
+)
 REQUIRED_EDIT_KEYS = ("note_path", "find", "replace", "expected_occurrences")
 REQUIRED_PLAN_KEYS = ("plan_version", "audit_run_id", "mode", "operations")
 
@@ -118,17 +120,27 @@ def _assert_replacement_repairs(operation: dict[str, Any], index: int) -> None:
 
     The two halves are a matched pair. `find` matches decayed LaTeX so it must
     carry a control character, and `replace` restores the literal backslash
-    sequence so it must carry none. Requiring the first narrows this path to
-    control-character repairs (KTD5a, recorded so a later non-repair edit
-    widens the gate deliberately rather than meeting a surprise refusal), and
-    it also moves the refusal earlier: a `find` matching nothing would
-    otherwise be caught only by the count gate, after the note was read.
+    sequence so it must carry none. Requiring the first narrows this execute
+    path to control-character repairs on purpose: it is the only vault-write
+    capability here, so it should grow by deliberate decision rather than turn
+    out to have been looser than it looked. An edit that is not this repair --
+    a typo fix, say -- is refused, and widening the gate for one is a change
+    to make knowingly. Requiring it also moves the refusal earlier: a `find`
+    matching nothing would otherwise be caught only by the count gate, after
+    the note was read.
 
     The rules ask about raw control characters rather than about decayed
     commands because `decayed_latex_commands` reads a note: it masks code
     spans, table rows and tab-indented lines. Those exemptions are right for a
     note and wrong for a bare fragment, where a leading tab or pipe means
     something else entirely once the fragment is spliced mid-line.
+
+    The last rule subsumes the others and is the reason this gate can be
+    called complete: a replacement must be its find string with the decay
+    restored and nothing else. Enumerating what a replacement must not add
+    does not close it, because the detector masks on backticks, table pipes,
+    tilde fences, HTML comments and display-math delimiters, and a list like
+    that is only ever as complete as the last defect found.
     """
     find, replace = operation["find"], operation["replace"]
     if find in replace:
@@ -147,12 +159,40 @@ def _assert_replacement_repairs(operation: dict[str, Any], index: int) -> None:
             f"Operation {index} replacement carries non-printing character(s) {codepoints}; "
             "a replacement may contain only visible text"
         )
-    for character, structure in MASKING_CHARACTERS.items():
-        if find.count(character) != replace.count(character):
-            raise RemediationError(
-                f"Operation {index} replacement changes the note's masking structure: "
-                f"it does not keep the {structure} count of its find string"
-            )
+    if _decayed(replace) != find:
+        raise RemediationError(
+            f"Operation {index} replacement is not its find string with the decay restored; "
+            "a repair may change nothing else"
+        )
+
+
+def _commands_matched_by(find: str) -> set[str]:
+    """The decayed commands a find string actually matches.
+
+    Applies the detector's own guard, that the character following the suffix
+    must not be a letter, so a fragment holding `<tab>other` is not counted as
+    a `\\to` this operation repaired.
+    """
+    matched: set[str] = set()
+    for command, form in DECAYED_FORMS.items():
+        start = find.find(form)
+        while start != -1:
+            following = find[start + len(form):start + len(form) + 1]
+            if not following.isalpha():
+                matched.add(command)
+                break
+            start = find.find(form, start + 1)
+    return matched
+
+
+def _decayed(text: str) -> str:
+    """Re-apply the decay to a restored string: the inverse of the repair.
+
+    Longest command first, so no command is rewritten inside another.
+    """
+    for character, suffix, command in DECAY_BY_LONGEST_COMMAND:
+        text = text.replace(command, character + suffix)
+    return text
 
 
 def _is_non_printing(character: str) -> bool:
@@ -218,22 +258,27 @@ def assert_repair_landed(operation: dict[str, Any], before: str, after: str) -> 
             f"{note_path}: write introduced decayed command(s) {', '.join(sorted(introduced))}"
         )
 
-    # The mirror of `introduced`, and the half a set difference cannot see. A
-    # command may leave the detector's view only by being repaired: if its
-    # bytes are still in the note, the write hid corruption rather than fixing
-    # it, and corruption the audit can no longer see is worse than corruption
-    # it reports. Closing an inline-code span or starting a table row does
-    # this without any non-printing character, so the rules on `replace`
-    # cannot catch it.
-    concealed = sorted(
-        command
-        for command in visible_before - visible_after
-        if DECAYED_FORMS[command] in after
-    )
+    # The mirror of `introduced`. A command may leave the detector's view only
+    # by being repaired, because corruption the audit can no longer see is
+    # worse than corruption it reports.
+    #
+    # The question is asked of what the detector reported, never of raw bytes.
+    # Decayed sequences it always ignored — masked, or failing its guard that
+    # the character after the suffix is not a letter — were never signal, so
+    # finding them afterwards proves nothing. `\to` is a tab and one letter
+    # and `\neq` a newline and two, so those sequences occur in ordinary prose
+    # and indented code; a byte test refuses correct repairs over them.
+    #
+    # One case this cannot speak for: in a note whose fences or code spans are
+    # unbalanced the detector reports nothing to begin with, so this check and
+    # `introduced` are both vacuous and only the equality below still holds.
+    # The guarantee there is that the transport obeyed the plan, not that the
+    # note's corruption semantics were verified.
+    concealed = sorted((visible_before - visible_after) - _commands_matched_by(operation["find"]))
     if concealed:
         raise RemediationError(
             f"{note_path}: write concealed decayed command(s) {', '.join(concealed)} "
-            "from the audit, leaving their bytes in the note"
+            "from the audit rather than repairing them"
         )
 
     if after != before.replace(operation["find"], operation["replace"]):
