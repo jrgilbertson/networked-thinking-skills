@@ -5,6 +5,7 @@ from shared.scripts.markdown_parse import (
     analyze_dae,
     count_rendered_words,
     count_anki_blocks,
+    decayed_latex_commands,
     extract_frontmatter,
     extract_headings,
     extract_wikilinks,
@@ -854,6 +855,177 @@ class DaeHeadingSectionsTest(unittest.TestCase):
         )
         sections = _dae_heading_sections(md)
         self.assertEqual(sections.get("example"), "For example, a concept applies here.")
+
+
+TAB = "\t"
+
+# The six tab-borne decayed forms, each inside an inline math span. The
+# seventh form is newline-borne and cannot sit inside one line, so it has its
+# own tests.
+DECAYED_INLINE_SPANS = (
+    (r"\times", "$2 " + TAB + "imes 3$"),
+    (r"\text", "$" + TAB + "ext{kg}$"),
+    (r"\tfrac", "$" + TAB + "frac{1}{2}$"),
+    (r"\theta", "$" + TAB + "heta$"),
+    (r"\to", "$x " + TAB + "o y$"),
+    (r"\tan", "$" + TAB + "an x$"),
+)
+
+CORRECT_INLINE_SPANS = (
+    "$2 \\times 3$",
+    "$\\text{kg}$",
+    "$\\tfrac{1}{2}$",
+    "$\\theta$",
+    "$x \\to y$",
+    "$\\tan x$",
+    "$a \\neq b$",
+)
+
+
+class DecayedLatexCommandsTest(unittest.TestCase):
+    # A decoder turned the backslash escape into the character it denotes, so
+    # `\times` reaches disk as TAB + "imes" and `\neq` as a line break + "eq".
+    # Fixtures build that shape explicitly rather than relying on Python's own
+    # escape decoding, so the control character is visible in the source.
+
+    def test_tab_before_imes_inside_inline_math_names_times(self):
+        markdown = "# Note\n\nThe area is $2 " + TAB + "imes 3$ square units.\n"
+        self.assertEqual(decayed_latex_commands(markdown), [r"\times"])
+
+    def test_correct_times_command_in_same_position_does_not_match(self):
+        markdown = "# Note\n\nThe area is $2 \\times 3$ square units.\n"
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_open_inline_math_split_across_lines_names_neq(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "The bound holds while $a ",
+                "eq b$ for every pair.",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\neq"])
+
+    def test_control_character_adjacent_to_math_span_matches(self):
+        markdown = "# Note\n\nThe product $a$ " + TAB + "imes $b$ grows.\n"
+        self.assertEqual(decayed_latex_commands(markdown), [r"\times"])
+
+    def test_tab_inside_fenced_code_block_does_not_match(self):
+        markdown = (
+            "# Note\n\n```text\nrate" + TAB + "imes 3\n```\n\nPlain prose.\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_tab_inside_table_cell_does_not_match(self):
+        markdown = (
+            "# Note\n\n"
+            "| Term | Value |\n"
+            "| --- | --- |\n"
+            "| speed | 3" + TAB + "imes 4 |\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_tab_followed_by_letter_does_not_match(self):
+        markdown = (
+            "# Note\n\nDisplay $x " + TAB + "overline{y}$ and $p " + TAB + "answer$.\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_line_beginning_with_equation_does_not_match(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "The bound holds for every pair.",
+                "equation 4 states the same thing.",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_tab_before_ext_inside_anki_back_block_matches(self):
+        markdown = (
+            "# Note\n\n"
+            "Clean prose with no corruption at all.\n\n"
+            "START\n"
+            "Basic\n"
+            "Front: What carries the unit?\n"
+            "Back: The mass is $5 " + TAB + "ext{kg}$ exactly.\n"
+            "END\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\text"])
+
+    def test_display_math_line_beginning_with_tab_names_tfrac(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "$$",
+                TAB + "frac{a}{b} + 1",
+                "$$",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\tfrac"])
+
+    def test_display_math_line_beginning_with_space_then_tab_matches(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "$$",
+                " " + TAB + "ext{total} = 5",
+                "$$",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\text"])
+
+    def test_tab_indented_line_outside_math_does_not_match(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "Example code:",
+                "",
+                TAB + "an = compute(3)",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_note_with_two_decayed_commands_returns_both(self):
+        markdown = (
+            "# Note\n\n"
+            "We have $2 " + TAB + "imes 3$ and the angle $" + TAB + "heta$ is fixed.\n"
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\theta", r"\times"])
+
+    def test_every_decayed_form_is_detected(self):
+        for command, span in DECAYED_INLINE_SPANS:
+            with self.subTest(command=command):
+                markdown = "# Note\n\nThe value " + span + " holds.\n"
+                self.assertEqual(decayed_latex_commands(markdown), [command])
+
+    def test_every_correct_spelling_is_left_alone(self):
+        for span in CORRECT_INLINE_SPANS:
+            with self.subTest(span=span):
+                markdown = "# Note\n\nThe value " + span + " holds.\n"
+                self.assertEqual(decayed_latex_commands(markdown), [])
+
+    def test_newline_borne_form_survives_alongside_a_tab_borne_form(self):
+        markdown = "\n".join(
+            [
+                "# Note",
+                "",
+                "The angle $" + TAB + "heta$ satisfies $a ",
+                "eq b$ throughout.",
+                "",
+            ]
+        )
+        self.assertEqual(decayed_latex_commands(markdown), [r"\neq", r"\theta"])
 
 
 if __name__ == "__main__":

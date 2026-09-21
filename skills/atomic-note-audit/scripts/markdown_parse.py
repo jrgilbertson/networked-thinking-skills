@@ -27,6 +27,18 @@ TRAILING_LABEL_LINE_RE = re.compile(
 )
 TARGET_DECK_LINE_RE = re.compile(r"^[ \t]*TARGET DECK:[^\r\n]*$", re.IGNORECASE)
 LEADING_INLINE_MATH_RE = re.compile(r"^\$[^$\r\n]+\$")
+# Control character, the letters left behind, and the command they reconstruct
+# to. Longest suffix first, so the guard on the following character decides
+# only the genuinely ambiguous tails.
+DECAYED_LATEX_SUFFIXES = (
+    ("\t", "imes", r"\times"),
+    ("\t", "frac", r"\tfrac"),
+    ("\t", "heta", r"\theta"),
+    ("\t", "ext", r"\text"),
+    ("\t", "an", r"\tan"),
+    ("\n", "eq", r"\neq"),
+    ("\t", "o", r"\to"),
+)
 
 
 @dataclass(frozen=True)
@@ -772,3 +784,67 @@ def _paragraph_starts_lowercase(paragraph: str) -> bool:
         if character.isalpha():
             return character.islower()
     return False
+
+
+def decayed_latex_commands(markdown: str) -> list[str]:
+    """Return the LaTeX commands a note's control characters reconstruct to.
+
+    A decoder that expands ``\\t`` and ``\\n`` in the text it writes turns a
+    command whose name starts with ``t`` or ``n`` into a bare control character
+    followed by the rest of its letters, so ``\\times`` lands on disk as a tab
+    followed by ``imes``. The corrupted span still matches every math pattern
+    the audit uses, so only the control character itself reveals it.
+    """
+    _, body = extract_frontmatter(markdown)
+    masked = _mask_inline_code_spans(_mask_fenced_code_blocks(body))
+    commands: set[str] = set()
+    inside_display_math = False
+
+    for line in masked.splitlines():
+        starts_inside_display_math = inside_display_math
+        if line.count("$$") % 2 == 1:
+            inside_display_math = not inside_display_math
+        if _is_table_row(line):
+            continue
+        # CommonMark reads a leading tab as indented code, but this corruption
+        # produces one inside math, so context decides which it is.
+        if _has_tab_indent(line) and not starts_inside_display_math:
+            continue
+        commands.update(_decayed_commands_in_line(line))
+
+    return sorted(commands)
+
+
+def _is_table_row(line: str) -> bool:
+    return line.lstrip(" \t").startswith("|")
+
+
+def _has_tab_indent(line: str) -> bool:
+    return "\t" in line[: len(line) - len(line.lstrip(" \t"))]
+
+
+def _decayed_commands_in_line(line: str) -> set[str]:
+    commands: set[str] = set()
+    command = _reconstructed_command("\n", line)
+    if command is not None:
+        commands.add(command)
+    for index, character in enumerate(line):
+        if character != "\t":
+            continue
+        command = _reconstructed_command("\t", line[index + 1:])
+        if command is not None:
+            commands.add(command)
+    return commands
+
+
+def _reconstructed_command(decoded: str, remainder: str) -> str | None:
+    for decayed_character, suffix, command in DECAYED_LATEX_SUFFIXES:
+        if decayed_character != decoded or not remainder.startswith(suffix):
+            continue
+        following = remainder[len(suffix):len(suffix) + 1]
+        # Without this guard `\to` fires on a tab before `overline` and `\neq`
+        # on a line beginning `equation`.
+        if following.isalpha():
+            continue
+        return command
+    return None
