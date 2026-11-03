@@ -102,3 +102,16 @@ class AuditInventoryTest(unittest.TestCase):
             row = inventory_vault(root, run_id='synthetic')[0]
             self.assertTrue(any(c['code'] == 'dae_sentence_case' and c['status'] == 'failed' for c in row['integrity_checks']))
             self.assertNotIn('score', row)
+
+    def test_dotted_note_titles_attachments_and_ambiguous_targets(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Rate is 3.14 units]] [[Diagram.png]] [[Same]] [[A/Same]]')
+            self.make_note(root, 'Rate is 3.14 units.md', '# Rate\nSynthetic content.')
+            (root / 'Diagram.png').write_bytes(b'synthetic attachment')
+            for folder in ('A', 'B'):
+                (root / folder).mkdir()
+                (root / folder / 'Same.md').write_text('# Same')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            unresolved = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(unresolved, ['Repair the unresolved or ambiguous link: Same'])

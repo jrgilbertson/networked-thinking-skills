@@ -22,6 +22,7 @@ from shared.scripts.model_contract import (
 )
 from shared.scripts.schema_validation import ValidationError, validate_audit_row, validate_inventory_row
 from shared.scripts.audit_inventory import content_hash, source_path
+from shared.scripts.obsidian_adapter import ObsidianTransportError
 
 
 PROMPT_REFERENCE = Path(__file__).resolve().parents[1] / "references" / "model-judgment-prompt.md"
@@ -44,6 +45,10 @@ class RunnerInvocationError(RuntimeError):
 
 class SourceChangedError(RuntimeError):
     """The source no longer matches the captured inventory."""
+
+
+class SourceUnavailableError(RuntimeError):
+    """The selected source cannot currently be read through its required transport."""
 
 
 RETRYABLE_BATCH_ERRORS = (ValidationError, subprocess.TimeoutExpired)
@@ -219,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
         subprocess.TimeoutExpired,
         RunnerInvocationError,
         SourceChangedError,
+        SourceUnavailableError,
     ) as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -610,7 +616,10 @@ def _resolve_note_path(vault_root: Path, note_path: str) -> Path:
 
 def _verified_inventory_content(vault: Path, row: dict[str, Any]) -> str:
     reader = row.get("_source_reader")
-    text = reader(row["note_path"]) if reader is not None else source_path(vault, row["note_path"]).read_text(encoding="utf-8")
+    try:
+        text = reader(row["note_path"]) if reader is not None else source_path(vault, row["note_path"]).read_text(encoding="utf-8")
+    except (OSError, ObsidianTransportError) as exc:
+        raise SourceUnavailableError(f"source unavailable: {row['note_path']}: {exc}") from exc
     if content_hash(text) != row["content_hash"]:
         raise SourceChangedError(f"source changed: {row['note_path']}; refresh the inventory before review")
     return row["content"]
@@ -691,8 +700,8 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
                 for j in _read_jsonl(output_jsonl):
                     states[j["note_path"]]["status"] = "reviewed"
         return sum(states[row["note_path"]]["status"] == "reviewed" for row in work_rows)
-    except (ValidationError, SourceChangedError, OSError, RunnerInvocationError, subprocess.TimeoutExpired) as exc:
-        state = "stale" if isinstance(exc, SourceChangedError) else ("unavailable" if isinstance(exc, FileNotFoundError) or "failed to start" in str(exc) else "failed")
+    except (ValidationError, SourceChangedError, SourceUnavailableError, OSError, RunnerInvocationError, subprocess.TimeoutExpired) as exc:
+        state = "stale" if isinstance(exc, SourceChangedError) else ("unavailable" if isinstance(exc, (FileNotFoundError, SourceUnavailableError)) or "failed to start" in str(exc) else "failed")
         for row in active:
             if states[row["note_path"]]["status"] != "reviewed":
                 states[row["note_path"]]["status"] = state

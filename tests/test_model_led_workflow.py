@@ -7,6 +7,7 @@ from shared.scripts.audit_inventory import inventory_vault
 from shared.scripts.collect_model_judgments import collect_model_judgments, RunnerInvocationError
 from shared.scripts.apply_model_judgments import compose_inventory
 from shared.scripts.schema_validation import ValidationError, validate_audit_run_pair
+from shared.scripts.obsidian_adapter import ObsidianTransportError
 
 
 class SyntheticRunner:
@@ -137,3 +138,26 @@ class ModelLedWorkflowTest(unittest.TestCase):
             manifest['model_coverage']['pending'] += 1
             with self.assertRaises(ValidationError):
                 validate_audit_run_pair(rows, manifest)
+
+    def test_collection_records_unavailable_when_app_reader_disconnects(self):
+        with tempfile.TemporaryDirectory() as d:
+            root, inventory, path, output = self.setup_run(d, 1)
+            def reader(path):
+                raise ObsidianTransportError('synthetic app unavailable')
+            runner = SyntheticRunner()
+            with self.assertRaisesRegex(RuntimeError, 'unavailable'):
+                self.collect(root, path, output, runner, source_reader=reader)
+            self.assertEqual(runner.calls, 0)
+            status = json.loads(output.with_suffix('.status.json').read_text())
+            self.assertEqual(status['states'][inventory[0]['note_path']]['status'], 'unavailable')
+
+    def test_composition_reports_unavailable_when_app_reader_disconnects(self):
+        with tempfile.TemporaryDirectory() as d:
+            root, inventory, path, output = self.setup_run(d, 1)
+            def reader(path):
+                raise ObsidianTransportError('synthetic app unavailable')
+            rows, manifest = compose_inventory(inventory, [], vault_root=root, source_reader=reader)
+            self.assertEqual(manifest['model_coverage']['unavailable'], 1)
+            self.assertIsNone(rows[0]['score'])
+            self.assertFalse(rows[0]['clean'])
+            self.assertTrue(all(c['status'] == 'not_checked' for c in rows[0]['integrity_checks']))

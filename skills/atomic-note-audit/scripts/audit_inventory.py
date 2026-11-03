@@ -51,7 +51,24 @@ def _check(code: str, source: str, message: str, *, status: str = "passed", prio
 
 
 def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
-    files = [p for p in vault.rglob("*") if p.is_file() and p.resolve().is_relative_to(vault)]
+    by_path = {}
+    by_name = {}
+    for path in vault.rglob("*"):
+        if path.is_file() and path.resolve().is_relative_to(vault):
+            by_path[path.relative_to(vault).as_posix()] = path
+            by_name.setdefault(path.name, set()).add(path)
+
+    def lookup(names: list[str], source: str) -> set[Path]:
+        candidates = set()
+        parent = PurePosixPath(source).parent
+        for name in names:
+            for relative in (name, (parent / name).as_posix()):
+                if relative in by_path:
+                    candidates.add(by_path[relative])
+        if not candidates:
+            for name in names:
+                candidates.update(by_name.get(PurePosixPath(name).name, set()))
+        return candidates
 
     def resolve(target: str, source: str) -> bool:
         target, _, fragment = target.partition("#")
@@ -61,10 +78,12 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
             parsed = PurePosixPath(target)
             if parsed.is_absolute() or ".." in parsed.parts or "\\" in target:
                 return False
-            names = [target] if parsed.suffix else [target + ".md", target]
-            candidates = [p for p in files if any(p.relative_to(vault).as_posix() == name or p.relative_to(vault).as_posix() == (PurePosixPath(source).parent / name).as_posix() for name in names)]
-            if not candidates:
-                candidates = [p for p in files if p.name in {PurePosixPath(n).name for n in names}]
+            if parsed.suffix:
+                candidates = lookup([target], source)
+                if not candidates and not target.endswith(".md"):
+                    candidates = lookup([target + ".md"], source)
+            else:
+                candidates = lookup([target + ".md", target], source)
         candidates = list(set(candidates))
         if len(candidates) != 1:
             return False

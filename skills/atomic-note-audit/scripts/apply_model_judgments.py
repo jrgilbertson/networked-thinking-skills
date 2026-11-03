@@ -15,6 +15,7 @@ from finding_codes import FINDING_MESSAGES, FINDING_RECOMMENDATION_MODES
 from model_contract import validate_model_judgment, inventory_cache_key
 from audit_inventory import content_hash, source_path
 from audit_engine import _dimensions_for_findings, _utc_now
+from obsidian_adapter import ObsidianTransportError
 from schema_validation import (
     DIMENSION_KEYS,
     PRIORITY_COUNT_KEYS,
@@ -387,7 +388,7 @@ def compose_inventory(inventory: list[dict[str, Any]], judgments: list[dict[str,
             source_current = content_hash(current) == item["content_hash"]
             if not source_current:
                 state = "stale"
-        except OSError:
+        except (OSError, ObsidianTransportError):
             source_current = False
             state = "unavailable"
         if not source_current:
