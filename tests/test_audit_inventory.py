@@ -115,3 +115,58 @@ class AuditInventoryTest(unittest.TestCase):
             row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
             unresolved = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
             self.assertEqual(unresolved, ['Repair the unresolved or ambiguous link: Same'])
+
+    def test_card_marker_examples_do_not_request_repairs(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Example.md', '# Example\n```text\nSTART\n```\n<!--\nEND\nEND\n-->\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            marker = next(c for c in row['integrity_checks'] if c['code'] == 'card_markers')
+            self.assertEqual(marker['status'], 'passed')
+
+    def test_folder_qualified_links_do_not_fall_back_to_other_folders(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Missing/Topic]] [[Other/Topic]] [[Topic]]')
+            (root / 'Other').mkdir()
+            (root / 'Other/Topic.md').write_text('# Topic')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            failures = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(failures, ['Repair the unresolved or ambiguous link: Missing/Topic'])
+
+    def test_heading_targets_use_visible_structural_headings(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Target#Example]] [[Target#Visible]] [[Target#^hidden]] [[Target#^visible]]')
+            self.make_note(root, 'Target.md', '# Target\n```md\n## Example\nSample ^hidden\n```\n   ## Visible ###\nText ^visible\n')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            failures = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(failures, ['Repair the unresolved or ambiguous link: Target#Example', 'Repair the unresolved or ambiguous link: Target#^hidden'])
+
+    def test_unsynced_card_does_not_claim_anki_access(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Example.md', '# Example\nSTART\nBasic\nFront: A\nBack: B\nEND\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            local = next(c for c in row['integrity_checks'] if c['code'] == 'unsynced_card')
+            self.assertEqual((local['source'], local['status']), ('markers', 'failed'))
+            anki = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+            self.assertEqual([c['status'] for c in anki], ['not_checked'])
+
+    def test_mixed_anki_models_use_each_source_block(self):
+        class SyncedAnki:
+            def invoke(self, action, params):
+                if action == 'notesInfo':
+                    return [
+                        dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}}),
+                        dict(noteId=456, modelName='Cloze', cards=[2, 3], fields={'Text': {'value': '{{c1::A}} {{c2::B}}'}}),
+                    ]
+                return [dict(cardId=i, deckName='Basic deck' if i == 1 else 'Cloze deck') for i in (1, 2, 3)]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Example\nTARGET DECK: Basic deck\nSTART\nBasic\nFront: A\nBack: B\n<!--ID: 123-->\nEND\nTARGET DECK: Cloze deck\nSTART\nCloze\n{{c1::A}} {{c2::B}}\n<!--ID: 456-->\nEND\n'
+            self.make_note(root, 'Example.md', text)
+            row = inventory_vault(root, run_id='synthetic', anki_client=SyncedAnki())[0]
+            checks = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+            self.assertEqual(len(checks), 2)
+            self.assertTrue(all(c['status'] == 'passed' for c in checks), checks)

@@ -15,7 +15,7 @@ if __package__ in (None, ""):
 
 from audit_engine import DOCTRINE_VERSION, RUBRIC_VERSION, _load_structure_targets, _utc_now
 from config import DEFAULT_CONFIG, resolve_config
-from markdown_parse import extract_frontmatter, extract_wikilinks, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase
+from markdown_parse import extract_frontmatter, extract_wikilinks, extract_headings, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase, _structural_markdown
 from model_contract import MODEL_PROMPT_VERSION
 from schema_validation import ValidationError, validate_inventory_row
 from verify_anki_notes import AnkiConnectClient, extract_anki_ids, _visible_field_text
@@ -67,7 +67,8 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
                     candidates.add(by_path[relative])
         if not candidates:
             for name in names:
-                candidates.update(by_name.get(PurePosixPath(name).name, set()))
+                if "/" not in name:
+                    candidates.update(by_name.get(name, set()))
         return candidates
 
     def resolve(target: str, source: str) -> bool:
@@ -91,8 +92,8 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
             return True
         text = candidates[0].read_text(encoding="utf-8")
         if fragment.startswith("^"):
-            return bool(re.search(r"(?:^|\s)" + re.escape(fragment) + r"\s*$", text, re.MULTILINE))
-        headings = {re.sub(r"\s+#+$", "", m.group(1)).strip().casefold() for m in re.finditer(r"^#{1,6}\s+(.+)$", text, re.MULTILINE)}
+            return bool(re.search(r"(?:^|\s)" + re.escape(fragment) + r"\s*$", _structural_markdown(text), re.MULTILINE))
+        headings = {heading.casefold() for heading in extract_headings(text)}
         return fragment.casefold() in headings
 
     return resolve
@@ -124,7 +125,7 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
         checks.append(_check("frontmatter", "metadata", "Required frontmatter is present." if frontmatter is not None else "Add the required frontmatter.", status="passed" if frontmatter is not None else "failed"))
         checks.append(_check("parent_link", "parent", "Parent Structure Note links to this note." if path.stem in parent_targets else "Link this note from its parent Structure Note.", status="passed" if path.stem in parent_targets else "failed"))
         counts = count_anki_blocks(text)
-        ordered = [m.group(1) for m in re.finditer(r"(?m)^\s*(START|END)\s*$", text)]
+        ordered = [line for line in _structural_markdown(text).splitlines() if line in {"START", "END"}]
         valid_markers = counts["START"] == counts["END"] and all(ordered[i:i+2] == ["START", "END"] for i in range(0, len(ordered), 2))
         checks.append(_check("card_markers", "markers", "Card markers are balanced and ordered." if valid_markers else "Repair the malformed START/END card boundaries.", status="passed" if valid_markers else "failed", priority="P1"))
         corruption = decayed_latex_commands(text)
@@ -149,6 +150,35 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
     for row in rows:
         validate_inventory_row(row)
     return rows
+
+
+def _source_card_expectations(text: str) -> dict[int, tuple[str | None, str | None, int | None]]:
+    _, body = extract_frontmatter(text)
+    body_lines = body.splitlines()
+    structural_lines = _structural_markdown(text).splitlines()
+    expectations = {}
+    deck = None
+    start = None
+    for index, line in enumerate(structural_lines):
+        deck_match = re.match(r"^TARGET DECK:\s*(.+)$", line)
+        if deck_match:
+            deck = deck_match.group(1).strip()
+        if line == "START":
+            start = index
+        elif line == "END" and start is not None:
+            card = "\n".join(structural_lines[start + 1:index])
+            note_ids = extract_anki_ids("\n".join(body_lines[start + 1:index]))
+            model = next((m for m in ("Basic", "Cloze") if re.search(r"(?m)^" + m + r"\s*$", card)), None)
+            if model == "Basic":
+                count = 1
+            elif model == "Cloze":
+                count = len(set(re.findall(r"\{\{c(\d+)::", card)))
+            else:
+                count = None
+            for note_id in note_ids:
+                expectations[note_id] = (model, deck, count if len(note_ids) == 1 else None)
+            start = None
+    return expectations
 
 
 def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
@@ -178,11 +208,14 @@ def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
             checks.append(_check("shared_anki_id", "markers", "Give each source card a unique Anki ID; this ID occurs more than once in scope.", status="failed", priority="P1"))
         if not note_ids:
             has_cards = count_anki_blocks(row["content"])["START"] > 0
-            checks.append(_check("unsynced_card" if has_cards else "anki_unchecked", "anki", "Verify the unsynced source card; no Anki ID is recorded." if has_cards else "No source Anki ID; integration not checked.", status="failed" if has_cards else "not_checked"))
+            if has_cards:
+                checks.append(_check("unsynced_card", "markers", "Verify the unsynced source card; no Anki ID is recorded.", status="failed"))
+            checks.append(_check("anki_unchecked", "anki", "No source Anki ID; integration not checked.", status="not_checked"))
             continue
         if notes is None:
             checks.append(_check("anki_unchecked", "anki", "Anki integration not checked: connection unavailable or not requested.", status="not_checked"))
             continue
+        expectations = _source_card_expectations(row["content"])
         for note_id in note_ids:
             note = notes.get(note_id)
             if note is None:
@@ -192,17 +225,15 @@ def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
             card_ids = note.get("cards", [])
             if not card_ids or any(c not in cards for c in card_ids):
                 failures.append("Verify missing Anki cards.")
-            source_model = next((m for m in ("Basic", "Cloze") if re.search(r"(?m)^" + m + r"\s*$", row["content"])), None)
+            source_model, deck, expected_count = expectations.get(note_id, (None, None, None))
             if source_model and note.get("modelName") != source_model:
                 failures.append("Match the source and Anki note models.")
-            deck = re.search(r"(?m)^TARGET DECK:\s*(.+)$", row["content"])
-            if deck and any(cards.get(c, {}).get("deckName") != deck.group(1).strip() for c in card_ids):
+            if deck and any(cards.get(c, {}).get("deckName") != deck for c in card_ids):
                 failures.append("Match the source and Anki card decks.")
             fields = note.get("fields", {})
             if not isinstance(fields, dict):
                 fields = {}
-            expected_count = 1 if source_model == "Basic" else len(set(re.findall(r"\{\{c(\d+)::", row["content"])))
-            if len(note_ids) == 1 and expected_count and len(card_ids) != expected_count:
+            if expected_count and len(card_ids) != expected_count:
                 failures.append("Match the source and Anki card counts.")
             if not fields or not any(_visible_field_text(fields, name).strip() for name in fields):
                 failures.append("Repair empty rendered Anki fields.")

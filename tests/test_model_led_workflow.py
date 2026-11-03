@@ -161,3 +161,23 @@ class ModelLedWorkflowTest(unittest.TestCase):
             self.assertIsNone(rows[0]['score'])
             self.assertFalse(rows[0]['clean'])
             self.assertTrue(all(c['status'] == 'not_checked' for c in rows[0]['integrity_checks']))
+
+    def test_source_preflight_failure_leaves_other_notes_pending(self):
+        for failure in ('changed', 'unavailable'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as d:
+                root, inventory, path, output = self.setup_run(d)
+                affected = inventory[1]['note_path']
+                def reader(note_path):
+                    if note_path == affected:
+                        if failure == 'unavailable':
+                            raise ObsidianTransportError('synthetic app unavailable')
+                        return 'Changed source'
+                    return (root / note_path).read_text()
+                with self.assertRaises(RuntimeError):
+                    self.collect(root, path, output, SyntheticRunner(), source_reader=reader)
+                status = json.loads(output.with_suffix('.status.json').read_text())
+                expected = {row['note_path']: 'pending' for row in inventory}
+                expected[affected] = 'unavailable' if failure == 'unavailable' else 'stale'
+                self.assertEqual({key: entry['status'] for key, entry in status['states'].items()}, expected)
+                _, manifest = compose_inventory(inventory, [], vault_root=root, collection_status=status, source_reader=reader)
+                self.assertEqual(manifest['model_coverage']['pending'], 2)

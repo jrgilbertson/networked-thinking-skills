@@ -665,11 +665,13 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
     accepted = []
     try:
         for row in rows:
+            active = [row]
             _verified_inventory_content(vault, {**row, "_source_reader": source_reader})
             row["_source_reader"] = source_reader
             row["_provenance"] = dict(run_id=row["run_id"], content_hash=row["content_hash"],
                 model_identity=model, runner_identity=identity,
                 cache_key=inventory_cache_key(row, model_identity=model, runner_identity=identity))
+        active = rows
         seen = set()
         for judgment in _read_jsonl(output_jsonl):
             validate_model_judgment(judgment)
