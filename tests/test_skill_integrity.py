@@ -1,3 +1,4 @@
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -21,6 +22,7 @@ SKILL_REFERENCES = {
         "references/doctrine.md",
         "references/audit-rubric.md",
         "references/model-judgment-prompt.md",
+        "references/model-judgment-workflow.md",
         "references/remediation-context.md",
         "references/install-matrix.md",
     ],
@@ -30,8 +32,12 @@ SKILL_REFERENCES = {
 def _required_reference_paths(text):
     lines = text.splitlines()
     try:
-        start = lines.index("## Required References") + 1
-    except ValueError as exc:
+        start = next(
+            index + 1
+            for index, line in enumerate(lines)
+            if line.lower() == "## required references"
+        )
+    except StopIteration as exc:
         raise AssertionError("Missing Required References section") from exc
 
     references = []
@@ -39,12 +45,27 @@ def _required_reference_paths(text):
         if line.startswith("## "):
             break
         line = line.strip()
-        if line.startswith("- `") and line.endswith("`"):
-            references.append(line.removeprefix("- `").removesuffix("`"))
+        match = re.match(r"- `([^`]+)`", line)
+        if match:
+            references.append(match.group(1))
     return references
 
 
 class SkillIntegrityTest(unittest.TestCase):
+    def test_private_content_confirmation_precedes_model_judgment_workflow(self):
+        text = (ROOT / "skills/atomic-note-audit/SKILL.md").read_text(encoding="utf-8")
+        review_step = text.split("4. **Review note quality.**", 1)[1].split(
+            "5. **Generate review artifacts.**", 1
+        )[0]
+        normalized = " ".join(review_step.split())
+
+        confirmation = "confirm that the user accepts this provider/tool trust boundary"
+        self.assertIn(confirmation, normalized)
+        self.assertLess(
+            normalized.index(confirmation),
+            normalized.index("references/model-judgment-workflow.md"),
+        )
+
     def test_skills_have_frontmatter_and_skill_local_references(self):
         for skill, references in SKILL_REFERENCES.items():
             with self.subTest(skill=skill):
@@ -82,6 +103,7 @@ class SkillIntegrityTest(unittest.TestCase):
             "doctrine.md",
             "audit-rubric.md",
             "model-judgment-prompt.md",
+            "model-judgment-workflow.md",
             "remediation-context.md",
             "install-matrix.md",
         ]:

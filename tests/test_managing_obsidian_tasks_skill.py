@@ -11,26 +11,6 @@ def normalized_text(path: Path) -> str:
 
 
 class ManagingObsidianTasksSkillTest(unittest.TestCase):
-    def test_baseline_record_covers_approved_flows(self):
-        text = normalized_text(
-            ROOT / "tests/fixtures/managing-obsidian-tasks-skill/baseline.md"
-        )
-
-        self.assertIn("Human follow-up task", text)
-        self.assertIn("Agent-first research task", text)
-        self.assertIn("Waiting transition", text)
-        self.assertIn("fresh agent context", text)
-
-    def test_trigger_record_has_full_rigor_pass(self):
-        text = normalized_text(
-            ROOT / "tests/fixtures/managing-obsidian-tasks-skill/trigger-queries.md"
-        )
-
-        self.assertIn("eight should-trigger and eight near-miss", text)
-        self.assertEqual(text.count("| yes | yes | yes | Pass |"), 8)
-        self.assertEqual(text.count("| no | no | no | Pass |"), 7)
-        self.assertIn("| no | no | no | Pass after tuning |", text)
-
     def test_skill_is_portable_and_routes_issues_away(self):
         text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
 
@@ -66,7 +46,10 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
         text = normalized_text(SKILL_DIR / "SKILL.md")
 
         self.assertIn("Read `assets/task-template.md` when creating a task", text)
-        self.assertIn("Read the other files under `assets/` only when setting up or repairing", text)
+        self.assertIn(
+            "Read `assets/tasks.base` and `assets/tasks-structure-note.md` only when setting up or repairing",
+            text,
+        )
         self.assertIn(
             "Bases plugin is required for setup, search, create, update, and close",
             text,
@@ -179,7 +162,10 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
 
         self.assertIn("quote-safe transport", text)
         self.assertIn("serialized JSON/base64 payload", text)
-        self.assertIn("Never interpolate note Markdown into a shell `content=` argument", text)
+        self.assertIn(
+            "Never interpolate note Markdown, asset Markdown, or YAML into a shell `content=` argument",
+            text,
+        )
         for content_kind in (
             "apostrophes",
             "backticks",
@@ -196,9 +182,10 @@ class ManagingObsidianTasksSkillTest(unittest.TestCase):
             "each of the three assets (the template, Base, and structure note)",
             text,
         )
-        self.assertIn("same quote-safe JSON/base64/helper transport", text)
+        self.assertIn("For task creation and each of the three assets", text)
+        self.assertIn("using the quote-safe transport above", text)
         self.assertIn(
-            "Never interpolate asset Markdown or YAML into a shell `content=` argument",
+            "Never interpolate note Markdown, asset Markdown, or YAML into a shell `content=` argument",
             text,
         )
 

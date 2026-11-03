@@ -3,193 +3,109 @@ name: atomic-note-audit
 description: Use when auditing or improving the quality of Networked Thinking atomic notes in an Obsidian vault.
 ---
 
-# Atomic Note Audit
+# Atomic note audit
 
-Use this skill to audit every Markdown file in a configured Atomic Notes folder, produce vault-health KPIs, and create remediation queues.
+Audit every Markdown file in the configured Atomic Notes folder, report
+vault-health KPIs, and create remediation queues. Audit first; apply repairs
+only through the remediation workflow below. This skill supports batch audit
+and remediation on its own. Install `atomic-note` alongside it for individual
+note authoring.
 
-For note create/improve workflows, install `atomic-note` as well. This skill
-stands alone for batch audit and remediation. Shared doctrine and remediation
-rules appear here as skill-local copies so the package does not depend on
-another skill's directory at install time.
+## Required references
 
-## Required References
+- `references/doctrine.md`: read before judging note quality. Defines DAE,
+  naming, sourcing, learner purpose, and Anki requirements.
+- `references/audit-rubric.md`: read before interpreting findings, scores,
+  buckets, or clean-note KPIs.
+- `references/model-judgment-prompt.md`: use verbatim for model judgments.
+- `references/model-judgment-workflow.md`: read before preparing, collecting, or
+  applying model judgments. Includes runner commands and provenance checks.
+- `references/remediation-context.md`: read before planning any vault mutation.
+  Defines approval, Obsidian tooling, rename, Anki, and held-decision workflows.
+- `references/install-matrix.md`: read for supported installation surfaces and
+  self-contained package requirements.
 
-These paths ship with the install so the skill stands alone. Do not hand-edit
-them in an installed skill; contributors regenerate skill-local copies from the
-repo's shared references (see project AGENTS and install docs).
+## Read-only audit
 
-- `references/doctrine.md`
-- `references/audit-rubric.md`
-- `references/model-judgment-prompt.md`
-- `references/remediation-context.md`
-- `references/install-matrix.md`
+1. **Resolve scope.** Confirm the vault configuration and Atomic Notes folder.
+   Write artifacts outside the vault unless the user requests them inside it.
+   For in-vault artifacts, create one run folder under the configured audit
+   output folder using `YYYYMMDDHHMM`, for example `202606061035 Model Judgment`.
+2. **Scan every note.** Run `scripts/audit_notes.py` to produce the deterministic
+   audit JSONL and run manifest. Use each script's `--help` for arguments.
+3. **Validate the baseline.** Run `scripts/validate_jsonl.py` on the audit JSONL
+   before using it for reports or model judgments.
+4. **Review note quality.** Read the doctrine and rubric. Model judgment may send
+   note content or excerpts to the active agent's model provider. Before
+   exhaustive model judgment on private vault content, confirm that the user
+   accepts this provider/tool trust boundary. In default mode,
+   model-judge flagged or ambiguous notes and a sample of apparently clean
+   notes. In exhaustive mode, model-judge every note. Follow
+   `references/model-judgment-workflow.md` to collect, validate, and apply
+   judgments to the deterministic rows before generating model-judgment reports.
+5. **Generate review artifacts.** Run `scripts/generate_report.py` with the
+   validated audit JSONL and matching manifest. When requested, generate an
+   Obsidian Base with `scripts/generate_base.py`.
+6. **Report the queues.** Summarize KPIs and P0-P3/no-change queues, including
+   pending model judgments and fact checks when interpreting clean-note counts.
+   Read-only audit ends with review artifacts and recommendations.
 
-## Read-Only Audit
-
-1. Resolve vault config.
-2. Run `scripts/audit_notes.py`.
-3. Validate JSONL with `scripts/validate_jsonl.py`.
-4. Generate Markdown report with `scripts/generate_report.py`.
-5. Generate Obsidian Base with `scripts/generate_base.py` when requested.
-6. Summarize KPIs and P0-P3/no-change queues.
-
-When writing audit artifacts inside an Obsidian vault, create one run folder
-under the configured audit output folder using the vault timestamp style
-`YYYYMMDDHHMM`, for example `202606061035 Model Judgment`. Do not use dashed
-date folder names such as `2026-06-06 103558`.
-
-## Model Judgment
-
-Use deterministic scan for every note. In default mode, model-judge flagged or
-ambiguous notes and a sample of apparently clean notes. In exhaustive mode,
-model-judge every note.
-
-Model judgment is performed by the active desktop or terminal agent that the
-user is already using in the vault, such as Claude Desktop, Claude Code, Codex
-CLI, or Codex Desktop. Do not require this skill to collect API keys, configure
-provider accounts, or send vault content through a repo-owned service. The
-agent supplies judgments; the skill-local scripts define the schema, validation,
-merge, and report surfaces.
-
-Privacy boundary: deterministic scans run locally. Model judgment may send note
-content or excerpts to the model provider used by the active agent. Confirm the
-user accepts that provider/tool trust boundary before running exhaustive model
-judgment on private vault content.
-
-Use `references/model-judgment-prompt.md` verbatim when asking an
-LLM for model judgment. The prompt is generated from the scoring vocabulary
-source of truth and must stay aligned with `scripts/finding_codes.py`.
-Model output must be strict JSON and validated before it affects scoring.
-The collector owns stored schema and prompt provenance; do not ask the model to
-invent those values.
-
-To inspect the generated content prompt for one note without prompt drift, run:
-
-```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
-```
-
-That prompt and the model's raw response are not stored judgment records. To
-produce a validated, applicable judgment for one note, select its audit row and
-route it through the same trusted collector used for batch runs:
-
-```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --collector-input /tmp/networked-thinking-audit/example-audit.jsonl
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/example-audit.jsonl --output-jsonl /tmp/networked-thinking-audit/example-judgment.jsonl --raw-dir /tmp/networked-thinking-model-raw/example --model gpt-5.5
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/example-judgment.jsonl --output-jsonl /tmp/networked-thinking-audit/example-applied.jsonl --output-manifest /tmp/networked-thinking-audit/example-applied-manifest.json --allow-missing
-```
-
-The preparation step validates the deterministic audit rows and writes only the
-selected row. The collector then stamps trusted schema and prompt provenance;
-the model is never asked to supply those values.
-
-For exhaustive runs, use the validated batch collector with a selected local
-agent runner. Codex CLI remains supported as one runner:
-
-```bash
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
-```
-
-For local agent CLIs that accept the prompt on stdin and write the final response
-to stdout or a file, use the generic command runner:
-
-```bash
-python3 scripts/collect_model_judgments.py --runner command --command 'local-agent --write-final-response "{output_path}"' --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw
-```
-
-The command runner sends the prompt on stdin. If the command writes the final
-JSONL response to stdout, stdout is parsed. If it writes to `{output_path}`, that
-file is parsed instead. Quote path placeholders such as `{output_path}`,
-`{stdout_path}`, and `{stderr_path}` in command templates when paths may contain
-spaces. Use doubled braces for literal `{` or `}` characters.
-
-Keep `--raw-dir` outside the vault by default because it contains private note
-content in prompts and logs. The collector stamps each stored judgment with the
-matching audit row's `prompt_version`. It resumes only when existing provenance
-matches, validates each response, and splits failed batches into smaller retries.
-
-The collector stores model responses as JSONL, one strict
-`schemas/model-judgment.schema.json` object per line. Then apply them to
-the deterministic audit rows before generating the model-judgment report or
-Base:
-
-```bash
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
-```
-
-By default, the apply step hard-fails unless every audit row has exactly one
-matching model judgment. Use `--allow-missing` only for a deliberate sampling
-pass; unmatched rows stay `pending_model: true`. Supplied judgments with missing
-or mismatched `prompt_version` provenance are rejected.
-
-For reviewed rows, model findings replace deterministic semantic findings. The
-apply step keeps only deterministic audit checks a single-note model cannot
-reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`,
-`duplicate_overlap`, `dae_sentence_case`, and `decayed_latex_command`.
-Each depends on evidence the note's prose does not carry: the file's exact
-characters, structure, and markers, or the vault surrounding it. Deterministic
-validation reads that evidence directly; a single-note model judgment can only
-infer it.
+Deterministic scans run locally. Model judgment uses the active desktop or
+terminal agent, such as Claude Desktop, Claude Code, Codex CLI, or Codex Desktop.
+Use the agent's existing authentication; this skill does not collect API keys,
+configure provider accounts, or send vault content through a repo-owned service.
 
 ## Remediation
 
-Do not mutate notes from audit findings alone. Generate or consume an explicit
-remediation plan, or produce an explicit per-note destructive dry run for a
-single user-directed operation. Load `references/remediation-context.md`
-before planning any vault mutation.
+1. **Plan before mutation.** Read `references/remediation-context.md`. Generate
+   or consume an explicit remediation plan, or prepare an explicit per-note
+   destructive dry run for a single user-directed operation. Audit findings
+   alone do not authorize writes.
+2. **Validate the dry run.** Run `scripts/remediate_notes.py --plan <plan.json>
+   --manifest <manifest.json>`. Add `--destructive-allowed` to let `split`,
+   `delete`, `rename`, or `move` pass validation without writing anything.
+   Before approval, report each destructive target's path, Anki status,
+   backlinks, intended Obsidian CLI command, link cleanup plan, and permanence.
+   Before deletion, verify the running vault's `trashOption`; omitting the CLI
+   `permanent` flag follows that setting.
+3. **Resolve learner decisions.** Require approval before destructive
+   operations. Stop for an Anki-specific decision when a note has Anki markers
+   or Obsidian-to-Anki identifiers. For `anki_yagni`, ask whether the card is
+   worth memorizing for this learner. Medical students, professors, and other
+   specialized learners may need memorization the auditor does not. Hold the
+   note for that decision rather than automatically keeping or removing Anki.
+   During long-running goals, loops, or autonomous
+   batches, maintain the remediation context's durable held-decision artifact
+   for duplicate, YAGNI, split, delete, rehome, and factual-risk decisions.
+   Chat history and checkpoint summaries are not sufficient.
+4. **Apply approved operations through Obsidian.** Require official Obsidian
+   skills and preflight, including a verified CLI binary. For decayed-LaTeX
+   edits, follow **Repair script** below. Prefer
+   `python3 scripts/obsidian_cli.py` for app-context commands; its resolver uses
+   the registered `obsidian` command, rejects the macOS GUI executable, and
+   checks the CLI fallback. If a sandbox prevents attachment to the running
+   app, rerun in an approved unsandboxed context. Never substitute raw
+   filesystem edits for app-context operations. When deleting a note with an
+   Obsidian-to-Anki ID, follow the remediation context's `DELETE`, scan, verify,
+   then delete sequence. Warn before scanning that plugin state files may
+   change.
+5. **Verify and report the result.** Follow the remediation context's path,
+   link, content, and Anki verification for each operation. Preserve timestamped
+   reports, Bases, JSONL files, and manifests as historical artifacts unless
+   the user requests a correction. Keep mechanical wikilink changes that an
+   approved Obsidian-aware rename makes inside those reports.
 
-Validate a plan and produce a dry-run manifest with `scripts/remediate_notes.py
---plan <plan.json> --manifest <manifest.json>`, adding `--destructive-allowed`
-to let a `split`, `delete`, `rename`, or `move` operation pass validation
-without writing anything. The only path that writes a repair into the vault is
-`scripts/remediate_notes.py --execute --vault "<Vault Name>"`, with
-`--obsidian-binary` to override the default `obsidian` when that name resolves
-to the GUI app binary rather than the CLI. `edit` is the only executable
-operation, and every operation it runs must already carry `approved: true`
-under the gate in `references/remediation-context.md`. The command reports
-`operation_count=` and, on `--execute`, `dispatched_note_count=`; a halted
-batch also prints `dispatched_note=<path>` for each note it sent a write for,
-and the manifest's `dispatched_note_paths` is the operator's account of what
-to inspect and roll back.
+## Repair script
 
-Require official Obsidian skills and preflight before vault mutations. Use the
-actual Obsidian CLI binary; the registered `obsidian` command is the default,
-and the bundled resolver rejects the macOS GUI executable before using its CLI
-fallback. Require approval before destructive operations. `edit` operations
-that repair decayed LaTeX are not destructive, but still require the owner's
-explicit approval before `--execute`; see the repair approval gate in
-`references/remediation-context.md`. If a sandboxed agent cannot attach to the
-running Obsidian app, rerun the Obsidian CLI step in an approved unsandboxed
-context instead of using raw filesystem edits for app-context operations. When
-working from an installed skill, prefer `python3 scripts/obsidian_cli.py` for
-app-context CLI commands.
+`scripts/remediate_notes.py` writes only when called with
+`--execute --vault "<Vault Name>"`.
+Use `--obsidian-binary` when the default `obsidian` resolves to the GUI app rather
+than the CLI. Only `edit` is executable, and each operation must already carry
+`approved: true` under the remediation context's approval gate. Decayed-LaTeX
+repairs are non-destructive `edit` operations but still need the owner's
+explicit approval before execution.
 
-For delete, split, move, or rename dry runs, report the target path, Anki
-status, backlinks, intended Obsidian CLI command, link cleanup plan, and whether
-the operation is permanent. Stop for an Anki-specific decision when a note has
-Anki markers or Obsidian-to-Anki identifiers. When deleting a note with an
-Obsidian-to-Anki ID, follow the exact `DELETE` marker, scan, verify, then delete
-sequence in `references/remediation-context.md`, including warning
-that the scan may update Obsidian-to-Anki plugin state files.
-
-When a synced Anki card appears potentially not worth memorizing, treat it as
-`anki_yagni`: flag it as a sanity check and stop for the learner's judgment. Do
-not remove or keep Anki automatically; medical students, professors, and other
-specialized learners may need memorization that a general-purpose auditor would
-not.
-
-For long-running goals, loops, or autonomous remediation batches, keep a durable
-held-decision artifact as described in
-`references/remediation-context.md`. Chat history and checkpoint
-summaries are not sufficient state for duplicate, YAGNI, split, delete, rehome,
-or factual-risk decisions.
-
-Before delete, verify the running vault's `trashOption`. Deleting without the
-CLI `permanent` flag follows that configured Obsidian behavior.
-
-Treat timestamped audit reports, Bases, JSONL files, and manifests as immutable
-historical artifacts by default. Remediation cleans live knowledge-graph files,
-not prior audit outputs, unless the user explicitly asks for an audit artifact
-correction. If an approved Obsidian-aware rename automatically updates
-wikilinks inside audit reports, keep those mechanical link-maintenance changes
-instead of manually reversing them.
+The script reports `operation_count=` and, on execution,
+`dispatched_note_count=`. A halted batch also prints `dispatched_note=<path>`
+for every note it sent a write for. Inspect the manifest's
+`dispatched_note_paths` to identify notes that need inspection or rollback.

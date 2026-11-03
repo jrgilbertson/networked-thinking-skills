@@ -22,6 +22,25 @@ lefthook run pre-commit --force --no-auto-install
 
 Run any added doc-specific tests with the same change.
 
+## Regression Checks
+
+Start from an observed failure. Fix it at the appropriate layer, then choose
+the cheapest reliable regression check. A skill change does not require a
+behavioral eval by default. Tests and lint rules can check objective conditions;
+hooks run or enforce checks.
+
+Behavioral evals measure model-driven behavior and can use code assertions,
+human review, or LLM judges. Use Promptfoo for repeatable model runs and reuse
+deterministic helpers for grading. Add human judgment where code cannot reliably
+grade the result, and validate any LLM judge against human labels before
+trusting it. Preserve the actual inputs, outputs, and grading evidence so a
+result can be inspected and reproduced. See
+[Hamel's evals FAQ](https://hamel.dev/blog/posts/evals-faq/).
+
+Evals and batch model runs require approval under AGENTS.md. Automated tests
+mock model calls. The vault-audit judgment collector is runtime functionality,
+separate from the behavioral eval harness.
+
 ## Versioning
 
 Use SemVer for package and contract versions. Treat these as separate contracts:

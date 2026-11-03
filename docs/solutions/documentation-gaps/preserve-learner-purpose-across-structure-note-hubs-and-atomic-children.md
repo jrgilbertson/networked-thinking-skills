@@ -92,19 +92,18 @@ YAGNI safeguard.
 The level distinction prevents both errors. Broad organization stays broad
 where it helps navigation, while Atomic Notes retain the rigor that makes the
 network trustworthy. This preserves factual recall without relaxing DAE,
-connection, sourcing, or factual-risk requirements. It also preserves
-analytical use: the fresh-context evaluation found the analytical hero's-journey
-case unchanged while the mixed-purpose hub and explicit quiz-recall cases
-improved (`tests/fixtures/atomic-note-skill/baseline-recall-friendly-structure-note.md:13`,
-`tests/fixtures/atomic-note-skill/baseline-recall-friendly-structure-note.md:21`,
-`tests/fixtures/atomic-note-skill/baseline-recall-friendly-structure-note.md:29`).
+connection, sourcing, or factual-risk requirements. The contract also preserves
+analytical use when that is the learner's chosen purpose. Agent behavior under
+these instructions has not been established by a reproducible behavioral eval.
 
-The contract is tested rather than merely stated. The synthetic fixture encodes
+The synthetic fixture encodes
 the intended hub scope, child atomicity, sourcing, Anki decision, and absence of
 a recall-orientation penalty
 (`tests/fixtures/atomic-note-skill/recall-friendly-structure-note.json:6`). The
-contract test ties those properties to the canonical doctrine and installed
-skill (`tests/test_atomic_note_skill_examples.py:47`).
+contract test checks those properties and required guidance in the canonical
+doctrine and installed skill (`tests/test_atomic_note_skill_examples.py:47`).
+These checks validate fixtures and instructions, not an agent's execution of
+the workflow.
 
 ## When to Apply
 
@@ -121,11 +120,10 @@ skill (`tests/test_atomic_note_skill_examples.py:47`).
 - When changing doctrine that also affects audit decisions or model
   instructions; bump only the changed contracts, regenerate skill-local
   artifacts, and verify synchronization.
-- When evaluating a skill-contract clarification; compare prior and revised
-  behavior in fresh contexts and check trigger and near-miss boundaries
-  separately (`tests/fixtures/atomic-note-skill/trigger-queries.md:3`,
-  `tests/fixtures/atomic-note-skill/trigger-queries.md:8`,
-  `tests/fixtures/atomic-note-skill/trigger-queries.md:23`).
+- When evaluating a skill-contract clarification, choose a regression check
+  based on the observed failure. For behavior that requires model execution,
+  compare captured prior and revised outputs in Promptfoo. Check triggering
+  separately when the failure concerns skill selection.
 
 ## Examples
 

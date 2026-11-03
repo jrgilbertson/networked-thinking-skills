@@ -90,7 +90,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
 
     def test_production_instructions_define_the_two_matching_pairs(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
-        skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+        skill = normalized_text(ROOT / "skills/atomic-note/references/doctrine.md")
 
         for text in (doctrine, skill):
             self.assertIn("reader-visible wording", text)
@@ -131,14 +131,16 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("variable labels", skill)
         self.assertIn("prose-first sentence", skill)
         self.assertIn("Doctrine owns", skill)
-        self.assertIn("even when the same DAE also appears before `START`", skill)
+        self.assertIn("Read the doctrine's **Anki** section", skill)
 
         self.assertIn("retrieval question", doctrine)
         self.assertIn("central claim", doctrine)
         self.assertIn("they are not the Front prompt", doctrine)
-        self.assertIn("retrieval question", skill)
-        self.assertIn("central claim", skill)
-        self.assertIn("are not the Front", skill)
+        installed_doctrine = normalized_text(ROOT / "skills/atomic-note/references/doctrine.md")
+        self.assertIn("retrieval question", installed_doctrine)
+        self.assertIn("central claim", installed_doctrine)
+        self.assertIn("they are not the Front prompt", installed_doctrine)
+        self.assertIn("put the primary formula and labels on `Back:`", installed_doctrine)
 
     def test_rendered_definition_filename_text_removes_markdown_wrappers(self):
         cases = (
@@ -155,6 +157,10 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
     def test_authoring_guidance_has_note_type_alignment_table(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+        installed_doctrine = normalized_text(ROOT / "skills/atomic-note/references/doctrine.md")
+
+        self.assertIn("`references/doctrine.md`: read before drafting", skill)
+        self.assertIn("Follow the doctrine's **Naming Alignment** section", skill)
 
         expected_rows = (
             "| Plain-prose DAE, with or without Anki | First visible DAE sentence after the H1 | "
@@ -166,7 +172,7 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
             "| Anki `Cloze` with DAE stored only in the card body | Rendered cloze-bearing Definition sentence | "
             "Exact reader-visible wording without the final period |",
         )
-        for text_name, text in (("doctrine", doctrine), ("skill", skill)):
+        for text_name, text in (("doctrine", doctrine), ("installed_doctrine", installed_doctrine)):
             for row in expected_rows:
                 with self.subTest(text=text_name, row=row):
                     self.assertIn(row, text)
@@ -174,8 +180,11 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
     def test_guidance_treats_nonstandard_vaults_as_a_compatibility_exception(self):
         doctrine = normalized_text(ROOT / "shared/references/doctrine.md")
         skill = normalized_text(ROOT / "skills/atomic-note/SKILL.md")
+        installed_doctrine = normalized_text(ROOT / "skills/atomic-note/references/doctrine.md")
 
-        for text in (doctrine, skill):
+        self.assertIn("doctrine's compatibility exception", skill)
+
+        for text in (doctrine, installed_doctrine):
             self.assertIn("pre-existing user vault", text)
             self.assertIn("compatibility exception", text)
             self.assertIn("learner or governing template explicitly declares", text)
@@ -254,6 +263,8 @@ class AtomicNoteSkillContractTest(unittest.TestCase):
         self.assertIn("Do not require a rename or rename approval", remediation)
         self.assertIn("only when that pair would differ", remediation)
         self.assertIn("existing filename/Definition mismatch", skill)
+        self.assertIn("do not write a proposed Definition change that would introduce filename drift", skill)
+        self.assertIn("leave the unchanged Definition and stale filename in place", skill)
         self.assertIn("report an unchanged pre-existing mismatch", skill)
 
     def test_structure_note_guidance_requires_full_unaliased_entries(self):
