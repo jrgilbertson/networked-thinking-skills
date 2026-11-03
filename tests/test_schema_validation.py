@@ -346,7 +346,7 @@ class SchemaValidationTest(unittest.TestCase):
         schema = json.loads(RUN_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
         self.assertEqual(
             schema["$defs"]["priority_counts"]["required"],
-            ["P0", "P1", "P2", "P3", "no_change"],
+            ["P0", "P1", "P2", "P3", "no_change", "unreviewed"],
         )
 
     def test_valid_audit_run_pair_passes(self):

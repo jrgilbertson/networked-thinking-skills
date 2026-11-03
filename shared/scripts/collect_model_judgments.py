@@ -437,7 +437,7 @@ def _validated_batch_judgments(
     for row, judgment in zip(rows, judgments, strict=True):
         stored_judgment = {
             **judgment,
-            "schema_version": MODEL_JUDGMENT_SCHEMA_VERSION,
+            "schema_version": "2.0.0",
             "prompt_version": PROMPT_VERSION,
         }
         validate_model_judgment(stored_judgment)
