@@ -19,11 +19,22 @@ MODEL_JUDGMENT_REQUIRED = {
     "fact_check_required",
     "evidence",
 }
-MODEL_JUDGMENT_SCHEMA_VERSION = "2.0.0"
+MODEL_JUDGMENT_SCHEMA_VERSION = "3.0.0"
+MODEL_PROMPT_VERSION = "2.0.0"
+PROVENANCE_KEYS = {"content_hash", "cache_key", "model_identity", "runner_identity", "run_id"}
 FINDING_REQUIRED = {"code", "message"}
 FINDING_ALLOWED = FINDING_REQUIRED | {"evidence"}
 EVIDENCE_KEYS = {"excerpt", "reason"}
 MAX_EVIDENCE_EXCERPT_WORDS = 40
+
+
+def inventory_cache_key(row: dict[str, Any], *, model_identity: str, runner_identity: str) -> str:
+    return build_cache_key(
+        note_path=row["note_path"], content_hash=row["content_hash"],
+        doctrine_version=row["doctrine_version"], rubric_version=row["rubric_version"],
+        prompt_version=row["prompt_version"], audit_mode=row["audit_mode"],
+        model_identity=model_identity, runner_identity=runner_identity,
+    )
 
 
 def build_cache_key(
@@ -34,6 +45,8 @@ def build_cache_key(
     rubric_version: str,
     prompt_version: str,
     audit_mode: str,
+    model_identity: str | None = None,
+    runner_identity: str | None = None,
 ) -> str:
     payload = {
         "audit_mode": audit_mode,
@@ -43,6 +56,10 @@ def build_cache_key(
         "prompt_version": prompt_version,
         "rubric_version": rubric_version,
     }
+    if model_identity is not None:
+        payload["model_identity"] = model_identity
+    if runner_identity is not None:
+        payload["runner_identity"] = runner_identity
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
     return f"model-judgment:v1:{digest}"
@@ -52,13 +69,18 @@ def validate_model_judgment(judgment: dict[str, Any]) -> None:
     if not isinstance(judgment, dict):
         raise ValidationError("model_judgment must be an object")
 
-    _require_keys(judgment, MODEL_JUDGMENT_REQUIRED, "model_judgment")
-    _reject_extra_keys(judgment, MODEL_JUDGMENT_REQUIRED, "model_judgment")
-    if judgment["schema_version"] != MODEL_JUDGMENT_SCHEMA_VERSION:
+    version = judgment.get("schema_version")
+    required = MODEL_JUDGMENT_REQUIRED | (PROVENANCE_KEYS if version == "3.0.0" else set())
+    _require_keys(judgment, required, "model_judgment")
+    _reject_extra_keys(judgment, required, "model_judgment")
+    if version not in {"2.0.0", "3.0.0"}:
         raise ValidationError(
             "model_judgment.schema_version must be "
-            f"{MODEL_JUDGMENT_SCHEMA_VERSION}"
+            "2.0.0 (historical) or 3.0.0"
         )
+    if version == "3.0.0":
+        for key in PROVENANCE_KEYS:
+            _validate_non_empty_string(judgment[key], f"model_judgment.{key}")
     _validate_non_empty_string(judgment["prompt_version"], "model_judgment.prompt_version")
     _validate_non_empty_string(judgment["note_path"], "model_judgment.note_path")
     _validate_dimension_adjustments(judgment["dimension_adjustments"])

@@ -5,8 +5,7 @@ description: Use when auditing or improving the quality of Networked Thinking at
 
 # Atomic note audit
 
-Audit every Markdown file in the configured Atomic Notes folder, report
-vault-health KPIs, and create remediation queues. Audit first; apply repairs
+Review selected Atomic Notes with the model and exact integrity checks, then publish one recommendation-first plain Markdown report. Audit first; apply repairs
 only through the remediation workflow below. This skill supports batch audit
 and remediation on its own. Install `atomic-note` alongside it for individual
 note authoring.
@@ -27,33 +26,12 @@ note authoring.
 
 ## Read-only audit
 
-1. **Resolve scope.** Confirm the vault configuration and Atomic Notes folder.
-   Write artifacts outside the vault unless the user requests them inside it.
-   For in-vault artifacts, create one run folder under the configured audit
-   output folder using `YYYYMMDDHHMM`, for example `202606061035 Model Judgment`.
-2. **Scan every note.** Run `scripts/audit_notes.py` to produce the deterministic
-   audit JSONL and run manifest. Use each script's `--help` for arguments.
-3. **Validate the baseline.** Run `scripts/validate_jsonl.py` on the audit JSONL
-   before using it for reports or model judgments.
-4. **Review note quality.** Read the doctrine and rubric. Model judgment may send
-   note content or excerpts to the active agent's model provider. Before
-   exhaustive model judgment on private vault content, confirm that the user
-   accepts this provider/tool trust boundary. In default mode,
-   model-judge flagged or ambiguous notes and a sample of apparently clean
-   notes. In exhaustive mode, model-judge every note. Follow
-   `references/model-judgment-workflow.md` to collect, validate, and apply
-   judgments to the deterministic rows before generating model-judgment reports.
-5. **Generate review artifacts.** Run `scripts/generate_report.py` with the
-   validated audit JSONL and matching manifest. When requested, generate an
-   Obsidian Base with `scripts/generate_base.py`.
-6. **Report the queues.** Summarize KPIs and P0-P3/no-change queues, including
-   pending model judgments and fact checks when interpreting clean-note counts.
-   Read-only audit ends with review artifacts and recommendations.
-
-Deterministic scans run locally. Model judgment uses the active desktop or
-terminal agent, such as Claude Desktop, Claude Code, Codex CLI, or Codex Desktop.
-Use the agent's existing authentication; this skill does not collect API keys,
-configure provider accounts, or send vault content through a repo-owned service.
+1. **Resolve scope and privacy first.** Name the vault and selected notes before reading or exporting them. Default to model review of every note in that scope; an intentional limit is partial coverage, not a whole-vault conclusion. Before model review of private content, confirm that the user accepts this provider/tool trust boundary. Reuse an existing confirmation for the same scope and destination. Use the active agent's existing authentication; do not collect API keys or add a model service.
+2. **Capture unscored inventory and exact checks.** Use `scripts/audit_inventory.py`, not a semantic baseline. Preserve source paths, hashes, captured content and scope. Keep supporting evidence outside the vault by default. If in-vault evidence was explicitly requested, use one `Evidence/` directory under the run folder. Keep raw prompts and logs external unless separately requested. Follow vault instructions for every read: when Obsidian app access is required, use the official CLI and `ObsidianAdapter` to supply selected paths, source reads, parent targets and link resolution to `inventory_vault`; supply the same app reader to collection and composition. Never fall back to raw filesystem reads. An app-exported snapshot is also valid if it preserves paths and is refreshed through the app before final composition.
+3. **Review meaning with the model.** Read the doctrine, rubric and `references/model-judgment-workflow.md`. Use the shared prompt and existing runner adapters. Validate each batch before accepting it. Resume only compatible source/prompt/model/runner results. Do not replace missing judgments with heuristic quality scores. Read-only Anki checks may use `notesInfo` and `cardsInfo`; never sync or change cards as part of the audit.
+4. **Compose truthful results.** Recheck source hashes and compose validated model judgments with separately attributed integrity evidence. Pending, failed, unavailable and stale model reviews have null quality values and are never clean. Keep unresolved fact-checks explicit. Anki unavailable or not requested means not checked, not passed. After a collection interruption, still compose and report accepted work and unfinished coverage.
+5. **Publish one report.** Generate `Audit.md` from the matching results and manifest. Use plain Markdown with the recommendation first, concise coverage, then P0-P3 priority buckets. Show each affected note once in the action queue with a usable note link, concrete change and short reason. Summarize unchanged notes as a count. Record completed fixes or held decisions only from evidence; a suggestion is not a completed fix. Link to supporting evidence. Do not rely on graphics or publish competing baseline/model reports. Generate a Base only if requested.
+6. **Finish read-only.** Return the one report and its actual coverage. Audit findings do not authorize note or card changes. Preserve historical artifacts unless the user explicitly requests changes. For an in-vault report, use one run folder under the configured output folder with a `YYYYMMDDHHMM` name, such as `202606061035 Audit`.
 
 ## Remediation
 

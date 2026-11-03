@@ -25,12 +25,14 @@
     "fact_check_required",
     "doctrine_version",
     "rubric_version",
-    "prompt_version"
+    "prompt_version",
+    "config_snapshot",
+    "review_status",
+    "integrity_checks"
   ],
   "properties": {
     "schema_version": {
-      "type": "string",
-      "minLength": 1
+      "const": "2.0.0"
     },
     "run_id": {
       "type": "string",
@@ -89,7 +91,14 @@
       "type": "boolean"
     },
     "dimensions": {
-      "$ref": "#/$defs/dimensions"
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/dimensions"
+        }
+      ]
     },
     "findings": {
       "type": "array",
@@ -145,6 +154,21 @@
     "prompt_version": {
       "type": "string",
       "minLength": 1
+    },
+    "review_status": {
+      "enum": [
+        "reviewed",
+        "pending",
+        "failed",
+        "unavailable",
+        "stale"
+      ]
+    },
+    "integrity_checks": {
+      "type": "array",
+      "items": {
+        "$ref": "audit-inventory.schema.json#/$defs/integrity_check"
+      }
     }
   },
   "$defs": {
@@ -241,5 +265,54 @@
       "minimum": 0,
       "maximum": 100
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "review_status": {
+            "const": "reviewed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "score": {
+            "type": "integer"
+          },
+          "dimensions": {
+            "$ref": "#/$defs/dimensions"
+          },
+          "pending_model": {
+            "const": false
+          },
+          "model_judgment": {
+            "$ref": "model-judgment.schema.json"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "score": {
+            "type": "null"
+          },
+          "dimensions": {
+            "type": "null"
+          },
+          "clean": {
+            "const": false
+          },
+          "pending_model": {
+            "const": true
+          },
+          "model_judgment": {
+            "type": "null"
+          },
+          "findings": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
 }

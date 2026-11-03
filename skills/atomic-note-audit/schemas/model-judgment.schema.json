@@ -13,12 +13,17 @@
     "factual_risk",
     "factual_risk_reason",
     "fact_check_required",
-    "evidence"
+    "evidence",
+    "content_hash",
+    "cache_key",
+    "model_identity",
+    "runner_identity",
+    "run_id"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "2.0.0"
+      "const": "3.0.0"
     },
     "prompt_version": {
       "type": "string",
@@ -55,6 +60,26 @@
       "items": {
         "$ref": "#/$defs/evidence"
       }
+    },
+    "content_hash": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cache_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "model_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runner_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "allOf": [

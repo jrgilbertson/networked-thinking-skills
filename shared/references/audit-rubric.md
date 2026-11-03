@@ -4,14 +4,17 @@ The scoring source of truth is `shared/scripts/finding_codes.py`. The
 model-judgment prompt is generated from that source by
 `python3 -m shared.scripts.model_prompt`.
 
-Final score is a 1-100 remediation urgency score. A perfect vault has an
-average score of 100. Compute each row score with a single loss budget:
+For model-reviewed notes, quality score is a 1-100 urgency diagnostic.
+Unfinished model reviews have null score and dimensions and are never clean.
+Any quality average includes reviewed notes only and states its denominator.
+Compute reviewed quality with a single loss budget:
 
 ```text
 score = clamp(100 - total_loss, 1, 100)
 ```
 
-Findings create loss once. Score alone determines the remediation bucket.
+Model findings create quality loss once. Quality score determines the model-quality bucket.
+Exact integrity checks carry separate action priorities; the report uses the most urgent applicable priority without changing the quality score.
 Finding-level priority labels are not part of the JSON contract.
 
 Finding losses are defined by canonical code in `shared/scripts/finding_codes.py`.
@@ -33,8 +36,9 @@ Priority is assigned from the final score:
 - P3: 85-99, polish.
 - No changes: 100.
 
-A clean note has score 100, no pending model-audit flag, and no pending
-fact-check-required flag.
+A quality-clean note has score 100, no pending model-audit flag, and no pending
+fact-check-required flag. It can still need an exact integrity or Anki repair.
+The report counts a note as needing no changes only when quality is clean and no integrity action remains.
 
 `anki_yagni` is a low-severity memorization-utility sanity check for synced
 Anki notes. Use it when the card appears reference-only, low-stakes, or unlikely
@@ -56,8 +60,7 @@ be shortened without misclassifying the note as a multi-note or reference note.
 control character its escape sequence decodes to, so `\times` is stored as a tab
 followed by `imes`. The corrupted span still reads as math to every other check,
 so the finding reports the command it reconstructs. Remediation restores that
-command; substituting plain text for the equation is not a repair. The finding
-is deterministic and survives model judgment.
+command; substituting plain text for the equation is not a repair. The exact integrity check remains visible independently of model judgment.
 
 `dae_sentence_case` is a deterministic polish check: the first visible letter
 of the Definition, Analogy, and Example must be capitalized, including a leading

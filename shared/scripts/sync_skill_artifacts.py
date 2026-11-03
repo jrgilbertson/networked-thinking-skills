@@ -47,6 +47,10 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
         ),
         schemas=(
             "audit-row.schema.json",
+            "audit-row-v1.schema.json",
+            "audit-inventory.schema.json",
+            "model-judgment-v2.schema.json",
+            "run-manifest-v1.schema.json",
             "config.schema.json",
             "model-judgment.schema.json",
             "remediation-plan.schema.json",
@@ -56,6 +60,7 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
             "__init__.py",
             "apply_model_judgments.py",
             "audit_engine.py",
+            "audit_inventory.py",
             "audit_notes.py",
             "base_generation.py",
             "collect_model_judgments.py",

@@ -32,16 +32,31 @@ Its breadth is intentional; DAE and one-concept rules apply to linked Atomic Not
 The project-specific contract for valid Atomic Note shape, authoring rules, Anki handling, reference material, and deterministic audit expectations.
 
 ### Deterministic Audit
-The non-model review path that evaluates Atomic Notes from structural and textual rules before any model judgment is involved.
+The historical non-model review path that evaluates Atomic Notes from structural and textual rules. It remains available for historical compatibility; it is not a prerequisite for a new model-led audit.
 
 ### Decayed LaTeX Command
 A LaTeX command that reached the vault as the control character its escape sequence decodes to, such as `\times` stored as a tab followed by `imes`. The Obsidian CLI decodes `\t` and `\n` in its `content=` argument, so commands whose names start with `t` or `n` are the ones at risk. Deterministic audit reports these as `decayed_latex_command` and names the command it reconstructs, which is also the repair.
 
 ### Model Judgment Runner
-A local agent invocation path for model judgment collection that executes the shared audit prompt and returns validated model judgment objects without changing downstream JSONL contracts.
+A local agent invocation path for model judgment collection that executes the shared audit prompt and returns validated model judgment objects while the shared collector validates results against the applicable versioned contracts.
 
 ### Runner Adapter
 The runner-specific boundary that owns prompt handoff, agent command invocation, final response capture, raw logs, and safety flags while leaving batching, parsing, validation, and retry behavior to the shared collector.
 
 ### Generated Skill Artifact
 A checked-in installable skill copy of a canonical shared reference or helper that must stay synchronized with its shared source.
+
+### Model-Led Audit
+A quality review whose semantic findings come from model judgment, with exact integrity evidence kept distinct and presented in the same learner-facing report.
+
+### Audit Inventory
+An unscored capture of the selected notes, source hashes and exact-check evidence used to establish what a review covers.
+
+### Review Coverage
+The count of selected notes in each model-review state: reviewed, pending, failed, unavailable or stale. Coverage describes the selected scope rather than implying a whole-vault conclusion.
+
+### Exact Integrity Check
+A reproducible check of actual source structure, characters, link targets or Anki state. Its outcome does not substitute for semantic quality review.
+
+### Quality-Clean Note
+A model-reviewed note with no quality loss or pending fact check. An independent integrity failure can still require action.

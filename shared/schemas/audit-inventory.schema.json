@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://networked-thinking.dev/schemas/audit-inventory.schema.json",
+  "title": "Unscored Atomic Note Inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "artifact_type",
+    "schema_version",
+    "run_id",
+    "note_path",
+    "note_link",
+    "content",
+    "content_hash",
+    "modified_time",
+    "doctrine_version",
+    "rubric_version",
+    "prompt_version",
+    "audit_mode",
+    "config_snapshot",
+    "integrity_checks"
+  ],
+  "properties": {
+    "artifact_type": {
+      "const": "audit_inventory"
+    },
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note_link": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "modified_time": {
+      "type": "string",
+      "minLength": 1
+    },
+    "doctrine_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rubric_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "audit_mode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "config_snapshot": {
+      "type": "object"
+    },
+    "integrity_checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/integrity_check"
+      }
+    }
+  },
+  "$defs": {
+    "integrity_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "source",
+        "status",
+        "message",
+        "priority"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not_checked"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "enum": [
+            "P0",
+            "P1",
+            "P2",
+            "P3",
+            null
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "enum": [
+                  "P0",
+                  "P1",
+                  "P2",
+                  "P3"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "priority": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

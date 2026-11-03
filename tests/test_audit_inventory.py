@@ -1,0 +1,230 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from shared.scripts.audit_inventory import inventory_vault, evidence_directory
+from shared.scripts.schema_validation import ValidationError, validate_inventory_row
+
+
+class FakeAnki:
+    def __init__(self, disconnected=False):
+        self.actions = []
+        self.disconnected = disconnected
+
+    def invoke(self, action, params):
+        self.actions.append(action)
+        if self.disconnected:
+            raise RuntimeError('unavailable')
+        return []
+
+
+class AuditInventoryTest(unittest.TestCase):
+    def make_note(self, root, name, content):
+        p = root / 'Atomic Notes' / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content)
+
+    def test_inventory_is_unscored_and_exact_checks_resolve_links(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'First.md', '# First\n\nEveryone always learns. [[Second]] [[Missing]]')
+            self.make_note(root, 'Second.md', '# Second\n\nAnother idea.')
+            rows = inventory_vault(root, run_id='synthetic')
+            self.assertEqual(len(rows), 2)
+            row = rows[0]
+            validate_inventory_row(row)
+            self.assertNotIn('score', row)
+            self.assertNotIn('findings', row)
+            checks = row['integrity_checks']
+            self.assertTrue(any(c['code'] == 'unresolved_link' and c['status'] == 'failed' for c in checks))
+            self.assertTrue(any(c['source'] == 'metadata' and c['status'] == 'failed' for c in checks))
+            self.assertFalse(any(c['code'] in {'factual_risk', 'invalid_dae', 'weak_dae'} for c in checks))
+
+    def test_duplicate_ids_and_unavailable_anki_remain_distinct(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Example\nSTART\nBasic\nFront: A\nBack: B\n<!--ID: 123-->\nEND\n'
+            for name in ['A.md', 'B.md']:
+                self.make_note(root, name, text)
+            client = FakeAnki(disconnected=True)
+            rows = inventory_vault(root, run_id='synthetic', anki_client=client)
+            for row in rows:
+                checks = row['integrity_checks']
+                self.assertTrue(any(c['code'] == 'shared_anki_id' and c['status'] == 'failed' for c in checks))
+                self.assertTrue(any(c['source'] == 'anki' and c['status'] == 'not_checked' for c in checks))
+            self.assertEqual(client.actions, ['notesInfo'])
+
+    def test_missing_anki_target_is_read_only_failure(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Example.md', '# Example\n<!--ID: 123-->')
+            client = FakeAnki()
+            row = inventory_vault(root, run_id='synthetic', anki_client=client)[0]
+            self.assertEqual(client.actions, ['notesInfo'])
+            self.assertTrue(any(c['code'] == 'missing_anki_target' for c in row['integrity_checks']))
+
+    def test_explicit_selection_and_source_reader(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            reads = []
+            def reader(path):
+                reads.append(path)
+                return '# Snapshot\n\nSynthetic content.'
+            rows = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Chosen.md'], content_reader=reader, parent_targets=set(), link_resolver=lambda target, source: True)
+            self.assertEqual(reads, ['Atomic Notes/Chosen.md'])
+            self.assertEqual(rows[0]['note_path'], 'Atomic Notes/Chosen.md')
+            with self.assertRaises(ValidationError):
+                inventory_vault(root, run_id='synthetic', note_paths=['../outside.md'])
+
+    def test_external_evidence_default_and_one_explicit_vault_directory(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d) / 'vault'
+            root.mkdir()
+            self.assertFalse(evidence_directory(root, root.parent / 'run', allow_vault=False).is_relative_to(root))
+            with self.assertRaises(ValidationError):
+                evidence_directory(root, root / 'run', allow_vault=False)
+            self.assertEqual(evidence_directory(root, root / 'run', allow_vault=True), root.resolve() / 'run' / 'Evidence')
+
+    def test_heading_links_and_malformed_card_order(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'First.md', '# First\nEND\nSTART\n[[Second#Existing]] [[Second#Absent]]')
+            self.make_note(root, 'Second.md', '# Second\n## Existing\nText.')
+            checks = inventory_vault(root, run_id='synthetic')[0]['integrity_checks']
+            self.assertTrue(any(c['code'] == 'card_markers' and c['status'] == 'failed' for c in checks))
+            self.assertEqual(sum(c['code'] == 'unresolved_link' for c in checks), 1)
+
+    def test_literal_sentence_case_check_is_preserved_without_semantic_scoring(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Three-tier system\n\nA three-tier system organizes an application into presentation, logic, and data layers.\n\na three-tier system is like a restaurant with a dining room, kitchen, and pantry.\n\nFor example, a web app keeps HTML, rules, and orders in separate layers.\n'
+            self.make_note(root, 'Example.md', text)
+            row = inventory_vault(root, run_id='synthetic')[0]
+            self.assertTrue(any(c['code'] == 'dae_sentence_case' and c['status'] == 'failed' for c in row['integrity_checks']))
+            self.assertNotIn('score', row)
+
+    def test_dotted_note_titles_attachments_and_ambiguous_targets(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Rate is 3.14 units]] [[Diagram.png]] [[Same]] [[A/Same]]')
+            self.make_note(root, 'Rate is 3.14 units.md', '# Rate\nSynthetic content.')
+            (root / 'Diagram.png').write_bytes(b'synthetic attachment')
+            for folder in ('A', 'B'):
+                (root / folder).mkdir()
+                (root / folder / 'Same.md').write_text('# Same')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            unresolved = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(unresolved, ['Repair the unresolved or ambiguous link: Same'])
+
+    def test_card_marker_examples_do_not_request_repairs(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Example.md', '# Example\n```text\nSTART\n```\n<!--\nEND\nEND\n-->\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            marker = next(c for c in row['integrity_checks'] if c['code'] == 'card_markers')
+            self.assertEqual(marker['status'], 'passed')
+
+    def test_folder_qualified_links_do_not_fall_back_to_other_folders(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Missing/Topic]] [[Other/Topic]] [[Topic]]')
+            (root / 'Other').mkdir()
+            (root / 'Other/Topic.md').write_text('# Topic')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            failures = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(failures, ['Repair the unresolved or ambiguous link: Missing/Topic'])
+
+    def test_heading_targets_use_visible_structural_headings(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Target#Example]] [[Target#Visible]] [[Target#^hidden]] [[Target#^visible]]')
+            self.make_note(root, 'Target.md', '# Target\n```md\n## Example\nSample ^hidden\n```\n   ## Visible ###\nText ^visible\n')
+            row = inventory_vault(root, run_id='synthetic', note_paths=['Atomic Notes/Source.md'])[0]
+            failures = [c['message'] for c in row['integrity_checks'] if c['code'] == 'unresolved_link']
+            self.assertEqual(failures, ['Repair the unresolved or ambiguous link: Target#Example', 'Repair the unresolved or ambiguous link: Target#^hidden'])
+
+    def test_unsynced_card_does_not_claim_anki_access(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Example.md', '# Example\nSTART\nBasic\nFront: A\nBack: B\nEND\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            local = next(c for c in row['integrity_checks'] if c['code'] == 'unsynced_card')
+            self.assertEqual((local['source'], local['status']), ('markers', 'failed'))
+            anki = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+            self.assertEqual([c['status'] for c in anki], ['not_checked'])
+
+    def test_mixed_anki_models_use_each_source_block(self):
+        class SyncedAnki:
+            def invoke(self, action, params):
+                if action == 'notesInfo':
+                    return [
+                        dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}}),
+                        dict(noteId=456, modelName='Cloze', cards=[2, 3], fields={'Text': {'value': '{{c1::A}} {{c2::B}}'}}),
+                    ]
+                return [dict(cardId=i, deckName='Basic deck' if i == 1 else 'Cloze deck') for i in (1, 2, 3)]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Example\nTARGET DECK: Basic deck\nSTART\nBasic\nFront: A\nBack: B\n<!--ID: 123-->\nEND\nTARGET DECK: Cloze deck\nSTART\nCloze\n{{c1::A}} {{c2::B}}\n<!--ID: 456-->\nEND\n'
+            self.make_note(root, 'Example.md', text)
+            row = inventory_vault(root, run_id='synthetic', anki_client=SyncedAnki())[0]
+            checks = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+            self.assertEqual(len(checks), 2)
+            self.assertTrue(all(c['status'] == 'passed' for c in checks), checks)
+
+    def test_synced_card_does_not_hide_an_unsynced_supplemental_card(self):
+        class SyncedAnki:
+            def invoke(self, action, params):
+                if action == 'notesInfo':
+                    return [dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}})]
+                return [dict(cardId=1, deckName='Synthetic')]
+        for client in (None, SyncedAnki()):
+            with self.subTest(connected=client is not None), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self.make_note(root, 'Example.md', '# Example\nSTART\nBasic\nFront: A\nBack: B\n<!--ID: 123-->\nEND\nSTART\nCloze\n{{c1::Supplemental idea}}\nEND\n')
+                row = inventory_vault(root, run_id='synthetic', anki_client=client)[0]
+                local = [c for c in row['integrity_checks'] if c['code'] == 'unsynced_card']
+                self.assertEqual(len(local), 1)
+                self.assertEqual((local[0]['source'], local[0]['status']), ('markers', 'failed'))
+                anki = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+                self.assertEqual([c['status'] for c in anki], ['passed' if client else 'not_checked'])
+
+    def test_binary_attachment_fragments_do_not_abort_capture(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Paper.pdf#page=2]] [[Paper.pdf]]')
+            (root / 'Paper.pdf').write_bytes(b'%PDF-1.7\n%\xff\xfe\x80\x81\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            links = [c for c in row['integrity_checks'] if c['source'] == 'links']
+            self.assertEqual([c['status'] for c in links], ['not_checked', 'passed'])
+            self.assertFalse(any(c['code'] == 'unresolved_link' for c in links))
+
+    def test_anki_id_examples_do_not_trigger_live_lookups_or_shared_ids(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '---\nexample: "<!--ID: 123-->"\n---\n# Example\n```md\nSTART\nBasic\n<!--ID: 123-->\nEND\n```\n`<!--ID: 123-->`\n\n    <!--ID: 123-->\n'
+            for name in ('A.md', 'B.md'):
+                self.make_note(root, name, text)
+            client = FakeAnki()
+            rows = inventory_vault(root, run_id='synthetic', anki_client=client)
+            self.assertEqual(client.actions, [])
+            for row in rows:
+                self.assertFalse(any(c['code'] in {'missing_anki_target', 'shared_anki_id'} for c in row['integrity_checks']))
+
+    def test_only_active_id_comments_supply_card_expectations(self):
+        class ActiveAnki:
+            def __init__(self):
+                self.requests = []
+            def invoke(self, action, params):
+                self.requests.append((action, params))
+                if action == 'notesInfo':
+                    return [dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}})]
+                return [dict(cardId=1, deckName='Synthetic')]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Example\nSTART\nBasic\nFront: A\nBack: B\n```md\n<!--ID: 999-->\n```\n<!--ID: 123-->\nEND\nSTART\nCloze\n{{c1::Supplemental idea}}\n`<!--ID: 456-->`\nEND\n'
+            self.make_note(root, 'Example.md', text)
+            client = ActiveAnki()
+            checks = inventory_vault(root, run_id='synthetic', anki_client=client)[0]['integrity_checks']
+            self.assertEqual(client.requests[0], ('notesInfo', {'notes': [123]}))
+            self.assertEqual(sum(c['code'] == 'unsynced_card' for c in checks), 1)
+            self.assertEqual([c['status'] for c in checks if c['source'] == 'anki'], ['passed'])

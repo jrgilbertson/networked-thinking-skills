@@ -114,7 +114,7 @@ class ModelContractTest(unittest.TestCase):
     def test_schema_allows_null_factual_risk_reason_and_excerpt_reason_evidence(self):
         schema = json.loads(MODEL_JUDGMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
 
-        self.assertEqual(schema["properties"]["schema_version"]["const"], "2.0.0")
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "3.0.0")
         self.assertIn("prompt_version", schema["required"])
         self.assertEqual(set(schema["properties"]["factual_risk_reason"]["type"]), {"string", "null"})
 

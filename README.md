@@ -16,7 +16,7 @@ Networked Thinking is a book and practical system for turning saved articles, hi
 | Skill | What it does |
 |---|---|
 | `atomic-note` | Create or improve a single-concept note in DAE format. |
-| `atomic-note-audit` | Score existing notes against the system's rubric, deterministic checks first, agent judgment second. |
+| `atomic-note-audit` | Review selected notes with model judgment and exact integrity checks; deliver one concise Markdown report. |
 | `managing-obsidian-tasks` | Manage Obsidian tasks from capture to completion. |
 
 More skills will land here as the book's workflows do; each installs independently.

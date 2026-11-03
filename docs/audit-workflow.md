@@ -1,164 +1,61 @@
-# Audit Workflow
+# Audit workflow
 
-Use audit workflows before remediation. These commands read notes and write audit
-artifacts; they do not mutate vault files.
+A new audit is model-led and produces one plain Markdown `Audit.md`.
+The report leads with a recommendation, then coverage and P0-P3 action buckets.
+It lists each affected note once with a usable link, action and short reason.
+Unchanged notes are counted rather than listed.
 
-## Repo-Development Synthetic Fixture Validation
+## Read-only sequence
 
-Run the fixture workflow first when validating a fresh checkout or changing audit
-logic in this repo. `make_fixture_vault` is repo-development-only and is not
-included in installed skills.
+1. Select the vault and note scope; resolve the model provider-sharing boundary before exporting private content.
+2. Capture unscored inventory and exact metadata, marker, literal, link and optional read-only Anki evidence.
+3. Collect model judgments for every selected note using an existing authenticated runner.
+4. Compose accepted judgments with exact evidence and explicit unfinished states.
+5. Validate the matching JSONL/manifest and publish the single report.
 
-```bash
-python3 -m shared.scripts.make_fixture_vault /tmp/networked-thinking-fixture-vault
-python3 -m shared.scripts.audit_notes --vault /tmp/networked-thinking-fixture-vault --run-id fixture-run --jsonl /tmp/networked-thinking-audit/fixture-audit.jsonl --manifest /tmp/networked-thinking-audit/fixture-manifest.json --deterministic-fixture-output
-python3 -m shared.scripts.validate_jsonl /tmp/networked-thinking-audit/fixture-audit.jsonl
-python3 -m shared.scripts.generate_report --jsonl /tmp/networked-thinking-audit/fixture-audit.jsonl --manifest /tmp/networked-thinking-audit/fixture-manifest.json --output /tmp/networked-thinking-audit/fixture-report.md
-python3 -m shared.scripts.generate_base --jsonl /tmp/networked-thinking-audit/fixture-audit.jsonl --output /tmp/networked-thinking-audit/fixture-audit.base
-```
+The installed [model judgment workflow](../shared/references/model-judgment-workflow.md) gives commands, runner options, resume rules and snapshot handling.
+A normal run needs no deterministic semantic scoring pass.
+Use `--inventory-jsonl` for current collection/composition.
+The historical `audit_notes` and `--audit-jsonl` interfaces remain compatibility tools.
 
-Expected command signals:
+## Evidence and coverage
 
-- `audit_notes` prints `rows=<count>`.
-- `collect_model_judgments` prints `total=<count> completed=<count> remaining=<count>`,
-  one line per validated batch, then `done=<count> output=<path>`.
-- `apply_model_judgments` prints `rows=<count> model_judgments=<count>`.
-- `validate_jsonl` prints `valid_rows=<count>`.
-- `generate_report` prints the Markdown report path.
-- `generate_base` prints the Base file path.
+Keep inventory, judgments, results, manifest and private raw logs outside the vault by default.
+If the user explicitly requests in-vault evidence, put JSONL and the manifest in one `Evidence/` directory; keep raw prompts/logs external unless separately requested.
+Publish only `Audit.md` into the requested run folder.
+For in-vault runs, use `YYYYMMDDHHMM` folder names under the configured audit output folder.
+Generate a Base only on request.
 
-## Real Vault Audit
+Quality comes from validated model review.
+Pending, failed, unavailable and stale notes have null quality values and are never clean.
+Report both numerator and denominator; a limited pass is not exhaustive.
+Exact-check and Anki coverage are separate.
+An unavailable or omitted Anki check means not checked.
+Pending fact-checks remain unverified even after model review.
+The audit does not apply fixes or authorize remediation.
 
-Write outputs outside the vault unless the user explicitly wants generated files
-inside the vault.
+Honor vault-specific app tooling for all reads and writes.
+For app-required vaults, use the included adapter callbacks or an app-exported, path-preserving snapshot refreshed before composition.
+Do not silently substitute filesystem reads for required app access.
 
-Run these commands from the installed `atomic-note-audit` skill root.
+## Synthetic development verification
 
-When writing audit artifacts inside an Obsidian vault, create one run folder
-under the configured audit output folder using the vault timestamp style
-`YYYYMMDDHHMM`, for example a folder named `202606061035 Model Judgment`. Do
-not use dashed date folder names such as `2026-06-06 103558`.
-
-Real-vault audit artifacts can expose private note paths, titles, links,
-findings, and recommendations. Keep them outside this repo by default, do not
-commit them, and do not paste or publish them without explicit approval.
-
-```bash
-python3 scripts/audit_notes.py --vault /path/to/vault --run-id baseline-YYYYMMDDHHMM --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json
-python3 scripts/validate_jsonl.py /tmp/networked-thinking-audit/baseline.jsonl
-python3 scripts/generate_report.py --jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --output /tmp/networked-thinking-audit/baseline-report.md
-python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/baseline.jsonl --output /tmp/networked-thinking-audit/baseline.base
-```
-
-## Deep Baseline Guidance
-
-- Confirm the vault path and configured Atomic Notes and Structure Notes folders
-  before running a full baseline.
-- Treat the generated JSONL and manifest as the machine-readable audit record.
-  Treat the Markdown report and Base file as review surfaces.
-- Review the lowest-scoring P0 notes first, then P1. The score determines the
-  remediation bucket.
-- Sample no-change notes and P3 notes during the first baseline to catch false
-  negatives before trusting the queue.
-- Do not remediate directly from an audit row. Create or consume an explicit
-  remediation plan, then follow [remediation.md](remediation.md).
-
-## Model Judgment
-
-Run these commands from the installed `atomic-note-audit` skill root.
-
-Model judgment assumes the user is already running an authenticated desktop or
-terminal agent in the vault, such as Claude Desktop, Claude Code, Codex CLI, or
-Codex Desktop. The audit skill does not own provider authentication, API keys, or
-a hosted inference service.
-
-Deterministic scans run locally. Model judgment may send note content or
-excerpts to the model provider used by the active agent. Confirm the user accepts
-that provider/tool trust boundary before running exhaustive model judgment on
-private vault content.
-
-The deterministic audit remains the source input. A model-judgment pass should
-use `references/model-judgment-prompt.md` and emit strict judgment JSON. Before
-storage, the collector adds schema and prompt provenance so the resulting object
-matches `schemas/model-judgment.schema.json`; validate stored judgments before
-they affect scores, buckets, or reports. In default mode, review flagged or
-ambiguous notes plus a sample of apparently clean notes. In exhaustive mode,
-review every note.
-
-Inspect a single-note content request with the generated prompt and exact
-vault-relative path:
+No provider call or private vault is needed for regression tests:
 
 ```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
+env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_model_led_*.py'
+env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_audit_inventory.py
+lefthook run pre-commit --force --no-auto-install
 ```
 
-The prompt file and the model's raw response are inspection artifacts, not
-stored judgments. To produce a validated judgment that can be applied, select
-the note's deterministic audit row and send that one-row JSONL through the
-trusted collector:
+The installed-skill test copies only the packaged skill into a temporary directory, creates a synthetic vault, runs a fake local runner, composes and validates current results, and publishes one report.
+Coverage includes full and partial review, interrupted/failed collection, malformed batch splitting, stale sources, cache invalidation, held decisions, exact Anki/link failures and optional Base behavior.
+See [the synthetic Markdown report](../tests/golden/fixture-model-led-report.md) for the expected layout.
+Historical fixture outputs remain under `tests/golden/fixture-audit*` to prove old readers still work.
 
-```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --collector-input /tmp/networked-thinking-audit/example-audit.jsonl
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/example-audit.jsonl --output-jsonl /tmp/networked-thinking-audit/example-judgment.jsonl --raw-dir /tmp/networked-thinking-model-raw/example --model gpt-5.5
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/example-judgment.jsonl --output-jsonl /tmp/networked-thinking-audit/example-applied.jsonl --output-manifest /tmp/networked-thinking-audit/example-applied-manifest.json --allow-missing
-```
+## Remediation
 
-The preparation step validates the baseline and emits only the matching audit
-row. The collector owns the stored schema and `prompt_version`, and
-`--allow-missing` keeps unreviewed baseline rows pending in this deliberate
-single-note pass.
-
-Collect exhaustive model judgments in validated batches by selecting a local
-agent runner. Codex CLI remains supported as one runner:
-
-```bash
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
-```
-
-For local agent CLIs that accept the prompt on stdin and write the final response
-to stdout or a file, use the generic command runner:
-
-```bash
-python3 scripts/collect_model_judgments.py --runner command --command 'local-agent --write-final-response "{output_path}"' --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw
-```
-
-The command runner sends the prompt on stdin. If the command writes the final
-JSONL response to stdout, stdout is parsed. If it writes to `{output_path}`, that
-file is parsed instead. Quote path placeholders such as `{output_path}`,
-`{stdout_path}`, and `{stderr_path}` in command templates when paths may contain
-spaces. Use doubled braces for literal `{` or `}` characters. The collector
-writes raw prompts and runner stdout/stderr
-to `--raw-dir`. Those
-files contain private note content, so keep `--raw-dir` outside the vault unless
-the user explicitly wants private prompt logs stored there. The collector adds
-each audit row's `prompt_version` to its stored judgment, so the model supplies
-judgment content rather than provenance. It resumes only when existing
-provenance matches; missing or stale provenance fails instead of silently
-skipping the note. It validates every model response against
-`scripts/model_contract.py` before appending and splits a failed batch
-into smaller retries when the model drifts from JSONL or the controlled finding
-vocabulary. Requiring this stored provenance advances the model-judgment schema
-contract to `2.0.0`; it does not change the model prompt because the collector,
-not the model, owns the new field.
-
-After model judgments have been collected into JSONL, apply them to the
-deterministic audit rows before generating review artifacts:
-
-```bash
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
-python3 scripts/validate_jsonl.py /tmp/networked-thinking-audit/model-applied.jsonl
-python3 scripts/generate_report.py --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --manifest /tmp/networked-thinking-audit/model-applied-manifest.json --output /tmp/networked-thinking-audit/model-applied-report.md
-python3 scripts/generate_base.py --jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output /tmp/networked-thinking-audit/model-applied.base
-```
-
-`apply_model_judgments` requires one judgment per audit row by default. Use
-`--allow-missing` only for an intentional partial/sampling pass; unmatched rows
-remain `pending_model: true` so model judgment coverage and clean-note KPIs stay
-honest. Every supplied judgment must also carry the same `prompt_version` as its
-matching audit row.
-
-For reviewed rows, model findings are the final semantic quality judgment. The
-apply step retains only deterministic audit findings the single-note model
-cannot reliably infer: `missing_frontmatter`, `missing_parent`,
-`malformed_anki`, `duplicate_overlap`, `dae_sentence_case`, and
-`decayed_latex_command`.
+Follow [remediation.md](remediation.md) after reviewing the report.
+A model recommendation is never proof that a fix was applied.
+Preserve previous audits unless the user explicitly requests a change.
+Do not migrate or clean them up as a side effect of adopting the current workflow.

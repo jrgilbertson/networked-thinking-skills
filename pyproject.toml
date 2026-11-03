@@ -1,6 +1,6 @@
 [project]
 name = "networked-thinking-skills"
-version = "0.2.0"
+version = "0.3.0"
 description = "Agent Skills and scripts for Networked Thinking notes and tasks"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -9,7 +9,9 @@ authors = [{ name = "Networked Thinking" }]
 dependencies = []
 
 [tool.networked-thinking]
-schema_version = "1.0.0"
+schema_version = "2.0.0"
 doctrine_version = "1.0.8"
 rubric_version = "1.0.4"
-prompt_version = "1.0.6"
+prompt_version = "2.0.0"
+inventory_schema_version = "1.0.0"
+model_judgment_schema_version = "3.0.0"

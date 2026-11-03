@@ -16,9 +16,13 @@ if __package__ in (None, ""):
 from audit_engine import PROMPT_VERSION
 from model_contract import (
     MODEL_JUDGMENT_SCHEMA_VERSION,
+    MODEL_PROMPT_VERSION,
+    inventory_cache_key,
     validate_model_judgment,
 )
-from schema_validation import ValidationError, validate_audit_row
+from schema_validation import ValidationError, validate_audit_row, validate_inventory_row
+from audit_inventory import content_hash, source_path
+from obsidian_adapter import ObsidianTransportError
 
 
 PROMPT_REFERENCE = Path(__file__).resolve().parents[1] / "references" / "model-judgment-prompt.md"
@@ -37,6 +41,14 @@ class Batch:
 
 class RunnerInvocationError(RuntimeError):
     """Raised when a local runner command fails before usable model output exists."""
+
+
+class SourceChangedError(RuntimeError):
+    """The source no longer matches the captured inventory."""
+
+
+class SourceUnavailableError(RuntimeError):
+    """The selected source cannot currently be read through its required transport."""
 
 
 RETRYABLE_BATCH_ERRORS = (ValidationError, subprocess.TimeoutExpired)
@@ -127,14 +139,25 @@ class CommandRunner:
 def collect_model_judgments(
     *,
     vault_root: Path,
-    audit_jsonl: Path,
+    audit_jsonl: Path | None = None,
+    inventory_jsonl: Path | None = None,
     output_jsonl: Path,
     raw_dir: Path,
     max_notes: int,
     max_chars: int,
     limit: int | None = None,
     runner: AgentRunner,
+    model_identity: str | None = None,
+    source_reader: Any = None,
 ) -> int:
+    if inventory_jsonl is not None:
+        if audit_jsonl is not None:
+            raise ValidationError("select inventory input, not both inventory and legacy audit rows")
+        return _collect_inventory(vault_root=vault_root, inventory_jsonl=inventory_jsonl,
+            output_jsonl=output_jsonl, raw_dir=raw_dir, max_notes=max_notes, max_chars=max_chars,
+            limit=limit, runner=runner, model_identity=model_identity, source_reader=source_reader)
+    if audit_jsonl is None:
+        raise ValidationError("--inventory-jsonl is required for model-led review")
     vault_root = vault_root.resolve()
     raw_dir = raw_dir.resolve()
     rows = _read_audit_rows(audit_jsonl)
@@ -185,12 +208,14 @@ def main(argv: list[str] | None = None) -> int:
         collect_model_judgments(
             vault_root=args.vault,
             audit_jsonl=args.audit_jsonl,
+            inventory_jsonl=args.inventory_jsonl,
             output_jsonl=args.output_jsonl,
             raw_dir=args.raw_dir,
             max_notes=args.max_notes,
             max_chars=args.max_chars,
             limit=args.limit,
             runner=runner,
+            model_identity=args.model_identity,
         )
     except (
         ValidationError,
@@ -198,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
         json.JSONDecodeError,
         subprocess.TimeoutExpired,
         RunnerInvocationError,
+        SourceChangedError,
+        SourceUnavailableError,
     ) as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -209,7 +236,10 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         description="Collect model judgments for audit rows through a local agent runner."
     )
     parser.add_argument("--vault", type=Path, required=True)
-    parser.add_argument("--audit-jsonl", type=Path, required=True)
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--inventory-jsonl", type=Path, help="Unscored inventory from audit_inventory; the default workflow.")
+    inputs.add_argument("--audit-jsonl", type=Path, help="Historical baseline compatibility only; use --inventory-jsonl for new runs.")
+    parser.add_argument("--model-identity", help="Actual configured model for cache provenance; omit when unknown.")
     parser.add_argument("--output-jsonl", type=Path, required=True)
     parser.add_argument(
         "--raw-dir",
@@ -355,6 +385,10 @@ def _run_batch(
 
     runner.run(prompt, output_path=output_path, stdout_path=stdout_path, stderr_path=stderr_path)
 
+    for row in batch.rows:
+        if row.get("artifact_type") == "audit_inventory":
+            _verified_inventory_content(vault_root, row)
+
     judgments = parse_model_output(output_path.read_text(encoding="utf-8"))
     return _validated_batch_judgments(batch.rows, judgments)
 
@@ -378,8 +412,11 @@ def render_batch_prompt(vault_root: Path, rows: list[dict[str, Any]]) -> str:
     ]
     for number, row in enumerate(rows, start=1):
         note_path = str(row["note_path"])
-        path = _resolve_note_path(vault_root, note_path)
-        content = path.read_text(encoding="utf-8")
+        if row.get("artifact_type") == "audit_inventory":
+            content = _verified_inventory_content(vault_root, row)
+        else:
+            path = _resolve_note_path(vault_root, note_path)
+            content = path.read_text(encoding="utf-8")
         lines.extend(
             [
                 f"### Note {number}",
@@ -437,9 +474,13 @@ def _validated_batch_judgments(
     for row, judgment in zip(rows, judgments, strict=True):
         stored_judgment = {
             **judgment,
-            "schema_version": MODEL_JUDGMENT_SCHEMA_VERSION,
+            "schema_version": "2.0.0",
             "prompt_version": PROMPT_VERSION,
         }
+        if row.get("artifact_type") == "audit_inventory":
+            stored_judgment.update(row["_provenance"])
+            stored_judgment["schema_version"] = MODEL_JUDGMENT_SCHEMA_VERSION
+            stored_judgment["prompt_version"] = row["prompt_version"]
         validate_model_judgment(stored_judgment)
         stored_judgments.append(stored_judgment)
     return stored_judgments
@@ -475,8 +516,11 @@ def _make_batches(
     current: list[dict[str, Any]] = []
     current_chars = 0
     for row in rows:
-        path = _resolve_note_path(vault_root, str(row["note_path"]))
-        note_chars = path.stat().st_size
+        if row.get("artifact_type") == "audit_inventory":
+            note_chars = len(row["content"])
+        else:
+            path = _resolve_note_path(vault_root, str(row["note_path"]))
+            note_chars = path.stat().st_size
         if current and (len(current) >= max_notes or current_chars + note_chars > max_chars):
             batches.append(current)
             current = []
@@ -567,6 +611,113 @@ def _resolve_note_path(vault_root: Path, note_path: str) -> Path:
     if not path.exists():
         raise ValidationError(f"note path does not exist: {note_path}")
     return path
+
+
+
+def _verified_inventory_content(vault: Path, row: dict[str, Any]) -> str:
+    reader = row.get("_source_reader")
+    try:
+        text = reader(row["note_path"]) if reader is not None else source_path(vault, row["note_path"]).read_text(encoding="utf-8")
+    except (OSError, ObsidianTransportError) as exc:
+        raise SourceUnavailableError(f"source unavailable: {row['note_path']}: {exc}") from exc
+    if content_hash(text) != row["content_hash"]:
+        raise SourceChangedError(f"source changed: {row['note_path']}; refresh the inventory before review")
+    return row["content"]
+
+
+def _runner_identity(runner: AgentRunner) -> str:
+    identity = type(runner).__name__ + ":v1"
+    if isinstance(runner, CommandRunner):
+        identity += ":" + content_hash(runner.command_template)
+    elif isinstance(runner, CodexRunner):
+        identity += ":" + content_hash(json.dumps([runner.codex_bin, runner.sandbox, runner.ignore_user_config]))
+    return identity
+
+
+def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl: Path,
+                       raw_dir: Path, max_notes: int, max_chars: int, limit: int | None,
+                       runner: AgentRunner, model_identity: str | None, source_reader: Any) -> int:
+    vault = vault_root.resolve()
+    rows = _read_jsonl(inventory_jsonl)
+    if not inventory_jsonl.is_file():
+        raise ValidationError("inventory file does not exist")
+    for row in rows:
+        validate_inventory_row(row)
+        if row["prompt_version"] != MODEL_PROMPT_VERSION:
+            raise ValidationError("inventory prompt_version mismatch; refresh inventory")
+    selected = {row["note_path"]: row for row in rows}
+    if len(selected) != len(rows):
+        raise ValidationError("duplicate inventory note_path")
+    if len({(row["run_id"], row["audit_mode"]) for row in rows}) > 1:
+        raise ValidationError("inventory scope and run identity must agree")
+    if limit is not None and limit < 0:
+        raise ValidationError("limit must be non-negative")
+    model = model_identity or (runner.model if isinstance(runner, CodexRunner) else "unknown")
+    if model.strip().casefold() in {"auto", "default", "unknown"}:
+        model = "unknown"
+    identity = _runner_identity(runner)
+    output_jsonl.parent.mkdir(parents=True, exist_ok=True)
+    raw_dir = raw_dir.resolve()
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    states = {row["note_path"]: {"status": "pending", "content_hash": row["content_hash"]} for row in rows}
+    active = rows
+    errors = []
+    accepted = []
+    try:
+        for row in rows:
+            active = [row]
+            _verified_inventory_content(vault, {**row, "_source_reader": source_reader})
+            row["_source_reader"] = source_reader
+            row["_provenance"] = dict(run_id=row["run_id"], content_hash=row["content_hash"],
+                model_identity=model, runner_identity=identity,
+                cache_key=inventory_cache_key(row, model_identity=model, runner_identity=identity))
+        active = rows
+        seen = set()
+        for judgment in _read_jsonl(output_jsonl):
+            validate_model_judgment(judgment)
+            path = judgment["note_path"]
+            if path not in selected or path in seen:
+                raise ValidationError(f"duplicate or out-of-scope existing judgment: {path}")
+            seen.add(path)
+            row = selected[path]
+            matches = (judgment["schema_version"] == "3.0.0"
+                and judgment["prompt_version"] == row["prompt_version"]
+                and judgment.get("content_hash") == row["content_hash"]
+                and judgment.get("model_identity") == model
+                and judgment.get("runner_identity") == identity
+                and judgment.get("cache_key") == row["_provenance"]["cache_key"]
+                and (model != "unknown" or judgment.get("run_id") == row["run_id"]))
+            if matches:
+                accepted.append(judgment)
+                states[path]["status"] = "reviewed"
+        output_jsonl.write_text("".join(json.dumps(j, sort_keys=True) + "\n" for j in accepted), encoding="utf-8")
+        work_rows = rows if limit is None else rows[:limit]
+        remaining = [row for row in work_rows if states[row["note_path"]]["status"] != "reviewed"]
+        for index, batch_rows in enumerate(_make_batches(vault, remaining, max_notes=max_notes, max_chars=max_chars), 1):
+            active = batch_rows
+            try:
+                _run_batch_with_split(Batch(index, batch_rows), vault_root=vault, output_jsonl=output_jsonl,
+                    raw_dir=raw_dir, runner=runner)
+            finally:
+                for j in _read_jsonl(output_jsonl):
+                    states[j["note_path"]]["status"] = "reviewed"
+        return sum(states[row["note_path"]]["status"] == "reviewed" for row in work_rows)
+    except (ValidationError, SourceChangedError, SourceUnavailableError, OSError, RunnerInvocationError, subprocess.TimeoutExpired) as exc:
+        if isinstance(exc, SourceChangedError):
+            state = "stale"
+        elif isinstance(exc, (FileNotFoundError, SourceUnavailableError)) or "failed to start" in str(exc):
+            state = "unavailable"
+        else:
+            state = "failed"
+        for row in active:
+            if states[row["note_path"]]["status"] != "reviewed":
+                states[row["note_path"]]["status"] = state
+        errors.append(str(exc))
+        raise
+    finally:
+        status = dict(schema_version="1.0.0", run_id=rows[0]["run_id"] if rows else "empty",
+                      states=states, errors=errors)
+        output_jsonl.with_suffix(".status.json").write_text(json.dumps(status, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

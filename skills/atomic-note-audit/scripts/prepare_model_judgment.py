@@ -11,7 +11,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from model_prompt import render_model_judgment_prompt
-from schema_validation import ValidationError, validate_audit_row
+from schema_validation import ValidationError, validate_audit_row, validate_inventory_row
 
 
 def render_model_judgment_request(vault_root: Path, note_path: str) -> str:
@@ -44,7 +44,10 @@ def prepare_collector_input(audit_jsonl: Path, note_path: str) -> str:
             continue
         row = json.loads(line)
         try:
-            validate_audit_row(row, default_scan=True)
+            if row.get("artifact_type") == "audit_inventory":
+                validate_inventory_row(row)
+            else:
+                validate_audit_row(row, default_scan=True)
         except ValidationError as exc:
             raise ValidationError(f"audit row line {line_number}: {exc}") from exc
         if row["note_path"] != note_path:
@@ -103,9 +106,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="Write the note's validated audit row as collector input JSONL.",
     )
     parser.add_argument(
-        "--audit-jsonl",
+        "--inventory-jsonl", "--audit-jsonl", dest="audit_jsonl",
         type=Path,
-        help="Deterministic audit JSONL; required with --collector-input.",
+        help="Unscored inventory JSONL; --audit-jsonl remains a historical input alias.",
     )
     return parser.parse_args(argv)
 

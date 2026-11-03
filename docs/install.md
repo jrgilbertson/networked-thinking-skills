@@ -1,5 +1,7 @@
 # Install
 
+A new audit uses model judgment from unscored inventory and returns one plain Markdown `Audit.md`; no scored baseline is required. The existing authenticated runner is sufficient, and no new API key or service is needed. See [audit-workflow.md](audit-workflow.md).
+
 Run read-only audits before remediation. Remediation can edit, split, relink, or delete vault files, and it requires Obsidian-aware tooling.
 
 This repo packages three skills:

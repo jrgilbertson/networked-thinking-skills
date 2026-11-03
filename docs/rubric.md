@@ -21,7 +21,7 @@ and the generated model prompt.
 
 ## Bucket
 
-Bucket means remediation urgency and is derived from score:
+The model-quality bucket is derived from score:
 
 - P0: Critical structural hazards.
 - P1: High-impact doctrine failures.
@@ -29,8 +29,9 @@ Bucket means remediation urgency and is derived from score:
 - P3: Polish.
 - No changes: Score 100.
 
-A clean note scores 100, has no pending model audit flag, and has no pending
-fact-check-required flag.
+Only reviewed notes have quality scores. Pending, failed, unavailable and stale reviews have null quality values.
+A quality-clean note scores 100, has no pending model audit flag, and has no pending fact-check-required flag.
+Exact integrity and Anki actions remain independent; the report uses the most urgent applicable action bucket and does not count those notes as unchanged.
 
 An overlong Definition is a P1 DAE doctrine failure reported as
 `definition_too_long`. This means the note should be shortened in place, not
@@ -64,7 +65,8 @@ learners may need cards that look unnecessary outside their domain.
 
 ## How To Read Results
 
-- Use bucket and score to decide work order.
+- Read the recommendation first, then the P0-P3 action buckets.
+- Use quality scores only for reviewed notes; exact checks can independently raise action priority.
 - Use dimension scores as diagnostics for what kind of edit is needed.
 - Use findings and recommendations to choose a remediation mode.
 - Use the JSONL row and manifest as the durable audit record.
