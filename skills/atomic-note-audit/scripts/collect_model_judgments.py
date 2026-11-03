@@ -644,6 +644,8 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
     if limit is not None and limit < 0:
         raise ValidationError("limit must be non-negative")
     model = model_identity or (runner.model if isinstance(runner, CodexRunner) else "unknown")
+    if model.strip().casefold() in {"auto", "default", "unknown"}:
+        model = "unknown"
     identity = _runner_identity(runner)
     output_jsonl.parent.mkdir(parents=True, exist_ok=True)
     raw_dir = raw_dir.resolve()
@@ -670,6 +672,8 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
             matches = (judgment["schema_version"] == "3.0.0"
                 and judgment["prompt_version"] == row["prompt_version"]
                 and judgment.get("content_hash") == row["content_hash"]
+                and judgment.get("model_identity") == model
+                and judgment.get("runner_identity") == identity
                 and judgment.get("cache_key") == row["_provenance"]["cache_key"]
                 and (model != "unknown" or judgment.get("run_id") == row["run_id"]))
             if matches:

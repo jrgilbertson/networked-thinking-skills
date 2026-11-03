@@ -15,7 +15,7 @@ if __package__ in (None, ""):
 
 from audit_engine import DOCTRINE_VERSION, RUBRIC_VERSION, _load_structure_targets, _utc_now
 from config import DEFAULT_CONFIG, resolve_config
-from markdown_parse import extract_frontmatter, extract_wikilinks, count_anki_blocks, decayed_latex_commands
+from markdown_parse import extract_frontmatter, extract_wikilinks, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase
 from model_contract import MODEL_PROMPT_VERSION
 from schema_validation import ValidationError, validate_inventory_row
 from verify_anki_notes import AnkiConnectClient, extract_anki_ids, _visible_field_text
@@ -110,6 +110,8 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
         checks.append(_check("card_markers", "markers", "Card markers are balanced and ordered." if valid_markers else "Repair the malformed START/END card boundaries.", status="passed" if valid_markers else "failed", priority="P1"))
         corruption = decayed_latex_commands(text)
         checks.append(_check("literal_corruption", "literal", "Restore the escaped command: " + ", ".join(corruption) if corruption else "No known decayed command characters found.", status="failed" if corruption else "passed", priority="P1"))
+        lowercase = dae_section_starts_lowercase(text)
+        checks.append(_check("dae_sentence_case", "sentence_case", "Capitalize the first visible letter of the affected DAE sentence." if lowercase else "No literal DAE sentence-case violation found.", status="failed" if lowercase else "passed", priority="P3"))
         links = extract_wikilinks(text)
         if not links:
             checks.append(_check("link_targets", "links", "No wikilink targets to resolve."))

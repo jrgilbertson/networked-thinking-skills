@@ -66,3 +66,15 @@ contract that changed, and document why.
 - Use `shared.scripts.make_fixture_vault` and `tests/fixtures/tiny-vault` for
   examples.
 - Keep golden outputs under `tests/golden` synthetic and reproducible.
+
+## Model-led audit contracts
+
+Version 0.3.0 makes unscored inventory the default review input and publishes one recommendation-first Markdown report.
+Current inventory is 1.0.0, result/manifest 2.0.0, stored judgment 3.0.0 and prompt 2.0.0.
+Doctrine 1.0.8 and rubric 1.0.4 retain their existing note rules, finding losses and quality bands.
+The historical engine keeps its original schema/prompt labels and compatibility entry points; do not relabel or rewrite stored audits.
+
+Canonical runtime changes belong under `shared/`; update the sync manifest when adding files and regenerate the installable skill.
+`test_model_led_install.py` executes the current CLI chain from a copied skill with no repository imports or real provider call.
+`test_model_led_reporting.py` protects the plain Markdown hierarchy, links, coverage and small action queue against synthetic fixtures.
+Use the generated `fixture-model-led-report.md` alongside historical fixtures, which continue to verify old readers.

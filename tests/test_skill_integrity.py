@@ -54,17 +54,24 @@ def _required_reference_paths(text):
 class SkillIntegrityTest(unittest.TestCase):
     def test_private_content_confirmation_precedes_model_judgment_workflow(self):
         text = (ROOT / "skills/atomic-note-audit/SKILL.md").read_text(encoding="utf-8")
-        review_step = text.split("4. **Review note quality.**", 1)[1].split(
-            "5. **Generate review artifacts.**", 1
-        )[0]
+        review_step = text.split("## Read-only audit", 1)[1].split("## Remediation", 1)[0]
         normalized = " ".join(review_step.split())
 
         confirmation = "confirm that the user accepts this provider/tool trust boundary"
         self.assertIn(confirmation, normalized)
         self.assertLess(
             normalized.index(confirmation),
-            normalized.index("references/model-judgment-workflow.md"),
+            normalized.index("scripts/audit_inventory.py"),
         )
+
+    def test_default_audit_is_model_led_plain_markdown(self):
+        text = (ROOT / 'skills/atomic-note-audit/SKILL.md').read_text()
+        workflow = text.split('## Read-only audit', 1)[1].split('## Remediation', 1)[0]
+        self.assertIn('scripts/audit_inventory.py', workflow)
+        self.assertNotIn('scripts/audit_notes.py', workflow)
+        self.assertIn('recommendation first', workflow)
+        self.assertIn('plain Markdown', workflow)
+        self.assertIn('P0', workflow)
 
     def test_skills_have_frontmatter_and_skill_local_references(self):
         for skill, references in SKILL_REFERENCES.items():

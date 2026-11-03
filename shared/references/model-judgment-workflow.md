@@ -1,84 +1,83 @@
-# Model judgment workflow
+# Model-led audit workflow
 
-Run these commands from the installed `atomic-note-audit` skill root, after
-creating and validating the deterministic audit JSONL and manifest.
+Model judgment is the default semantic review for all explicitly selected notes.
+Start from an unscored inventory; no scored baseline is required.
+Use the doctrine and generated model prompt before judging content.
+Choose scope and resolve the provider-sharing boundary before exporting private notes.
 
-Use `references/model-judgment-prompt.md` verbatim when asking an
-LLM for model judgment. The prompt is generated from the scoring vocabulary
-source of truth and must stay aligned with `scripts/finding_codes.py`.
-Model output must be strict JSON and validated before it affects scoring.
-The collector owns stored schema and prompt provenance; do not ask the model to
-invent those values.
+## Current installed workflow
 
-## Inspect one note
-
-To inspect the generated content prompt for one note, run:
+Run from the installed skill root.
+The examples below use canonical repository module commands; generated installed references use the equivalent `scripts/*.py` commands.
+Set `VAULT` to the authorized vault or an app-exported snapshot and `AUDIT_MODEL` to the configured model.
+Set `EVIDENCE` and `RAW` to new external run directories; `REPORT` is the requested `Audit.md` destination.
 
 ```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --output /tmp/model-judgment-request.md
+python3 -m shared.scripts.audit_inventory --vault "$VAULT" --run-id synthetic-example --evidence-dir "$EVIDENCE"
+python3 -m shared.scripts.collect_model_judgments --runner codex --model "$AUDIT_MODEL" --vault "$VAULT" --inventory-jsonl "$EVIDENCE/inventory.jsonl" --output-jsonl "$EVIDENCE/judgments.jsonl" --raw-dir "$RAW"
+python3 -m shared.scripts.apply_model_judgments --vault "$VAULT" --inventory-jsonl "$EVIDENCE/inventory.jsonl" --model-judgments "$EVIDENCE/judgments.jsonl" --output-jsonl "$EVIDENCE/results.jsonl" --output-manifest "$EVIDENCE/manifest.json"
+python3 -m shared.scripts.validate_jsonl "$EVIDENCE/results.jsonl"
+python3 -m shared.scripts.generate_report --jsonl "$EVIDENCE/results.jsonl" --manifest "$EVIDENCE/manifest.json" --output "$REPORT"
 ```
 
-## Collect one judgment
+Use a unique run ID rather than the example ID for a real run.
+Add repeatable `--note-path "Atomic Notes/Example.md"` arguments to inventory capture for an explicit subset.
+Add `--check-anki` only for the read-only AnkiConnect check.
+Without it, integration is not checked; an unavailable connection is also not checked.
+Missing targets and duplicate source IDs remain distinct integrity failures.
 
-The prompt and the model's raw response are inspection artifacts. To produce a
-validated judgment that can affect scoring, select the note's audit row and use
-the batch collector:
+If evidence inside the vault was explicitly requested, inventory capture accepts `--allow-vault-evidence` and places its JSONL under one `Evidence/` directory.
+Use the printed inventory path in subsequent commands.
+Raw prompts and runner logs stay in the external `RAW` directory unless separately requested.
+
+When the vault requires app-context access, do not run the filesystem capture command on the live vault.
+Supply app-derived discovery, reads, parent targets and resolution to `inventory_vault`, and pass the app reader as `source_reader` to collection and `compose_inventory`.
+The included `ObsidianAdapter.read_note` can provide that reader.
+Alternatively export a complete path-preserving snapshot through the app and refresh it through the app before composition; scope and link-check conclusions must describe the captured snapshot.
+Do not claim the private source is current when only an older snapshot was checked.
+
+## Runner boundary
+
+The generic runner accepts a configured local agent command:
 
 ```bash
-python3 scripts/prepare_model_judgment.py --vault /path/to/vault --note-path "Atomic Notes/Example.md" --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --collector-input /tmp/networked-thinking-audit/example-audit.jsonl
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/example-audit.jsonl --output-jsonl /tmp/networked-thinking-audit/example-judgment.jsonl --raw-dir /tmp/networked-thinking-model-raw/example --model gpt-5.5
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/example-judgment.jsonl --output-jsonl /tmp/networked-thinking-audit/example-applied.jsonl --output-manifest /tmp/networked-thinking-audit/example-applied-manifest.json --allow-missing
+python3 -m shared.scripts.collect_model_judgments --runner command --command 'local-agent --write-final-response "{output_path}"' --model-identity configured-model --vault "$VAULT" --inventory-jsonl "$EVIDENCE/inventory.jsonl" --output-jsonl "$EVIDENCE/judgments.jsonl" --raw-dir "$RAW"
 ```
 
-The preparation step validates the deterministic audit rows and writes only the
-selected row. The collector adds stored schema and prompt provenance.
+Replace the command and model identity with the active local runner configuration.
+The collector sends the prompt on stdin and reads the response from stdout or `{output_path}`.
+Quote path placeholders when paths can contain spaces; double literal braces in command templates.
+Adapters own invocation and capture, while the shared collector owns batching, parsing, validation, output retries and provenance.
+Malformed batch output can split into smaller retries; launch/nonzero invocation failures do not recursively split.
 
-## Collect a batch
+The model returns findings and evidence, not scores or trusted provenance.
+The collector stamps captured source hash, prompt version, configured model identity, runner identity, run ID and cache key.
+A configured identity is not a verified served-model receipt; use `unknown` for Auto or otherwise unidentifiable models.
+Unknown identity permits same-run recovery and disables cross-run cache reuse.
+Known identity and runner configuration must match before reuse.
 
-For exhaustive runs, use the validated batch collector with a selected local
-agent runner. To use Codex CLI:
+`--limit` intentionally reviews only part of the selected scope.
+Composition still includes every selected note and reports the rest as pending.
+The collector writes a sibling `judgments.status.json`; composition reads it automatically to distinguish failed, unavailable and stale work.
+After interruption, run composition and report generation to expose accepted results and incomplete coverage.
+Refresh inventory when source content changes; compatible completed judgments can be reused while changed notes are reviewed again.
+Never label unreviewed notes clean or use their score in a quality average.
 
-```bash
-python3 scripts/collect_model_judgments.py --runner codex --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw --model gpt-5.5
-```
+## One plain Markdown report
 
-For local agent CLIs that accept the prompt on stdin and write the final response
-to stdout or a file, use the generic command runner:
+Lead with the recommended changes, then concise coverage, then actions grouped under P0-P3 headings.
+Use each affected note's link once in the queue, with its action and short reason.
+Keep quality, exact integrity failures, pending fact-checks and Anki status distinguishable.
+Unchanged notes are an aggregate count; detailed per-note evidence stays outside the normal reading path.
+Completed/held decisions come from the manifest's recorded decisions, never from suggested model fixes.
+The report uses text hierarchy and links, not graphics.
+An optional Base remains a derived view and is not a second default report.
 
-```bash
-python3 scripts/collect_model_judgments.py --runner command --command 'local-agent --write-final-response "{output_path}"' --vault /path/to/vault --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --output-jsonl /tmp/networked-thinking-audit/model-judgments.jsonl --raw-dir /tmp/networked-thinking-model-raw
-```
+## Versions and historical compatibility
 
-The command runner sends the prompt on stdin. If the command writes the final
-JSONL response to stdout, stdout is parsed. If it writes to `{output_path}`, that
-file is parsed instead. Quote path placeholders such as `{output_path}`,
-`{stdout_path}`, and `{stderr_path}` in command templates when paths may contain
-spaces. Use doubled braces for literal `{` or `}` characters.
-
-Keep `--raw-dir` outside the vault by default because it contains private note
-content in prompts and logs. The collector stamps each stored judgment with the
-matching audit row's `prompt_version`. It resumes only when existing provenance
-matches, validates each response, and splits failed batches into smaller retries.
-
-## Apply judgments
-
-The collector stores model responses as JSONL, one strict
-`schemas/model-judgment.schema.json` object per line. Then apply them to
-the deterministic audit rows before generating the model-judgment report or
-Base:
-
-```bash
-python3 scripts/apply_model_judgments.py --audit-jsonl /tmp/networked-thinking-audit/baseline.jsonl --manifest /tmp/networked-thinking-audit/baseline-manifest.json --model-judgments /tmp/networked-thinking-audit/model-judgments.jsonl --output-jsonl /tmp/networked-thinking-audit/model-applied.jsonl --output-manifest /tmp/networked-thinking-audit/model-applied-manifest.json
-```
-
-By default, the apply step fails unless every audit row has exactly one
-matching model judgment. Use `--allow-missing` only for a deliberate sampling
-pass; unmatched rows stay `pending_model: true`. Supplied judgments with missing
-or mismatched `prompt_version` provenance are rejected.
-
-For reviewed rows, model findings replace deterministic semantic findings. The
-apply step keeps only deterministic audit checks a single-note model cannot
-reliably infer: `missing_frontmatter`, `missing_parent`, `malformed_anki`,
-`duplicate_overlap`, `dae_sentence_case`, and `decayed_latex_command`.
-These checks read exact file characters, structure, markers, or surrounding
-vault content.
+Current contracts are inventory 1.0.0, audit row/manifest 2.0.0, stored model judgment 3.0.0 and prompt 2.0.0.
+The existing doctrine and loss table remain unchanged.
+The historical deterministic engine, `--audit-jsonl` compatibility entry points and v1/v2 schemas remain available for old artifacts and callers.
+They are outside the new default workflow and do not justify a new baseline report.
+The `--inventory-jsonl` path rejects scored baseline input with an actionable diagnostic.
+Do not rewrite or delete previous audits.

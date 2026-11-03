@@ -93,3 +93,12 @@ class AuditInventoryTest(unittest.TestCase):
             checks = inventory_vault(root, run_id='synthetic')[0]['integrity_checks']
             self.assertTrue(any(c['code'] == 'card_markers' and c['status'] == 'failed' for c in checks))
             self.assertEqual(sum(c['code'] == 'unresolved_link' for c in checks), 1)
+
+    def test_literal_sentence_case_check_is_preserved_without_semantic_scoring(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Three-tier system\n\nA three-tier system organizes an application into presentation, logic, and data layers.\n\na three-tier system is like a restaurant with a dining room, kitchen, and pantry.\n\nFor example, a web app keeps HTML, rules, and orders in separate layers.\n'
+            self.make_note(root, 'Example.md', text)
+            row = inventory_vault(root, run_id='synthetic')[0]
+            self.assertTrue(any(c['code'] == 'dae_sentence_case' and c['status'] == 'failed' for c in row['integrity_checks']))
+            self.assertNotIn('score', row)

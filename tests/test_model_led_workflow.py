@@ -115,6 +115,16 @@ class ModelLedWorkflowTest(unittest.TestCase):
             self.collect(root, path, output, runner, model_identity='synthetic-model-b')
             self.assertEqual(runner.calls, 2)
 
+    def test_auto_model_identity_does_not_establish_cross_run_provenance(self):
+        with tempfile.TemporaryDirectory() as d:
+            root, inventory, path, output = self.setup_run(d, 1)
+            runner = SyntheticRunner()
+            self.collect(root, path, output, runner, model_identity='Auto')
+            inventory[0]['run_id'] = 'new-synthetic-run'
+            path.write_text(json.dumps(inventory[0]) + '\n')
+            self.collect(root, path, output, runner, model_identity='Auto')
+            self.assertEqual(runner.calls, 2)
+
     def test_quality_is_separate_from_exact_failures(self):
         with tempfile.TemporaryDirectory() as d:
             root, inventory, path, output = self.setup_run(d, 1)
