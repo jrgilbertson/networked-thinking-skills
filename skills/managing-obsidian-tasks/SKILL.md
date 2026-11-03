@@ -5,37 +5,45 @@ license: MIT
 compatibility: Requires a running Obsidian desktop app with the official Obsidian CLI. The core Bases plugin is required for setup, search, create, update, and close because each operation completes through Base views.
 ---
 
-# Managing Obsidian Tasks
+# Managing Obsidian tasks
 
 Manage Obsidian tasks from capture to completion. Task notes are the source of
 truth; dashboards only display their properties.
 
-## Required References
+## Required references
 
-- `references/task-contract.md`
+- `references/task-contract.md`: read before drafting, creating, changing,
+  transitioning, or validating a task. Defines task identity, metadata, body
+  sections, duplicates, and status transitions. A search-only run may delay
+  reading it until task properties need interpretation.
 
-Read `references/task-contract.md` before drafting, creating, changing,
-transitioning, or validating a task. A search-only run may delay reading it
-until task properties need interpretation.
+## Assets
 
 Read `assets/task-template.md` when creating a task or when setting up or
-repairing the task system. Read the other files under `assets/` only when
-setting up or repairing the task system; they define the Base and structure
-note.
+repairing the task system. Read `assets/tasks.base` and
+`assets/tasks-structure-note.md` only when setting up or repairing its Base and
+structure note.
 
-## Obsidian CLI boundary
+## Vault operations
 
 Use the official Obsidian CLI for every vault search, read, create, update,
-rename, move, property change, and deletion. Run it through
-`python3 scripts/obsidian_cli.py` when the bundled wrapper is usable; otherwise
-invoke the official CLI binary directly. Always pass the intended vault and an
-exact vault-relative path for mutations. With the bundled wrapper, pass the
+rename, move, property change, and deletion. Use the bundled
+`python3 scripts/obsidian_cli.py` wrapper with Python 3.11 or newer when usable;
+otherwise invoke the official CLI binary directly. Always pass the intended
+vault and an exact vault-relative path for mutations. With the bundled wrapper, pass the
 vault as `--vault <vault-name>` so it is placed before the Obsidian command;
 never forward a raw `vault=` argument.
 
 Preflight the CLI against the target vault before any write. When the app or
 CLI is unavailable, keep the proposed content as a draft and stop before
 mutation. Raw filesystem access is not a fallback for vault content.
+
+For task creation and each of the three assets (the template, Base, and
+structure note), pass the complete approved content through a quote-safe
+transport, such as a serialized JSON/base64 payload or a helper that safely
+escapes content. Never interpolate note Markdown, asset Markdown, or YAML into
+a shell `content=` argument. The transport must preserve apostrophes,
+backticks, shell substitutions, backslashes, and wikilinks literally.
 
 ## Workflow
 
@@ -76,11 +84,9 @@ created or replaced and wait for approval. After approval and immediately
 before each write, re-read the exact target or confirm that it remains absent,
 then compare that state with the approved baseline. On a mismatch, abort the
 write, recompute the proposal from the current state, present the revised
-preview, and request approval again. Write approved content through the CLI.
-For each of the three assets (the template, Base, and structure note), use the
-same quote-safe JSON/base64/helper transport required for task creation. Never
-interpolate asset Markdown or YAML into a shell `content=` argument. Preserve
-user customizations unless they violate the task contract.
+preview, and request approval again. Write approved content through the CLI
+using the quote-safe transport above. Preserve user customizations unless they
+violate the task contract.
 
 Completion: the template, Base, and structure note are readable through the
 CLI, and every Base view queries without error.
@@ -89,7 +95,7 @@ CLI, and every Base view queries without error.
 
 Draft from `assets/task-template.md`. Infer required values from the request,
 comparable tasks, and linked context; use `unknown` only when evidence remains
-insufficient. A required unknown keeps the proposed task in `triage`.
+insufficient.
 
 Present the proposed filename, complete metadata, and populated body. Wait for
 explicit approval before writing every new task, including when the request
@@ -103,14 +109,10 @@ task is ready to begin. Keep it in `triage` when any required value is
 After approval and immediately before the write, confirm that the exact target
 remains absent and compare that state with the approved absence baseline. If it
 exists or otherwise differs, abort the write, recompute the proposal from the
-current state, present the revised preview, and request approval again. Then
-pass the complete approved note through a quote-safe transport, such as a
-serialized JSON/base64 payload or a helper that safely escapes content, and use
-the CLI `create` operation without overwrite. Never interpolate note Markdown
-into a shell `content=` argument. The transport must preserve apostrophes,
-backticks, shell substitutions, backslashes, and wikilinks literally. Re-read
-the exact path and query the All tasks Base view. Linter-owned properties
-remain outside this skill's completion gate.
+current state, present the revised preview, and request approval again. Use the
+CLI `create` operation without overwrite and the quote-safe transport above.
+Re-read the exact path and query the All tasks Base view. Linter-owned
+properties remain outside this skill's completion gate.
 
 Completion: the approved note exists once, matches the preview, and appears in
 the task Base.

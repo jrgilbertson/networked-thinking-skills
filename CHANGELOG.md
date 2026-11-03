@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Removed
+
+- Deleted the atomic-note behavioral baseline and trigger-test summaries,
+  which lacked saved run evidence. Removed documentation claims that relied
+  on them. Deterministic tests and fixtures remain; future model-based
+  regression evals use Promptfoo when an observed failure warrants one.
+- Deleted the managing-obsidian-tasks baseline and trigger-test summaries and
+  the two tests that only checked those records' contents. Task-contract,
+  template, Base, and CLI checks remain.
+
 ### Added
 
 - Deterministic detection of LaTeX commands that decayed into control
@@ -19,6 +29,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Managing-obsidian-tasks now names each conditional asset reference and states
+  the shared content-transport rules once for creation and setup. Its routing,
+  task contract, approval gates, and bundled assets are unchanged.
+- Reorganized both atomic-note skill entrypoints around ordered workflows and
+  explicit reference-loading conditions. Model runner examples now ship in a
+  separate audit reference. Clarified both denied-rename cases and moved the
+  existing privacy confirmation before exhaustive model review. Doctrine,
+  rubric, prompt, and schema contracts are unchanged, so their versions remain
+  unchanged.
 - Doctrine `1.0.8`, rubric `1.0.4`, and model prompt `1.0.6` require the
   Definition, Analogy, and Example to start with a capital letter, including a
   leading wikilink alias. `dae_sentence_case` is one deterministic finding for

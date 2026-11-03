@@ -41,6 +41,7 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
             "doctrine.md",
             "audit-rubric.md",
             "model-judgment-prompt.md",
+            "model-judgment-workflow.md",
             "remediation-context.md",
             "install-matrix.md",
         ),
