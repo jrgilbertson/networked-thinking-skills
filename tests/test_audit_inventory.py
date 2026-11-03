@@ -170,3 +170,20 @@ class AuditInventoryTest(unittest.TestCase):
             checks = [c for c in row['integrity_checks'] if c['source'] == 'anki']
             self.assertEqual(len(checks), 2)
             self.assertTrue(all(c['status'] == 'passed' for c in checks), checks)
+
+    def test_synced_card_does_not_hide_an_unsynced_supplemental_card(self):
+        class SyncedAnki:
+            def invoke(self, action, params):
+                if action == 'notesInfo':
+                    return [dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}})]
+                return [dict(cardId=1, deckName='Synthetic')]
+        for client in (None, SyncedAnki()):
+            with self.subTest(connected=client is not None), tempfile.TemporaryDirectory() as d:
+                root = Path(d)
+                self.make_note(root, 'Example.md', '# Example\nSTART\nBasic\nFront: A\nBack: B\n<!--ID: 123-->\nEND\nSTART\nCloze\n{{c1::Supplemental idea}}\nEND\n')
+                row = inventory_vault(root, run_id='synthetic', anki_client=client)[0]
+                local = [c for c in row['integrity_checks'] if c['code'] == 'unsynced_card']
+                self.assertEqual(len(local), 1)
+                self.assertEqual((local[0]['source'], local[0]['status']), ('markers', 'failed'))
+                anki = [c for c in row['integrity_checks'] if c['source'] == 'anki']
+                self.assertEqual([c['status'] for c in anki], ['passed' if client else 'not_checked'])

@@ -15,7 +15,7 @@ if __package__ in (None, ""):
 
 from audit_engine import DOCTRINE_VERSION, RUBRIC_VERSION, _load_structure_targets, _utc_now
 from config import DEFAULT_CONFIG, resolve_config
-from markdown_parse import extract_frontmatter, extract_wikilinks, extract_headings, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase, _structural_markdown
+from markdown_parse import extract_frontmatter, extract_wikilinks, extract_headings, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase, _structural_markdown, _extract_anki_card_texts
 from model_contract import MODEL_PROMPT_VERSION
 from schema_validation import ValidationError, validate_inventory_row
 from verify_anki_notes import AnkiConnectClient, extract_anki_ids, _visible_field_text
@@ -206,10 +206,10 @@ def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
         note_ids = ids[row["note_path"]]
         if any(counts[i] > 1 for i in note_ids):
             checks.append(_check("shared_anki_id", "markers", "Give each source card a unique Anki ID; this ID occurs more than once in scope.", status="failed", priority="P1"))
+        unsynced = any(not extract_anki_ids(card) for card in _extract_anki_card_texts(row["content"]))
+        if unsynced or (not note_ids and count_anki_blocks(row["content"])["START"] > 0):
+            checks.append(_check("unsynced_card", "markers", "Verify the unsynced source card; no Anki ID is recorded.", status="failed"))
         if not note_ids:
-            has_cards = count_anki_blocks(row["content"])["START"] > 0
-            if has_cards:
-                checks.append(_check("unsynced_card", "markers", "Verify the unsynced source card; no Anki ID is recorded.", status="failed"))
             checks.append(_check("anki_unchecked", "anki", "No source Anki ID; integration not checked.", status="not_checked"))
             continue
         if notes is None:
