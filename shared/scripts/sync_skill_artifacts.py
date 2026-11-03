@@ -60,6 +60,7 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
             "__init__.py",
             "apply_model_judgments.py",
             "audit_engine.py",
+            "audit_inventory.py",
             "audit_notes.py",
             "base_generation.py",
             "collect_model_judgments.py",
