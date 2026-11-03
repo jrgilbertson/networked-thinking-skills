@@ -319,7 +319,6 @@ def _count_priority_field(rows: list[dict[str, Any]], *, model_led: bool = False
         counts[key] += 1
     return counts
 
-# Current contracts coexist with historical rows; old artifacts are never rewritten.
 MODEL_REVIEW_STATES = ("reviewed", "pending", "failed", "unavailable", "stale")
 INVENTORY_REQUIRED = {
     "artifact_type", "schema_version", "run_id", "note_path", "note_link",

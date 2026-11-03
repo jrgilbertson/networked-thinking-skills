@@ -675,7 +675,6 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
             if matches:
                 accepted.append(judgment)
                 states[path]["status"] = "reviewed"
-        # This is the current run's derived result stream; invalid cache entries are not reused.
         output_jsonl.write_text("".join(json.dumps(j, sort_keys=True) + "\n" for j in accepted), encoding="utf-8")
         work_rows = rows if limit is None else rows[:limit]
         remaining = [row for row in work_rows if states[row["note_path"]]["status"] != "reviewed"]

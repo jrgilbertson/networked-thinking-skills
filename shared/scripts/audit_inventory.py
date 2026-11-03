@@ -85,7 +85,6 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
                     link_resolver: Callable[[str, str], bool] | None = None,
                     config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     vault = vault_root.resolve()
-    # An app-context caller supplies discovery, reads and resolution explicitly.
     if content_reader is not None and (note_paths is None or parent_targets is None or link_resolver is None):
         raise ValidationError("app-context inventory requires selected paths, parent targets and a link resolver; no filesystem fallback")
     config = dict(config or (DEFAULT_CONFIG if content_reader else resolve_config(vault)))
