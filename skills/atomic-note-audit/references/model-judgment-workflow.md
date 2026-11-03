@@ -25,6 +25,8 @@ Add repeatable `--note-path "Atomic Notes/Example.md"` arguments to inventory ca
 Add `--check-anki` only for the read-only AnkiConnect check.
 Without it, integration is not checked; an unavailable connection is also not checked.
 Missing targets and duplicate source IDs remain distinct integrity failures.
+Anki ID examples in code and frontmatter do not trigger live lookups.
+Attachment file targets are checked; their fragments remain `not_checked` rather than being parsed as Markdown.
 
 If evidence inside the vault was explicitly requested, inventory capture accepts `--allow-vault-evidence` and places its JSONL under one `Evidence/` directory.
 Use the printed inventory path in subsequent commands.

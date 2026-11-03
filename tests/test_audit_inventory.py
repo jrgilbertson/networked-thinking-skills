@@ -187,3 +187,44 @@ class AuditInventoryTest(unittest.TestCase):
                 self.assertEqual((local[0]['source'], local[0]['status']), ('markers', 'failed'))
                 anki = [c for c in row['integrity_checks'] if c['source'] == 'anki']
                 self.assertEqual([c['status'] for c in anki], ['passed' if client else 'not_checked'])
+
+    def test_binary_attachment_fragments_do_not_abort_capture(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.make_note(root, 'Source.md', '# Source\n[[Paper.pdf#page=2]] [[Paper.pdf]]')
+            (root / 'Paper.pdf').write_bytes(b'%PDF-1.7\n%\xff\xfe\x80\x81\n')
+            row = inventory_vault(root, run_id='synthetic')[0]
+            links = [c for c in row['integrity_checks'] if c['source'] == 'links']
+            self.assertEqual([c['status'] for c in links], ['not_checked', 'passed'])
+            self.assertFalse(any(c['code'] == 'unresolved_link' for c in links))
+
+    def test_anki_id_examples_do_not_trigger_live_lookups_or_shared_ids(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '---\nexample: "<!--ID: 123-->"\n---\n# Example\n```md\nSTART\nBasic\n<!--ID: 123-->\nEND\n```\n`<!--ID: 123-->`\n\n    <!--ID: 123-->\n'
+            for name in ('A.md', 'B.md'):
+                self.make_note(root, name, text)
+            client = FakeAnki()
+            rows = inventory_vault(root, run_id='synthetic', anki_client=client)
+            self.assertEqual(client.actions, [])
+            for row in rows:
+                self.assertFalse(any(c['code'] in {'missing_anki_target', 'shared_anki_id'} for c in row['integrity_checks']))
+
+    def test_only_active_id_comments_supply_card_expectations(self):
+        class ActiveAnki:
+            def __init__(self):
+                self.requests = []
+            def invoke(self, action, params):
+                self.requests.append((action, params))
+                if action == 'notesInfo':
+                    return [dict(noteId=123, modelName='Basic', cards=[1], fields={'Front': {'value': 'A'}, 'Back': {'value': 'B'}})]
+                return [dict(cardId=1, deckName='Synthetic')]
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            text = '# Example\nSTART\nBasic\nFront: A\nBack: B\n```md\n<!--ID: 999-->\n```\n<!--ID: 123-->\nEND\nSTART\nCloze\n{{c1::Supplemental idea}}\n`<!--ID: 456-->`\nEND\n'
+            self.make_note(root, 'Example.md', text)
+            client = ActiveAnki()
+            checks = inventory_vault(root, run_id='synthetic', anki_client=client)[0]['integrity_checks']
+            self.assertEqual(client.requests[0], ('notesInfo', {'notes': [123]}))
+            self.assertEqual(sum(c['code'] == 'unsynced_card' for c in checks), 1)
+            self.assertEqual([c['status'] for c in checks if c['source'] == 'anki'], ['passed'])

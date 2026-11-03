@@ -15,10 +15,23 @@ if __package__ in (None, ""):
 
 from shared.scripts.audit_engine import DOCTRINE_VERSION, RUBRIC_VERSION, _load_structure_targets, _utc_now
 from shared.scripts.config import DEFAULT_CONFIG, resolve_config
-from shared.scripts.markdown_parse import extract_frontmatter, extract_wikilinks, extract_headings, count_anki_blocks, decayed_latex_commands, dae_section_starts_lowercase, _structural_markdown, _extract_anki_card_texts
+from shared.scripts.markdown_parse import (
+    HTML_COMMENT_RE,
+    extract_frontmatter,
+    extract_wikilinks,
+    extract_headings,
+    count_anki_blocks,
+    decayed_latex_commands,
+    dae_section_starts_lowercase,
+    _structural_markdown,
+    _extract_anki_card_texts,
+    _mask_fenced_code_blocks,
+    _mask_indented_code_blocks,
+    _mask_inline_code_spans,
+)
 from shared.scripts.model_contract import MODEL_PROMPT_VERSION
 from shared.scripts.schema_validation import ValidationError, validate_inventory_row
-from shared.scripts.verify_anki_notes import AnkiConnectClient, extract_anki_ids, _visible_field_text
+from shared.scripts.verify_anki_notes import ANKI_ID_RE, AnkiConnectClient, _visible_field_text
 
 
 def source_path(vault: Path, note_path: str) -> Path:
@@ -50,7 +63,7 @@ def _check(code: str, source: str, message: str, *, status: str = "passed", prio
                 priority=priority if status == "failed" else None)
 
 
-def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
+def _file_link_resolver(vault: Path) -> Callable[[str, str], bool | None]:
     by_path = {}
     by_name = {}
     for path in vault.rglob("*"):
@@ -71,7 +84,7 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
                     candidates.update(by_name.get(name, set()))
         return candidates
 
-    def resolve(target: str, source: str) -> bool:
+    def resolve(target: str, source: str) -> bool | None:
         target, _, fragment = target.partition("#")
         if not target:
             candidates = [source_path(vault, source)]
@@ -90,6 +103,8 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
             return False
         if not fragment:
             return True
+        if candidates[0].suffix.casefold() != ".md":
+            return None
         text = candidates[0].read_text(encoding="utf-8")
         if fragment.startswith("^"):
             return bool(re.search(r"(?:^|\s)" + re.escape(fragment) + r"\s*$", _structural_markdown(text), re.MULTILINE))
@@ -102,7 +117,7 @@ def _file_link_resolver(vault: Path) -> Callable[[str, str], bool]:
 def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | None = None,
                     anki_client: Any = None, content_reader: Callable[[str], str] | None = None,
                     parent_targets: set[str] | None = None,
-                    link_resolver: Callable[[str, str], bool] | None = None,
+                    link_resolver: Callable[[str, str], bool | None] | None = None,
                     config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     vault = vault_root.resolve()
     if content_reader is not None and (note_paths is None or parent_targets is None or link_resolver is None):
@@ -137,7 +152,10 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
             checks.append(_check("link_targets", "links", "No wikilink targets to resolve."))
         for target in links:
             resolved = resolver(target, note_path)
-            checks.append(_check("link_target" if resolved else "unresolved_link", "links", f"Link target resolves: {target}" if resolved else f"Repair the unresolved or ambiguous link: {target}", status="passed" if resolved else "failed"))
+            if resolved is None:
+                checks.append(_check("link_fragment_unchecked", "links", f"Target file exists; fragment not checked: {target}", status="not_checked"))
+            else:
+                checks.append(_check("link_target" if resolved else "unresolved_link", "links", f"Link target resolves: {target}" if resolved else f"Repair the unresolved or ambiguous link: {target}", status="passed" if resolved else "failed"))
         label = re.sub(r"^\d{12,14}\s+", "", path.stem).replace("|", " ").replace("]", "")
         row = dict(artifact_type="audit_inventory", schema_version="1.0.0", run_id=run_id,
                    note_path=note_path, note_link=f"[[{PurePosixPath(note_path).with_suffix('')}|{label}]]",
@@ -150,6 +168,17 @@ def inventory_vault(vault_root: Path, *, run_id: str, note_paths: list[str] | No
     for row in rows:
         validate_inventory_row(row)
     return rows
+
+
+def _source_anki_ids(text: str) -> list[int]:
+    _, body = extract_frontmatter(text)
+    active = _mask_inline_code_spans(_mask_indented_code_blocks(_mask_fenced_code_blocks(body)))
+    ids = []
+    for comment in HTML_COMMENT_RE.finditer(active):
+        match = ANKI_ID_RE.fullmatch(comment.group(0))
+        if match:
+            ids.append(int(match.group(1)))
+    return ids
 
 
 def _source_card_expectations(text: str) -> dict[int, tuple[str | None, str | None, int | None]]:
@@ -167,7 +196,7 @@ def _source_card_expectations(text: str) -> dict[int, tuple[str | None, str | No
             start = index
         elif line == "END" and start is not None:
             card = "\n".join(structural_lines[start + 1:index])
-            note_ids = extract_anki_ids("\n".join(body_lines[start + 1:index]))
+            note_ids = _source_anki_ids("\n".join(body_lines[start + 1:index]))
             model = next((m for m in ("Basic", "Cloze") if re.search(r"(?m)^" + m + r"\s*$", card)), None)
             if model == "Basic":
                 count = 1
@@ -182,7 +211,7 @@ def _source_card_expectations(text: str) -> dict[int, tuple[str | None, str | No
 
 
 def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
-    ids = {row["note_path"]: extract_anki_ids(row["content"]) for row in rows}
+    ids = {row["note_path"]: _source_anki_ids(row["content"]) for row in rows}
     counts = Counter(i for values in ids.values() for i in values)
     requested = sorted(counts)
     notes = None
@@ -206,7 +235,7 @@ def _anki_checks(rows: list[dict[str, Any]], client: Any) -> None:
         note_ids = ids[row["note_path"]]
         if any(counts[i] > 1 for i in note_ids):
             checks.append(_check("shared_anki_id", "markers", "Give each source card a unique Anki ID; this ID occurs more than once in scope.", status="failed", priority="P1"))
-        unsynced = any(not extract_anki_ids(card) for card in _extract_anki_card_texts(row["content"]))
+        unsynced = any(not _source_anki_ids(card) for card in _extract_anki_card_texts(row["content"]))
         if unsynced or (not note_ids and count_anki_blocks(row["content"])["START"] > 0):
             checks.append(_check("unsynced_card", "markers", "Verify the unsynced source card; no Anki ID is recorded.", status="failed"))
         if not note_ids:
