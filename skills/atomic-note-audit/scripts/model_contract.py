@@ -28,6 +28,15 @@ EVIDENCE_KEYS = {"excerpt", "reason"}
 MAX_EVIDENCE_EXCERPT_WORDS = 40
 
 
+def inventory_cache_key(row: dict[str, Any], *, model_identity: str, runner_identity: str) -> str:
+    return build_cache_key(
+        note_path=row["note_path"], content_hash=row["content_hash"],
+        doctrine_version=row["doctrine_version"], rubric_version=row["rubric_version"],
+        prompt_version=row["prompt_version"], audit_mode=row["audit_mode"],
+        model_identity=model_identity, runner_identity=runner_identity,
+    )
+
+
 def build_cache_key(
     *,
     note_path: str,

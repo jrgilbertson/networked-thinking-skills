@@ -12,7 +12,9 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from finding_codes import FINDING_MESSAGES, FINDING_RECOMMENDATION_MODES
-from model_contract import validate_model_judgment
+from model_contract import validate_model_judgment, inventory_cache_key
+from audit_inventory import content_hash, source_path
+from audit_engine import _dimensions_for_findings, _utc_now
 from schema_validation import (
     DIMENSION_KEYS,
     PRIORITY_COUNT_KEYS,
@@ -21,6 +23,10 @@ from schema_validation import (
     validate_audit_row,
     validate_audit_run_pair,
     validate_run_manifest,
+    validate_inventory_row,
+    MODEL_REVIEW_STATES,
+    integrity_coverage,
+    _count_priority_field,
 )
 from scoring import bucket_for_score, canonicalize_findings, compute_clean, compute_final_score
 
@@ -86,6 +92,23 @@ def apply_model_judgments(
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     try:
+        if args.inventory_jsonl is not None:
+            if args.vault is None:
+                raise ValidationError("--inventory-jsonl requires --vault for source freshness checks")
+            inventory = _read_jsonl(args.inventory_jsonl)
+            judgments = _read_jsonl(args.model_judgments) if args.model_judgments.exists() else []
+            status_path = args.collection_status or args.model_judgments.with_suffix(".status.json")
+            status = _read_json(status_path) if status_path.exists() else None
+            rows, manifest = compose_inventory(inventory, judgments, vault_root=args.vault,
+                collection_status=status, outputs={**_manifest_outputs(args),
+                    "inventory": str(args.inventory_jsonl),
+                    "evidence": str(args.inventory_jsonl.resolve().parent)})
+            _write_jsonl(args.output_jsonl, rows)
+            _write_json(args.output_manifest, manifest)
+            print(f"rows={len(rows)} reviewed={manifest['model_coverage']['reviewed']}")
+            return 0
+        if args.manifest is None:
+            raise ValidationError("historical --audit-jsonl requires --manifest")
         rows = _read_jsonl(args.audit_jsonl)
         manifest = _read_json(args.manifest)
         judgments = _read_jsonl(args.model_judgments)
@@ -107,8 +130,12 @@ def main(argv: list[str] | None = None) -> int:
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Apply model judgments to Atomic Note audit rows.")
-    parser.add_argument("--audit-jsonl", type=Path, required=True)
-    parser.add_argument("--manifest", type=Path, required=True)
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--inventory-jsonl", type=Path, help="Compose a current model-led audit from unscored inventory.")
+    inputs.add_argument("--audit-jsonl", type=Path, help="Historical baseline-row compatibility only.")
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--vault", type=Path)
+    parser.add_argument("--collection-status", type=Path)
     parser.add_argument("--model-judgments", type=Path, required=True)
     parser.add_argument("--output-jsonl", type=Path, required=True)
     parser.add_argument("--output-manifest", type=Path, required=True)
@@ -332,6 +359,92 @@ def _manifest_outputs(args: argparse.Namespace) -> dict[str, str]:
         "model_judgments": str(args.model_judgments),
         "manifest": str(args.output_manifest),
     }
+
+
+
+def compose_inventory(inventory: list[dict[str, Any]], judgments: list[dict[str, Any]], *,
+                      vault_root: Path, collection_status: dict[str, Any] | None = None,
+                      outputs: dict[str, str] | None = None, source_reader: Any = None,
+                      decisions: list[dict[str, str]] | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    for item in inventory:
+        validate_inventory_row(item)
+    selected = {item["note_path"]: item for item in inventory}
+    if len(selected) != len(inventory):
+        raise ValidationError("duplicate selected inventory note_path")
+    if len({(item["run_id"], item["audit_mode"]) for item in inventory}) > 1:
+        raise ValidationError("inventory run and scope identities must agree")
+    mapped = _judgment_map(judgments)
+    if set(mapped) - set(selected):
+        raise ValidationError("model judgment has no selected inventory note")
+    rows = []
+    status = collection_status or {}
+    for item in sorted(inventory, key=lambda r: r["note_path"]):
+        judgment = mapped.get(item["note_path"])
+        state = "pending"
+        checks = deepcopy(item["integrity_checks"])
+        try:
+            current = source_reader(item["note_path"]) if source_reader else source_path(vault_root, item["note_path"]).read_text(encoding="utf-8")
+            source_current = content_hash(current) == item["content_hash"]
+            if not source_current:
+                state = "stale"
+        except OSError:
+            source_current = False
+            state = "unavailable"
+        if not source_current:
+            for check in checks:
+                check.update(status="not_checked", priority=None, message="Source changed or unavailable; refresh inventory to recheck.")
+        elif judgment is not None:
+            compatible = (judgment["schema_version"] == "3.0.0"
+                and judgment["prompt_version"] == item["prompt_version"]
+                and judgment.get("content_hash") == item["content_hash"]
+                and judgment.get("cache_key") == inventory_cache_key(item,
+                    model_identity=judgment.get("model_identity", "unknown"),
+                    runner_identity=judgment.get("runner_identity", "unknown"))
+                and (judgment.get("model_identity") != "unknown" or judgment.get("run_id") == item["run_id"]))
+            state = "reviewed" if compatible else "stale"
+        elif status.get("run_id") == item["run_id"]:
+            entry = status.get("states", {}).get(item["note_path"], {})
+            if entry.get("content_hash") == item["content_hash"]:
+                candidate = entry.get("status")
+                if candidate in {"pending", "failed", "unavailable", "stale"}:
+                    state = candidate
+        reviewed = state == "reviewed"
+        findings = _combined_findings([], judgment["findings"]) if reviewed else []
+        factual = reviewed and bool(judgment["factual_risk"] or judgment["fact_check_required"] or _has_factual_risk(findings))
+        if factual and not _has_factual_risk(findings):
+            findings.append({"code": "factual_risk", "message": FINDING_MESSAGES["factual_risk"]})
+        score = compute_final_score(findings) if reviewed else None
+        dimensions = _apply_dimension_adjustments(_dimensions_for_findings(findings), judgment["dimension_adjustments"]) if reviewed else None
+        quality_priority = bucket_for_score(score) if reviewed else None
+        priorities = [c["priority"] for c in checks if c["status"] == "failed"]
+        if quality_priority is not None:
+            priorities.append(quality_priority)
+        row = {k: deepcopy(v) for k, v in item.items() if k not in {"artifact_type", "content", "audit_mode", "integrity_checks"}}
+        row.update(schema_version="2.0.0", row_status="complete" if reviewed else ("error" if state in {"failed", "unavailable"} else "skipped"),
+            review_status=state, score=score, dimensions=dimensions,
+            priority=min(priorities) if priorities else None, clean=compute_clean(score, pending_model=False, fact_check_required=factual) if reviewed else False,
+            pending_model=not reviewed, findings=findings, recommendations=_recommendations_for_findings(findings),
+            model_judgment=deepcopy(judgment) if reviewed else None,
+            cache_status=("hit" if judgment["run_id"] != item["run_id"] else "miss") if reviewed else "none",
+            factual_risk=factual, fact_check_required=factual, integrity_checks=checks)
+        if factual:
+            row["factual_risk_reason"] = judgment.get("factual_risk_reason") or "Verify the flagged claim against its source."
+        validate_audit_row(row, default_scan=True)
+        rows.append(row)
+    now = _utc_now()
+    manifest = dict(schema_version="2.0.0", run_id=inventory[0]["run_id"] if inventory else "empty",
+        started_at=now, ended_at=now, config_snapshot=inventory[0]["config_snapshot"] if inventory else {},
+        total_notes=len(rows), row_status_counts=_count_row_statuses(rows),
+        priority_counts=_count_priority_field(rows, model_led=True), validation_status="passed",
+        outputs=outputs or {}, errors=list(status.get("errors", [])),
+        model_coverage={state: sum(row["review_status"] == state for row in rows) for state in MODEL_REVIEW_STATES},
+        integrity_coverage=integrity_coverage(rows), audit_mode=inventory[0]["audit_mode"] if inventory else "selected:empty",
+        decisions=decisions or [])
+    if any(d["note_path"] not in selected for d in manifest["decisions"]):
+        raise ValidationError("recorded decision has no selected inventory note")
+    validate_run_manifest(manifest)
+    validate_audit_run_pair(rows, manifest)
+    return rows, manifest
 
 
 if __name__ == "__main__":
