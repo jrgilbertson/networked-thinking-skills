@@ -701,7 +701,12 @@ def _collect_inventory(*, vault_root: Path, inventory_jsonl: Path, output_jsonl:
                     states[j["note_path"]]["status"] = "reviewed"
         return sum(states[row["note_path"]]["status"] == "reviewed" for row in work_rows)
     except (ValidationError, SourceChangedError, SourceUnavailableError, OSError, RunnerInvocationError, subprocess.TimeoutExpired) as exc:
-        state = "stale" if isinstance(exc, SourceChangedError) else ("unavailable" if isinstance(exc, (FileNotFoundError, SourceUnavailableError)) or "failed to start" in str(exc) else "failed")
+        if isinstance(exc, SourceChangedError):
+            state = "stale"
+        elif isinstance(exc, (FileNotFoundError, SourceUnavailableError)) or "failed to start" in str(exc):
+            state = "unavailable"
+        else:
+            state = "failed"
         for row in active:
             if states[row["note_path"]]["status"] != "reviewed":
                 states[row["note_path"]]["status"] = state

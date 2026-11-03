@@ -420,14 +420,30 @@ def compose_inventory(inventory: list[dict[str, Any]], judgments: list[dict[str,
         priorities = [c["priority"] for c in checks if c["status"] == "failed"]
         if quality_priority is not None:
             priorities.append(quality_priority)
+        if reviewed:
+            row_status = "complete"
+        elif state in {"failed", "unavailable"}:
+            row_status = "error"
+        else:
+            row_status = "skipped"
         row = {k: deepcopy(v) for k, v in item.items() if k not in {"artifact_type", "content", "audit_mode", "integrity_checks"}}
-        row.update(schema_version="2.0.0", row_status="complete" if reviewed else ("error" if state in {"failed", "unavailable"} else "skipped"),
-            review_status=state, score=score, dimensions=dimensions,
-            priority=min(priorities) if priorities else None, clean=compute_clean(score, pending_model=False, fact_check_required=factual) if reviewed else False,
-            pending_model=not reviewed, findings=findings, recommendations=_recommendations_for_findings(findings),
+        row.update(
+            schema_version="2.0.0",
+            row_status=row_status,
+            review_status=state,
+            score=score,
+            dimensions=dimensions,
+            priority=min(priorities) if priorities else None,
+            clean=compute_clean(score, pending_model=False, fact_check_required=factual) if reviewed else False,
+            pending_model=not reviewed,
+            findings=findings,
+            recommendations=_recommendations_for_findings(findings),
             model_judgment=deepcopy(judgment) if reviewed else None,
             cache_status=("hit" if judgment["run_id"] != item["run_id"] else "miss") if reviewed else "none",
-            factual_risk=factual, fact_check_required=factual, integrity_checks=checks)
+            factual_risk=factual,
+            fact_check_required=factual,
+            integrity_checks=checks,
+        )
         if factual:
             row["factual_risk_reason"] = judgment.get("factual_risk_reason") or "Verify the flagged claim against its source."
         validate_audit_row(row, default_scan=True)
