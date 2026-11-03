@@ -27,7 +27,7 @@ def render_base(jsonl_path: str) -> str:
         "P1 High Impact": [row for row in rows if row.get("priority") == "P1"],
         "P2 Improvements": [row for row in rows if row.get("priority") == "P2"],
         "P3 Polish": [row for row in rows if row.get("priority") == "P3"],
-        "No Changes": [row for row in rows if row.get("priority") is None],
+        "No Changes": [row for row in rows if row.get("priority") is None and (row.get("schema_version") != "2.0.0" or row.get("review_status") == "reviewed" and row.get("clean") is True)],
         "Factual Risk": [row for row in rows if _is_factual_risk(row)],
         "Multi-Note Split Candidates": [row for row in rows if _has_finding(row, "multi_note")],
         "Missing Parent Candidates": [row for row in rows if _has_finding(row, "missing_parent")],
@@ -47,7 +47,11 @@ def render_base(jsonl_path: str) -> str:
         '    displayName: "Note Path"',
         "views:",
     ]
-    for view_name in VIEW_ORDER:
+    order = list(VIEW_ORDER)
+    if any(row.get("schema_version") == "2.0.0" for row in rows):
+        order.append("Unreviewed")
+        view_rows["Unreviewed"] = [row for row in rows if row.get("review_status") != "reviewed"]
+    for view_name in order:
         lines.extend(_view_lines(view_name, view_rows[view_name]))
     return "\n".join(lines) + "\n"
 

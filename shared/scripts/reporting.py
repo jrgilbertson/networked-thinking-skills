@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 from typing import Iterable
+from pathlib import Path
+import re
+
+from shared.scripts.finding_codes import FINDING_MESSAGES
 
 
 PRIORITY_ORDER = ("P0", "P1", "P2", "P3")
@@ -25,6 +29,8 @@ def render_markdown_report(
     rows: Iterable[dict[str, object]],
     manifest: dict[str, object],
 ) -> str:
+    if manifest.get("schema_version") == "2.0.0":
+        return _render_model_led_report(list(rows), manifest)
     sorted_rows = sorted(list(rows), key=_row_sort_key)
     total_notes = _int_or_default(manifest.get("total_notes"), len(sorted_rows))
     no_change_notes = sum(1 for row in sorted_rows if _bucket_key(row) == NO_CHANGE_BUCKET)
@@ -225,3 +231,101 @@ def _average_score(rows: list[dict[str, object]]) -> str:
 
 def _note_count(count: int) -> str:
     return f"{count} note" if count == 1 else f"{count} notes"
+
+
+def _plain(value: object) -> str:
+    text = " ".join(str(value).split())
+    return re.sub(r"([\\`*_\[\]<>])", r"\\\1", text)
+
+
+def _quality_action(code: str) -> str:
+    short_actions = {
+        "title_body_mismatch": "Align the filename, title and Definition.",
+        "dae_sentence_case": "Capitalize the first visible letter of the affected DAE sentence.",
+        "factual_risk": "Verify the flagged claim against its source.",
+    }
+    return short_actions.get(code, FINDING_MESSAGES[code])
+
+
+def _model_led_actions(row: dict[str, object]) -> list[str]:
+    checks = [c for c in row["integrity_checks"] if c["status"] == "failed"]
+    exact_codes = {"frontmatter": "missing_frontmatter", "parent_link": "missing_parent",
+                   "card_markers": "malformed_anki", "literal_corruption": "decayed_latex_command"}
+    represented = {exact_codes.get(c["code"]) for c in checks}
+    actions = []
+    for finding in row["findings"]:
+        if finding["code"] in represented:
+            continue
+        action = _quality_action(finding["code"])
+        reason = finding["message"]
+        label = "Fact-check pending" if finding["code"] == "factual_risk" else "Note quality"
+        suffix = "" if reason == action else " " + _plain(reason)
+        actions.append(f"**{_plain(action)}** {label}.{suffix}")
+    for check in checks:
+        label = "Anki integrity" if check["source"] == "anki" else "Exact integrity check"
+        actions.append(f"**{_plain(check['message'])}** {label}.")
+    return list(dict.fromkeys(actions))
+
+
+def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, object]) -> str:
+    rows = sorted(rows, key=_row_sort_key)
+    coverage = manifest["model_coverage"]
+    total = manifest["total_notes"]
+    unfinished = total - coverage["reviewed"]
+    queue = [row for row in rows if row.get("priority") in PRIORITY_ORDER]
+    unchanged = sum(row["review_status"] == "reviewed" and row["clean"] and row["priority"] is None for row in rows)
+    counts = {p: sum(row["priority"] == p for row in queue) for p in PRIORITY_ORDER}
+    if queue:
+        first = next(p for p in PRIORITY_ORDER if counts[p])
+        first_actions = []
+        for row in queue:
+            if row["priority"] == first:
+                first_actions.extend(c["message"] for c in row["integrity_checks"] if c["status"] == "failed" and c["priority"] == first)
+                first_actions.extend(_quality_action(f["code"]) for f in row["findings"])
+        actions = list(dict.fromkeys(first_actions))
+        recommendation = " ".join(_plain(a) for a in actions[:2])
+        recommendation += f" Start with {first} ({_note_count(counts[first])}), then work through the remaining priority buckets."
+        if unfinished:
+            recommendation += f" Finish model review for {unfinished} notes before treating this audit as complete."
+    elif unfinished:
+        recommendation = f"Finish model review for {unfinished} notes before drawing a conclusion."
+    else:
+        recommendation = "No actions were identified in the completed review and checks."
+    lines = ["# Atomic note audit", "", "## Recommendation", "", recommendation,
+             "", "## Coverage", "", f"{coverage['reviewed']} / {total} model-reviewed. {len(queue)} need action; {unchanged} need no changes."]
+    states = [f"{coverage[s]} {s}" for s in ("pending", "failed", "unavailable", "stale") if coverage[s]]
+    if states:
+        lines.append("Unfinished: " + "; ".join(states) + ".")
+    pending_facts = sum(bool(row["fact_check_required"]) for row in rows)
+    if pending_facts:
+        lines.append(f"Fact-checks pending: {pending_facts}; model review does not verify those claims.")
+    anki = manifest["integrity_coverage"].get("anki", {})
+    checked = anki.get("passed", 0) + anki.get("failed", 0)
+    lines.append(f"Anki: {checked} / {total} checked; {anki.get('not_checked', total)} not checked.")
+    if not counts["P0"]:
+        lines.extend(["", "P0 - Critical: none identified in completed checks."])
+    titles = {"P0": "Critical", "P1": "Fix first", "P2": "Improve next", "P3": "Optional polish"}
+    for priority in PRIORITY_ORDER:
+        entries = [row for row in queue if row["priority"] == priority]
+        if not entries:
+            continue
+        lines.extend(["", f"## {priority} - {titles[priority]}", ""])
+        for row in entries:
+            lines.append(f"- {row['note_link']}")
+            for action in _model_led_actions(row):
+                lines.append(f"  - {action}")
+            if row["review_status"] != "reviewed":
+                lines.append(f"  - Model review {row['review_status']}; quality is unscored.")
+    decisions = manifest.get("decisions", [])
+    if decisions:
+        links = {row["note_path"]: row["note_link"] for row in rows}
+        lines.extend(["", "## Recorded decisions", ""])
+        for decision in decisions:
+            label = "Completed" if decision["status"] == "completed" else "Held"
+            lines.append(f"- {label}: {links[decision['note_path']]} - {_plain(decision['message'])}")
+    evidence = manifest.get("outputs", {}).get("evidence")
+    if evidence:
+        path = Path(str(evidence))
+        link = path.resolve().as_uri() if path.is_absolute() else path.as_posix().replace(" ", "%20")
+        lines.extend(["", f"[Supporting evidence](<{link}>)"])
+    return "\n".join(lines) + "\n"
