@@ -16,6 +16,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Package 0.4.0 adds a single five-column audit table with stable run-local item
+  IDs and dated per-action outcomes. Markdown review format 1.0.0 uses minimal
+  hidden identification markers and keeps recommendations and outcomes visible.
+- Report-only recovery and an outcome recorder work after temporary audit data is
+  discarded. Verified completion requires approval and source/link/Anki check
+  summaries; held, declined, and partial work remain distinct.
+- A report-only publisher writes through guarded Obsidian app operations, verifies
+  readback and intended targets, and preserves concurrent edits and collisions.
+  New files use `<YYYYMMDDHHMM> Atomic note audit.md` directly in the output folder.
+  Historical reports and audit JSON contracts remain unchanged.
+
 - Deterministic detection of LaTeX commands that decayed into control
   characters, reported as `decayed_latex_command` with the command it
   reconstructs.

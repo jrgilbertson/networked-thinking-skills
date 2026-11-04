@@ -60,3 +60,9 @@ A reproducible check of actual source structure, characters, link targets or Ank
 
 ### Quality-Clean Note
 A model-reviewed note with no quality loss or pending fact check. An independent integrity failure can still require action.
+
+### Audit Review Record
+The single Markdown audit report that owns stable run-local item IDs, visible recommendations, and dated per-action decisions and verified outcomes. Temporary working data can be rebuilt from it. Minimal hidden markers identify actions and format; they do not duplicate recommendations or outcomes.
+
+### Action Outcome
+A recorded disposition for one recommendation: Pending, Held, Declined, Partial, or Completed. Prior work remains dated history; newly flagged work needs its own verification. Completion describes verified work rather than approval or a model suggestion.

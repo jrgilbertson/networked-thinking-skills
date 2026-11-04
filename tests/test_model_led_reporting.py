@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,7 @@ from shared.scripts.collect_model_judgments import collect_model_judgments
 from shared.scripts.apply_model_judgments import compose_inventory
 from shared.scripts.reporting import render_markdown_report
 from shared.scripts.base_generation import render_base
+from shared.scripts.audit_review_report import ReviewError, parse_report, note_target
 
 
 class ReportRunner:
@@ -51,23 +53,23 @@ class ModelLedReportingTest(unittest.TestCase):
             root, rows, manifest, evidence = self.fixture(Path(d))
             report = render_markdown_report(rows, manifest)
             self.assertLess(report.index('## Recommendation'), report.index('## Coverage'))
-            self.assertLess(report.index('## Coverage'), report.index('## P1'))
+            self.assertLess(report.index('## Coverage'), report.index('| # | Priority |'))
             recommendation = report.split('## Recommendation')[1].split('## Coverage')[0]
             self.assertIn('Repair the stale card link.', recommendation)
             self.assertIn('Split bundled ideas', recommendation)
             self.assertIn('100 / 100 model-reviewed', report)
             self.assertIn('5 need action', report)
             self.assertIn('95 need no changes', report)
-            self.assertEqual(report.count('[[Atomic Notes/Note 000|Note 000]]'), 1)
-            self.assertEqual(report.count('[[Atomic Notes/Note '), 5)
-            self.assertIn('## P2', report)
-            self.assertIn('## P3', report)
+            parsed = parse_report(report)
+            self.assertEqual([i.priority for i in parsed.items], ['P1', 'P1', 'P2', 'P2', 'P3'])
+            self.assertEqual([i.number for i in parsed.items], [1, 2, 3, 4, 5])
+            self.assertEqual([note_target(i.note) for i in parsed.items].count('Atomic Notes/Note 000.md'), 1)
             self.assertIn('Repair the stale card link.', report)
             self.assertIn('Anki integrity', report)
             self.assertIn('Supporting evidence', report)
             self.assertNotIn('![', report)
-            self.assertNotIn('<br>', report)
-            self.assertNotIn('| Note |', report)
+            self.assertEqual(report.count('| # | Priority | Note | Recommendation | Action taken |'), 1)
+            self.assertNotIn('## P1', report)
             self.assertNotIn('## No Changes', report)
             golden = Path(__file__).parent / 'golden' / 'fixture-model-led-report.md'
             self.assertEqual(report.replace(evidence.resolve().as_uri(), 'evidence/'), golden.read_text())
@@ -85,6 +87,124 @@ class ModelLedReportingTest(unittest.TestCase):
             no_changes = base.split('name: "No Changes"')[1].split('  - type:')[0]
             self.assertNotIn('Note 099.md', no_changes)
             self.assertIn('name: "Unreviewed"', base)
+
+    def test_interrupted_review_paths_and_ids_survive_without_working_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=6, limit=1)
+            before = deepcopy(rows)
+            text = render_markdown_report(rows, manifest)
+            self.assertEqual(rows, before)
+            self.assertTrue(all(row['score'] is None and row['priority'] is None
+                                for row in rows if row['review_status'] != 'reviewed'))
+        recovered = parse_report(text)
+        self.assertEqual({note_target(item.note) for item in recovered.items},
+                         {f'Atomic Notes/Note {i:03}.md' for i in range(6)})
+        unfinished = [item for item in recovered.items if any('Complete model review' in a.text for a in item.actions)]
+        self.assertEqual(len(unfinished), 5)
+        self.assertTrue(all(item.priority == 'P3' for item in unfinished))
+        self.assertTrue(all(item.outcomes[0].text == '**Pending**' for item in unfinished))
+        self.assertTrue(all('quality is unscored' in item.actions[0].text for item in unfinished))
+
+    def test_generated_advice_uses_the_same_deduplicated_actions_as_the_table(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=1)
+            rows[0]['findings'] = [dict(code='missing_frontmatter', message='Add the required frontmatter.')]
+            rows[0]['integrity_checks'] = [dict(code='frontmatter', source='frontmatter', status='failed',
+                priority='P1', message='Add the required frontmatter.')]
+            report = render_markdown_report(rows, manifest)
+            rows[0]['priority'] = 'P0'
+            revised = render_markdown_report(rows, manifest, existing_report=report)
+            self.assertIn('Start with P0', revised)
+            opening = report.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            self.assertNotIn("Add YAML frontmatter with the note's metadata.", opening)
+            self.assertIn('Add the required frontmatter.', opening)
+
+    def test_regeneration_recovers_ids_and_keeps_source_revisions_pending(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=5)
+            first = render_markdown_report(rows, manifest)
+            mapping = {note_target(i.note): i.number for i in parse_report(first).items}
+            rows.reverse()
+            rows[0]['priority'] = 'P0'
+            revised = render_markdown_report(rows, manifest, existing_report=first)
+            self.assertEqual({note_target(i.note): i.number for i in parse_report(revised).items}, mapping)
+            self.assertEqual(parse_report(revised).items[0].priority, 'P0')
+            rows[0]['content_hash'] = 'revised-source'
+            newer = parse_report(render_markdown_report(rows, manifest, existing_report=revised))
+            self.assertEqual(len(newer.items[0].actions), 2)
+            self.assertTrue(all(o.text == '**Pending**' for o in newer.items[0].outcomes))
+
+    def test_regeneration_stops_before_discarding_edited_coverage(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=2, limit=1)
+            rows[0]['fact_check_required'] = True
+            original = render_markdown_report(rows, manifest)
+            for prefix in ('1 / 2 model-reviewed.', 'Unfinished:', 'Fact-checks pending:', 'Anki:'):
+                line = next(line for line in original.splitlines() if line.startswith(prefix))
+                edited = original.replace(line, line + ' Learner annotation: preserve this context.')
+                with self.subTest(prefix=prefix), self.assertRaisesRegex(ReviewError, 'Coverage.*edited'):
+                    render_markdown_report(rows, manifest, existing_report=edited)
+            annotated = original.replace('## Coverage\n\n', '## Coverage\n\nA learner observation.\n')
+            self.assertIn('A learner observation.', render_markdown_report(rows, manifest, existing_report=annotated))
+
+    def test_regeneration_refreshes_generated_advice_and_preserves_learner_edits(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            partial, complete = root / 'partial', root / 'complete'
+            partial.mkdir()
+            complete.mkdir()
+            _, rows, manifest, _ = self.fixture(partial, count=5, limit=1)
+            report = render_markdown_report(rows, manifest)
+            self.assertIn('Finish model review for 4 notes before treating this audit as complete.', report)
+            _, rows, manifest, _ = self.fixture(complete, count=5)
+            rows[0]['priority'] = 'P0'
+            refreshed = render_markdown_report(rows, manifest, existing_report=report)
+            opening = refreshed.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            expected = render_markdown_report(rows, manifest).split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            self.assertEqual(opening, expected)
+            self.assertIn('Start with P0', opening)
+            self.assertNotIn('Finish model review', opening)
+            edited = report.replace(' Start with ', ' Learner preference: keep this context. Start with ', 1)
+            with self.assertRaisesRegex(ReviewError, 'Recommendation.*edited'):
+                render_markdown_report(rows, manifest, existing_report=edited)
+            pending_rows, pending_manifest = deepcopy(rows), deepcopy(manifest)
+            for row in pending_rows:
+                row.update(findings=[], integrity_checks=[], review_status='pending', priority='P1')
+            pending_manifest['model_coverage'].update(reviewed=0, pending=5)
+            pending = render_markdown_report(pending_rows, pending_manifest)
+            self.assertIn('Finish model review for 5 notes', pending)
+            completed = render_markdown_report(rows, manifest, existing_report=pending)
+            self.assertIn(expected, completed)
+
+    def test_special_character_paths_and_math_recommendations_keep_their_content(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=1)
+            rows[0]['note_path'] = 'Atomic Notes/λ [example]|math.md'
+            rows[0]['findings'][0]['message'] = r'Use $\theta$ with a|b and λ.'
+            text = render_markdown_report(rows, manifest)
+            item = parse_report(text).items[0]
+            self.assertEqual(note_target(item.note), rows[0]['note_path'])
+            self.assertIn(r'$\theta$', text)
+            self.assertIn(r'a\|b', text)
+
+    def test_large_report_and_zero_action_report_preserve_coverage(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=1)
+            large = []
+            for n in range(2000):
+                row = deepcopy(rows[0])
+                row['note_path'] = f'Atomic Notes/Synthetic {n}.md'
+                large.append(row)
+            manifest['total_notes'] = manifest['model_coverage']['reviewed'] = 2000
+            report = parse_report(render_markdown_report(large, manifest))
+            self.assertEqual(len(report.items), 2000)
+            self.assertEqual(len({i.number for i in report.items}), 2000)
+            self.assertTrue(all(len(i.actions) == 2 for i in report.items))
+            rows[0].update(priority=None, clean=True, findings=[], integrity_checks=[])
+            manifest['total_notes'] = manifest['model_coverage']['reviewed'] = 1
+            empty = render_markdown_report(rows, manifest)
+            self.assertEqual(parse_report(empty).items, [])
+            self.assertIn('1 need no changes', empty)
 
     def test_held_decision_stays_held_without_claiming_a_fix(self):
         with tempfile.TemporaryDirectory() as d:

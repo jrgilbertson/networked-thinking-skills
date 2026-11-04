@@ -5,6 +5,9 @@ from pathlib import Path
 import re
 
 from finding_codes import FINDING_MESSAGES
+from audit_review_report import (
+    ReviewOutcome, ReviewReport, add_item, identity, new_report, note_target, parse_report, render_report, table_safe,
+)
 
 
 PRIORITY_ORDER = ("P0", "P1", "P2", "P3")
@@ -28,9 +31,10 @@ BUCKET_LABELS = {
 def render_markdown_report(
     rows: Iterable[dict[str, object]],
     manifest: dict[str, object],
+    *, existing_report: str | None = None,
 ) -> str:
     if manifest.get("schema_version") == "2.0.0":
-        return _render_model_led_report(list(rows), manifest)
+        return _render_model_led_report(list(rows), manifest, existing_report=existing_report)
     sorted_rows = sorted(list(rows), key=_row_sort_key)
     total_notes = _int_or_default(manifest.get("total_notes"), len(sorted_rows))
     no_change_notes = sum(1 for row in sorted_rows if _bucket_key(row) == NO_CHANGE_BUCKET)
@@ -259,32 +263,47 @@ def _model_led_actions(row: dict[str, object]) -> list[str]:
         action = _quality_action(finding["code"])
         reason = finding["message"]
         label = "Fact-check pending" if finding["code"] == "factual_risk" else "Note quality"
-        suffix = "" if reason == action else " " + _plain(reason)
+        suffix = "" if reason == action else " " + _report_text(reason)
         actions.append(f"**{_plain(action)}** {label}.{suffix}")
     for check in checks:
         label = "Anki integrity" if check["source"] == "anki" else "Exact integrity check"
-        actions.append(f"**{_plain(check['message'])}** {label}.")
+        actions.append(f"**{_report_text(check['message'])}** {label}.")
+    if row["review_status"] != "reviewed":
+        actions.append(f"Complete model review ({row['review_status']}); quality is unscored.")
     return list(dict.fromkeys(actions))
 
 
-def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, object]) -> str:
+def _action_advice(action: str) -> tuple[int, str] | None:
+    matched = re.match(r"^\*\*(.*?)\*\* (Note quality|Fact-check pending|Exact integrity check|Anki integrity)\.", action)
+    if matched is None:
+        return None
+    integrity = matched[2] in {"Exact integrity check", "Anki integrity"}
+    return (0, _plain(matched[1])) if integrity else (1, matched[1])
+
+
+def _report_text(value: object) -> str:
+    return str(value).strip().replace("<!--", "&lt;!--").replace("-->", "--&gt;")
+
+
+def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, object],
+                             *, existing_report: str | None = None) -> str:
     rows = sorted(rows, key=_row_sort_key)
     coverage = manifest["model_coverage"]
     total = manifest["total_notes"]
     unfinished = total - coverage["reviewed"]
-    queue = [row for row in rows if row.get("priority") in PRIORITY_ORDER]
+    queue = [row for row in rows if row.get("priority") in PRIORITY_ORDER or row["review_status"] != "reviewed"]
     unchanged = sum(row["review_status"] == "reviewed" and row["clean"] and row["priority"] is None for row in rows)
-    counts = {p: sum(row["priority"] == p for row in queue) for p in PRIORITY_ORDER}
+    counts = {p: sum((row["priority"] or "P3") == p for row in queue) for p in PRIORITY_ORDER}
     if queue:
         first = next(p for p in PRIORITY_ORDER if counts[p])
         first_actions = []
         for row in queue:
-            if row["priority"] == first:
-                first_actions.extend(c["message"] for c in row["integrity_checks"] if c["status"] == "failed" and c["priority"] == first)
-                first_actions.extend(_quality_action(f["code"]) for f in row["findings"])
+            if (row["priority"] or "P3") == first:
+                advice = [entry for action in _model_led_actions(row) if (entry := _action_advice(action)) is not None]
+                first_actions.extend(text for _, text in sorted(advice, key=lambda entry: entry[0]))
         actions = list(dict.fromkeys(first_actions))
-        recommendation = " ".join(_plain(a) for a in actions[:2])
-        recommendation += f" Start with {first} ({_note_count(counts[first])}), then work through the remaining priority buckets."
+        recommendation = " ".join(actions[:2])
+        recommendation += f" Start with {first} ({_note_count(counts[first])}), then work through the remaining priorities."
         if unfinished:
             recommendation += f" Finish model review for {unfinished} notes before treating this audit as complete."
     elif unfinished:
@@ -302,30 +321,87 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
     anki = manifest["integrity_coverage"].get("anki", {})
     checked = anki.get("passed", 0) + anki.get("failed", 0)
     lines.append(f"Anki: {checked} / {total} checked; {anki.get('not_checked', total)} not checked.")
-    if not counts["P0"]:
-        lines.extend(["", "P0 - Critical: none identified in completed checks."])
-    titles = {"P0": "Critical", "P1": "Fix first", "P2": "Improve next", "P3": "Optional polish"}
-    for priority in PRIORITY_ORDER:
-        entries = [row for row in queue if row["priority"] == priority]
-        if not entries:
-            continue
-        lines.extend(["", f"## {priority} - {titles[priority]}", ""])
-        for row in entries:
-            lines.append(f"- {row['note_link']}")
-            for action in _model_led_actions(row):
-                lines.append(f"  - {action}")
-            if row["review_status"] != "reviewed":
-                lines.append(f"  - Model review {row['review_status']}; quality is unscored.")
-    decisions = manifest.get("decisions", [])
-    if decisions:
-        links = {row["note_path"]: row["note_link"] for row in rows}
-        lines.extend(["", "## Recorded decisions", ""])
-        for decision in decisions:
-            label = "Completed" if decision["status"] == "completed" else "Held"
-            lines.append(f"- {label}: {links[decision['note_path']]} - {_plain(decision['message'])}")
+    coverage_lines = lines[lines.index("## Coverage") + 2:]
     evidence = manifest.get("outputs", {}).get("evidence")
+    suffix = "\n"
     if evidence:
         path = Path(str(evidence))
         link = path.resolve().as_uri() if path.is_absolute() else path.as_posix().replace(" ", "%20")
-        lines.extend(["", f"[Supporting evidence](<{link}>)"])
-    return "\n".join(lines) + "\n"
+        suffix += f"[Supporting evidence](<{link}>) (optional temporary artifacts)\n"
+    if existing_report is None:
+        report = new_report(str(manifest["run_id"]), str(manifest["audit_mode"]), "\n".join(lines), suffix=suffix)
+    else:
+        report = parse_report(existing_report, run_id=str(manifest["run_id"]), scope=str(manifest["audit_mode"]))
+        report.prefix = _refresh_recommendation(report, recommendation)
+        report.prefix = _refresh_coverage(report.prefix, coverage_lines)
+    for row in queue:
+        actions = [(identity(str(row.get("content_hash", "unknown")) + "\0" + action), action)
+                   for action in _model_led_actions(row)]
+        add_item(report, str(row["note_path"]), str(row["priority"] or "P3"), actions)
+    for decision in manifest.get("decisions", []):
+        row = next(r for r in rows if r["note_path"] == decision["note_path"])
+        action_id = "legacy-" + identity(str(decision))
+        item = add_item(report, str(row["note_path"]), str(row["priority"] or "P3"),
+                        [(action_id, "Prior recorded decision; original action scope unknown.")])
+        event_id = "legacy-" + identity(str(decision))
+        if not any(o.id == event_id for o in item.outcomes):
+            label = "Held" if decision["status"] == "held" else "Reported completed"
+            text = f"**{label} — date and verification unknown** Source: audit manifest. {_report_text(decision['message'])}"
+            item.outcomes.append(ReviewOutcome(event_id, action_id, table_safe(text)))
+    rank = {str(row["note_path"]): index for index, row in enumerate(rows)}
+    report.items.sort(key=lambda item: (PRIORITY_ORDER.index(item.priority), rank.get(note_target(item.note), len(rows)), item.number))
+    return render_report(report)
+
+
+def _refresh_recommendation(report: ReviewReport, recommendation: str) -> str:
+    from audit_review_report import ReviewError
+    heading, coverage = "## Recommendation\n\n", "\n\n## Coverage\n\n"
+    if report.prefix.count(heading) != 1 or report.prefix.count(coverage) != 1:
+        raise ReviewError("Recommendation heading was edited; reconcile before regeneration")
+    before, after = report.prefix.split(heading, 1)
+    current, rest = after.split(coverage, 1)
+    if current == recommendation:
+        return report.prefix
+    known_actions = set()
+    for item in report.items:
+        for action in item.actions:
+            advice = _action_advice(action.text.replace(r"\|", "|"))
+            if advice is not None:
+                known_actions.add(advice[1])
+    parts = current.rsplit(" Start with ", 1)
+    generated = current == "No actions were identified in the completed review and checks." or re.fullmatch(
+        r"Finish model review for [0-9]+ notes before drawing a conclusion\.", current) is not None
+    if len(parts) == 2:
+        actions, next_steps = parts
+        known = not actions or actions in known_actions or any(
+            actions.startswith(first + " ") and actions[len(first) + 1:] in known_actions for first in known_actions)
+        generated = known and re.fullmatch(
+            r"P[0-3] \([0-9]+ notes?\), then work through the remaining priorities\."
+            r"(?: Finish model review for [0-9]+ notes before treating this audit as complete\.)?", next_steps) is not None
+    if not generated:
+        raise ReviewError("Recommendation text was edited; reconcile before regeneration")
+    return before + heading + recommendation + coverage + rest
+
+
+def _refresh_coverage(prefix: str, coverage_lines: list[str]) -> str:
+    heading = "## Coverage\n\n"
+    if prefix.count(heading) != 1:
+        from audit_review_report import ReviewError
+        raise ReviewError("Coverage heading was edited; reconcile before regeneration")
+    before, after = prefix.split(heading, 1)
+    managed = re.compile(r"^(?:[0-9]+ / [0-9]+ model-reviewed\.|Unfinished:|Fact-checks pending:|Anki:)")
+    generated = re.compile(
+        r"(?:[0-9]+ / [0-9]+ model-reviewed\. [0-9]+ need action; [0-9]+ need no changes\."
+        r"|Unfinished: [0-9]+ (?:pending|failed|unavailable|stale)"
+        r"(?:; [0-9]+ (?:pending|failed|unavailable|stale))*\."
+        r"|Fact-checks pending: [0-9]+; model review does not verify those claims\."
+        r"|Anki: [0-9]+ / [0-9]+ checked; [0-9]+ not checked\.)")
+    retained = []
+    for line in after.splitlines(keepends=True):
+        if managed.match(line):
+            if not generated.fullmatch(line.rstrip("\r\n")):
+                from audit_review_report import ReviewError
+                raise ReviewError("Coverage summary was edited; reconcile before regeneration")
+        else:
+            retained.append(line)
+    return before + heading + "\n".join(coverage_lines) + "\n" + "".join(retained)

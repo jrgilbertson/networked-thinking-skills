@@ -34,15 +34,13 @@ any LaTeX command whose name starts with `t` or `n` reaches the vault
 corrupted — `\theta`, one of the seven commands the audit detects, lands as a
 bare tab followed by `heta`. A raw string in the helper language does not
 prevent this; the decoding happens inside the CLI, after the helper has
-handed the argument over. GitHub issue #44 tracks the LaTeX-safe `content=`
-write path for app-context writes.
+handed the argument over. Use the quote-safe app-context transport above.
 
 The audit detects exactly seven of those commands — `\times`, `\text`,
 `\tfrac`, `\theta`, `\to`, `\tan`, and `\neq` — listed in
 `DECAYED_LATEX_SUFFIXES` in `scripts/markdown_parse.py`. Other
 `t`/`n`-leading commands decay by the same mechanism but are outside that
-detected set; issue #44 names `\nabla`, `\nu`, and `\tilde` as commands it
-also corrupts, and `\top` decays the same way. A note corrupted only by one
+detected set; `\nabla`, `\nu`, `\tilde`, and `\top` decay by the same rule. A note corrupted only by one
 of those audits as clean. A clean audit proves none of the seven detected
 commands decayed; it does not prove the note carries no decayed LaTeX at
 all.
@@ -262,7 +260,11 @@ specific outcome.
 
 When the user asks the agent to use a long-running goal, loop, or autonomous
 batch process to improve audit findings, maintain a durable held-decision
-artifact in addition to chat summaries. Do not rely on chat history, goal state,
+artifact in addition to chat summaries. For audit follow-up, that artifact is the
+selected Markdown audit report: use its visible `Action taken` entries rather
+than introducing a persistent external queue. Preserve the item numbers and
+minimal action-identification markers. For work without an audit report, agree
+on an appropriate durable artifact with the learner. Do not rely on chat history, goal state,
 or checkpoint prose as the only record. The artifact must include each held
 note link/path, hold reason, recommended decision, current status, and the next
 action needed from the learner. Update it whenever a hold is added, resolved,

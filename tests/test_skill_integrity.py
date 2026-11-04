@@ -23,6 +23,7 @@ SKILL_REFERENCES = {
         "references/audit-rubric.md",
         "references/model-judgment-prompt.md",
         "references/model-judgment-workflow.md",
+        "references/audit-review-record.md",
         "references/remediation-context.md",
         "references/install-matrix.md",
     ],
@@ -45,9 +46,9 @@ def _required_reference_paths(text):
         if line.startswith("## "):
             break
         line = line.strip()
-        match = re.match(r"- `([^`]+)`", line)
+        match = re.match(r"- (?:`([^`]+)`|\[[^\]]+\]\(([^)]+)\))", line)
         if match:
-            references.append(match.group(1))
+            references.append(match.group(1) or match.group(2))
     return references
 
 
