@@ -13,6 +13,7 @@ from urllib.parse import quote, unquote
 FORMAT_VERSION = "1.0.0"
 TABLE_HEADER = "| # | Priority | Note | Recommendation | Action taken |"
 TABLE_SEPARATOR = "|---|---|---|---|---|"
+RETIRED_NOTE_PREFIX = "Retired (verified deleted): "
 TOKEN = r"[A-Za-z0-9_-]+"
 HEADER = re.compile(r"<!-- atomic-note-audit:1\.0\.0 run=([^\s]+) scope=([^\s]+) -->")
 ITEM = re.compile(rf"([1-9][0-9]*) <!-- item:({TOKEN}) -->")
@@ -72,6 +73,8 @@ def note_link(path: str) -> str:
 
 
 def note_target(link: str) -> str:
+    if link.startswith(RETIRED_NOTE_PREFIX):
+        link = link[len(RETIRED_NOTE_PREFIX):]
     markdown = re.fullmatch(r"\[(?:\\.|[^\]])*\]\(<([^<>]+)>\)", link)
     if markdown:
         path = unquote(markdown[1])

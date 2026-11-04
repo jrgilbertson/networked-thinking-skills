@@ -132,6 +132,15 @@ After an approved verified rename, include `previous_path` and `rename_to` to
 update the report link without changing its item identity. This records a rename;
 it does not perform one. The links check must establish the new intended target.
 
+After an approved verified deletion or split that removes the source, use
+`retire_target: true` and `previous_path` on the completed outcome, without
+`rename_to`. Verify the deletion, repaired links, and applicable Anki changes
+before recording it. The historical Note cell becomes
+`Retired (verified deleted): [original link]`; its number, actions, and history
+remain recoverable. Publication verifies that retired paths are absent before
+and after writing, while live targets must still resolve. A missing unmarked
+target or a reappeared retired source requires reconciliation.
+
 ```bash
 python3 -m shared.scripts.record_audit_outcome --report-snapshot "$REPORT_SNAPSHOT" --event "$EVENT_JSON" --draft "$DRAFT"
 python3 -m shared.scripts.publish_audit_report --vault "$VAULT_NAME" --draft "$DRAFT" --report-path "$REPORT_PATH" --expected-snapshot "$REPORT_SNAPSHOT"

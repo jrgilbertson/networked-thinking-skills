@@ -5,7 +5,9 @@ import unittest
 
 from shared.scripts.obsidian_adapter import CommandResult
 from shared.scripts.publish_audit_report import publish_report, report_basename
-from shared.scripts.audit_review_report import ReviewError
+from shared.scripts.audit_review_report import ReviewError, add_item, parse_report, render_report
+from shared.scripts.record_audit_outcome import prepare_outcome
+from test_audit_outcome_recording import event
 from test_audit_review_report import REPORT
 
 
@@ -18,7 +20,10 @@ const writes = [];
 global.app = {
  vault: {
   getAbstractFileByPath: path => files.has(path) || folders.has(path) ? {path} : null,
-  read: async file => input.badReadback && writes.includes(file.path) ? files.get(file.path)+'changed' : files.get(file.path),
+  read: async file => {
+   if (input.reappearAfterWrite && writes.includes(file.path)) files.set(input.reappearAfterWrite,'Reappeared source.');
+   return input.badReadback && writes.includes(file.path) ? files.get(file.path)+'changed' : files.get(file.path);
+  },
   process: async (file, callback) => {
    if (input.concurrent) files.set(file.path, input.concurrent);
    const result = callback(files.get(file.path));
@@ -128,3 +133,37 @@ class ReportPublicationTest(unittest.TestCase):
         large = REPORT + ('A retained learner observation.\n' * 40000)
         publish_report(adapter, vault='Synthetic vault', draft=large, timestamp='203001020304')
         self.assertEqual(adapter.files[self.path], large)
+
+    def test_verified_deleted_source_retains_history_and_allows_other_item_updates(self):
+        retired = prepare_outcome(REPORT, event(retire_target=True,
+            previous_path='Atomic Notes/Example|math.md', description='Verified approved source deletion.'))
+        report = parse_report(retired)
+        add_item(report, 'Atomic Notes/Live.md', 'P2', [('clarify', 'Clarify the live note.')])
+        retired = render_report(report)
+        adapter = AppAdapter({'Atomic Notes/Live.md': 'Live source, unchanged.'})
+        del adapter.files['Atomic Notes/Example|math.md']
+        with self.assertRaises(ReviewError):
+            publish_report(adapter, vault='Synthetic vault', draft=REPORT, timestamp='203001020304')
+        first = publish_report(adapter, vault='Synthetic vault', draft=retired, timestamp='203001020304')
+        self.assertEqual(first['links_verified'], 1)
+        self.assertEqual(first['retired_targets_verified'], 1)
+        updated = prepare_outcome(retired, event(item=8, action_id='clarify', event_id='hold-live',
+            status='Held', verification={}, description='Wait for learner input.'))
+        publish_report(adapter, vault='Synthetic vault', draft=updated,
+                       report_path=self.path, expected_text=retired)
+        self.assertIn('Wait for learner input.', adapter.files[self.path])
+        self.assertIn('Learner prefers this name.', adapter.files[self.path])
+        self.assertNotIn('Atomic Notes/Example|math.md', adapter.files)
+        self.assertEqual(adapter.files['Atomic Notes/Live.md'], 'Live source, unchanged.')
+        adapter.files['Atomic Notes/Example|math.md'] = 'Source has reappeared.'
+        before = adapter.files[self.path]
+        with self.assertRaises(ReviewError):
+            publish_report(adapter, vault='Synthetic vault', draft=updated,
+                           report_path=self.path, expected_text=before)
+        self.assertEqual(adapter.files[self.path], before)
+        racing = AppAdapter({'Atomic Notes/Live.md': 'Live source.'},
+                            reappearAfterWrite='Atomic Notes/Example|math.md')
+        del racing.files['Atomic Notes/Example|math.md']
+        with self.assertRaisesRegex(ReviewError, 'uncertain'):
+            publish_report(racing, vault='Synthetic vault', draft=retired, timestamp='203001020304')
+        self.assertEqual(racing.writes, [self.path])

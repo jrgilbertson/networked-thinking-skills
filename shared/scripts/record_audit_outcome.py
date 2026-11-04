@@ -13,7 +13,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from shared.scripts.audit_review_report import (
-    TOKEN, ReviewError, ReviewOutcome, note_link, note_target, parse_report, render_report, table_safe,
+    TOKEN, RETIRED_NOTE_PREFIX, ReviewError, ReviewOutcome, note_link, note_target, parse_report, render_report, table_safe,
 )
 
 
@@ -91,6 +91,16 @@ def prepare_outcome(report_text: str, event: dict[str, object]) -> str:
     if remaining:
         text += "<br>Remaining: " + "; ".join(_text(v, "remaining check") for v in remaining)
     rename_to = event.get("rename_to")
+    retire_target = event.get("retire_target", False)
+    if type(retire_target) is not bool:
+        raise ReviewError("retire_target must be a boolean")
+    if retire_target:
+        if status != "Completed" or rename_to is not None:
+            raise ReviewError("Retirement requires a verified approved deletion, separate from a rename")
+        previous = _text(event.get("previous_path"), "previous_path")
+        if note_target(item.note) != previous:
+            raise ReviewError("Retirement receipt does not match the report's note target")
+        text += f"<br>Recorded retirement: {previous}."
     if rename_to is not None:
         if status != "Completed":
             raise ReviewError("A report target changes only after a verified approved rename")
@@ -109,6 +119,8 @@ def prepare_outcome(report_text: str, event: dict[str, object]) -> str:
     item.outcomes.append(ReviewOutcome(event_id, action_id, text))
     if rename_to is not None:
         item.note = new_link
+    elif retire_target:
+        item.note = RETIRED_NOTE_PREFIX + note_link(previous)
     return render_report(report)
 
 

@@ -15,7 +15,7 @@ import tempfile
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from shared.scripts.audit_review_report import ReviewError, TABLE_HEADER, note_target, parse_report
+from shared.scripts.audit_review_report import RETIRED_NOTE_PREFIX, ReviewError, TABLE_HEADER, note_target, parse_report
 from shared.scripts.config import DEFAULT_CONFIG
 from shared.scripts.obsidian_adapter import ObsidianAdapter, decode_eval_base64_output, ObsidianTransportError
 
@@ -48,11 +48,19 @@ def build_publish_code(payload_path: Path) -> str:
  if (typeof folder !== 'string' || !folder || folder.startsWith('/') || folder.includes(':') || folder.includes(String.fromCharCode(92)) || folder.split('/').some(p => !p || p === '.' || p === '..')) throw Error('invalid audit output folder');
  const path = payload.path || folder + '/' + payload.basename;
  if (!path.startsWith(folder + '/') || (payload.expected === null && path !== folder + '/' + payload.basename)) throw Error('unexpected report destination');
- for (const target of payload.targets) {
-  if (target === path) throw Error('report cannot overwrite an audited source note');
-  const dest = app.metadataCache.getFirstLinkpathDest(target,path);
-  if (!dest || dest.path !== target) throw Error('unresolved or wrong report link: ' + target);
- }
+ const verifyTargets = () => {
+  for (const target of [...payload.targets,...payload.retiredTargets]) {
+   if (target === path) throw Error('report cannot overwrite an audited source note');
+  }
+  for (const target of payload.targets) {
+   const dest = app.metadataCache.getFirstLinkpathDest(target,path);
+   if (!dest || dest.path !== target) throw Error('unresolved or wrong report link: ' + target);
+  }
+  for (const target of payload.retiredTargets) {
+   if (app.vault.getAbstractFileByPath(target)) throw Error('retired source still exists: ' + target);
+  }
+ };
+ verifyTargets();
  const file = app.vault.getAbstractFileByPath(path);
  if (payload.expected === null) {
   if (file) throw Error('report destination already exists; inspect before retrying');
@@ -71,11 +79,8 @@ def build_publish_code(payload_path: Path) -> str:
  }
  const published = app.vault.getAbstractFileByPath(path);
  if (!published || await app.vault.read(published) !== payload.draft) throw Error('report readback mismatch; inspect before retrying');
- for (const target of payload.targets) {
-  const dest = app.metadataCache.getFirstLinkpathDest(target,path);
-  if (!dest || dest.path !== target) throw Error('report link changed during publication: ' + target);
- }
- const value = {path,links_verified:payload.targets.length};
+ verifyTargets();
+ const value = {path,links_verified:payload.targets.length,retired_targets_verified:payload.retiredTargets.length};
  const bytes = new TextEncoder().encode(JSON.stringify(value));
  let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte);
  return btoa(binary);
@@ -105,7 +110,8 @@ def publish_report(adapter: ObsidianAdapter, *, vault: str, draft: str, timestam
     payload = dict(draft=draft, expected=expected_text, path=report_path,
                    basename=report_basename(timestamp) if report_path is None else PurePosixPath(report_path).name,
                    folder=output_folder, defaultFolder=DEFAULT_CONFIG["audit_output_folder"],
-                   targets=[note_target(item.note) for item in report.items])
+                   targets=[note_target(item.note) for item in report.items if not item.note.startswith(RETIRED_NOTE_PREFIX)],
+                   retiredTargets=[note_target(item.note) for item in report.items if item.note.startswith(RETIRED_NOTE_PREFIX)])
     with tempfile.TemporaryDirectory(prefix="atomic-audit-publish-") as temporary:
         payload_path = Path(temporary) / "payload.json"
         payload_path.write_text(json.dumps(payload, ensure_ascii=True), encoding="utf-8")
@@ -115,9 +121,11 @@ def publish_report(adapter: ObsidianAdapter, *, vault: str, draft: str, timestam
                           + (result.stderr or result.stdout or str(result.returncode)).strip())
     try:
         receipt = json.loads(decode_eval_base64_output(result.stdout))
-        if (not isinstance(receipt, dict) or set(receipt) != {"path", "links_verified"}
+        if (not isinstance(receipt, dict) or set(receipt) != {"path", "links_verified", "retired_targets_verified"}
                 or not isinstance(receipt["path"], str) or not _relative_path(receipt["path"])
-                or receipt["links_verified"] != len(report.items)
+                or type(receipt["links_verified"]) is not int or receipt["links_verified"] != len(payload["targets"])
+                or type(receipt["retired_targets_verified"]) is not int
+                or receipt["retired_targets_verified"] != len(payload["retiredTargets"])
                 or (report_path is not None and receipt["path"] != report_path)):
             raise ReviewError("Invalid publication acknowledgement")
     except (ValueError, ObsidianTransportError) as exc:

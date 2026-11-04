@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 
-from shared.scripts.audit_review_report import ReviewError, parse_report
+from shared.scripts.audit_review_report import ReviewError, note_target, parse_report
 from shared.scripts.record_audit_outcome import prepare_outcome
 from test_audit_review_report import REPORT
 
@@ -91,3 +91,20 @@ class OutcomeRecordingTest(unittest.TestCase):
             self.assertEqual(source.read_text(), REPORT)
             self.assertIn('Waiting for a learner decision.', draft.read_text())
             self.assertEqual(set(p.name for p in root.iterdir()), {'report.md', 'event.json', 'draft.md'})
+
+    def test_verified_retirement_keeps_target_identity_and_history_recoverable(self):
+        retired = event(retire_target=True, previous_path='Atomic Notes/Example|math.md',
+                        description='Deleted the approved obsolete source and checked its absence.')
+        result = prepare_outcome(REPORT, retired)
+        item = parse_report(result).items[0]
+        self.assertEqual(item.number, 7)
+        self.assertEqual(item.identity, 'original')
+        self.assertEqual(note_target(item.note), 'Atomic Notes/Example|math.md')
+        self.assertTrue(item.note.startswith('Retired (verified deleted): '))
+        self.assertIn('Learner prefers this name.', result)
+        self.assertEqual(prepare_outcome(result, retired), result)
+        for changes in [dict(status='Declined'), dict(previous_path='Atomic Notes/Other.md'),
+                        dict(previous_path=None), dict(retire_target='yes'),
+                        dict(rename_to='Atomic Notes/Replacement.md')]:
+            with self.subTest(changes=changes), self.assertRaises(ReviewError):
+                prepare_outcome(REPORT, {**retired, **changes})
