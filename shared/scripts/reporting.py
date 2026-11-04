@@ -273,6 +273,14 @@ def _model_led_actions(row: dict[str, object]) -> list[str]:
     return list(dict.fromkeys(actions))
 
 
+def _action_advice(action: str) -> tuple[int, str] | None:
+    matched = re.match(r"^\*\*(.*?)\*\* (Note quality|Fact-check pending|Exact integrity check|Anki integrity)\.", action)
+    if matched is None:
+        return None
+    integrity = matched[2] in {"Exact integrity check", "Anki integrity"}
+    return (0, _plain(matched[1])) if integrity else (1, matched[1])
+
+
 def _report_text(value: object) -> str:
     return str(value).strip().replace("<!--", "&lt;!--").replace("-->", "--&gt;")
 
@@ -291,10 +299,10 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
         first_actions = []
         for row in queue:
             if (row["priority"] or "P3") == first:
-                first_actions.extend(c["message"] for c in row["integrity_checks"] if c["status"] == "failed" and c["priority"] == first)
-                first_actions.extend(_quality_action(f["code"]) for f in row["findings"])
+                advice = [entry for action in _model_led_actions(row) if (entry := _action_advice(action)) is not None]
+                first_actions.extend(text for _, text in sorted(advice, key=lambda entry: entry[0]))
         actions = list(dict.fromkeys(first_actions))
-        recommendation = " ".join(_plain(a) for a in actions[:2])
+        recommendation = " ".join(actions[:2])
         recommendation += f" Start with {first} ({_note_count(counts[first])}), then work through the remaining priorities."
         if unfinished:
             recommendation += f" Finish model review for {unfinished} notes before treating this audit as complete."
@@ -357,10 +365,9 @@ def _refresh_recommendation(report: ReviewReport, recommendation: str) -> str:
     known_actions = set()
     for item in report.items:
         for action in item.actions:
-            matched = re.match(r"^\*\*(.*?)\*\* (Note quality|Fact-check pending|Exact integrity check|Anki integrity)\.", action.text)
-            if matched:
-                text = matched[1].replace(r"\|", "|")
-                known_actions.add(_plain(text) if matched[2] in {"Exact integrity check", "Anki integrity"} else text)
+            advice = _action_advice(action.text.replace(r"\|", "|"))
+            if advice is not None:
+                known_actions.add(advice[1])
     parts = current.rsplit(" Start with ", 1)
     generated = current == "No actions were identified in the completed review and checks." or re.fullmatch(
         r"Finish model review for [0-9]+ notes before drawing a conclusion\.", current) is not None

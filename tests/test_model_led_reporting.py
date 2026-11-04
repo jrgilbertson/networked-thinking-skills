@@ -105,6 +105,20 @@ class ModelLedReportingTest(unittest.TestCase):
         self.assertTrue(all(item.outcomes[0].text == '**Pending**' for item in unfinished))
         self.assertTrue(all('quality is unscored' in item.actions[0].text for item in unfinished))
 
+    def test_generated_advice_uses_the_same_deduplicated_actions_as_the_table(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=1)
+            rows[0]['findings'] = [dict(code='missing_frontmatter', message='Add the required frontmatter.')]
+            rows[0]['integrity_checks'] = [dict(code='frontmatter', source='frontmatter', status='failed',
+                priority='P1', message='Add the required frontmatter.')]
+            report = render_markdown_report(rows, manifest)
+            rows[0]['priority'] = 'P0'
+            revised = render_markdown_report(rows, manifest, existing_report=report)
+            self.assertIn('Start with P0', revised)
+            opening = report.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            self.assertNotIn("Add YAML frontmatter with the note's metadata.", opening)
+            self.assertIn('Add the required frontmatter.', opening)
+
     def test_regeneration_recovers_ids_and_keeps_source_revisions_pending(self):
         with tempfile.TemporaryDirectory() as d:
             _, rows, manifest, _ = self.fixture(Path(d), count=5)
