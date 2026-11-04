@@ -76,6 +76,7 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
             "obsidian_cli.py",
             "preflight_obsidian.py",
             "prepare_model_judgment.py",
+            "publish_audit_report.py",
             "remediate_notes.py",
             "remediation.py",
             "reporting.py",
