@@ -27,6 +27,8 @@ def main(argv: list[str] | None = None) -> int:
         validate_audit_run_pair(rows, manifest)
         if args.output.resolve() in {args.jsonl.resolve(), args.manifest.resolve()}:
             raise ReviewError("Report output must not overwrite audit inputs")
+        if args.existing_report is not None and manifest.get("schema_version") != "2.0.0":
+            raise ReviewError("--existing-report requires a model-led schema 2.0.0 manifest")
         existing = None
         if manifest.get("schema_version") == "2.0.0":
             previous = args.existing_report or (args.output if args.output.exists() else None)

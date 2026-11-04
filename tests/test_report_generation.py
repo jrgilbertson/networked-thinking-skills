@@ -27,6 +27,19 @@ def load_fixture_manifest() -> dict[str, object]:
 
 
 class ReportGenerationTest(unittest.TestCase):
+    def test_legacy_generation_rejects_explicit_snapshot_without_overwriting_output(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            snapshot, output = root / 'snapshot.md', root / 'draft.md'
+            snapshot.write_text('Learner review history.')
+            output.write_text('Preserve this destination.')
+            result = subprocess.run([sys.executable, '-m', 'shared.scripts.generate_report',
+                '--jsonl', str(AUDIT_JSONL), '--manifest', str(MANIFEST_JSON),
+                '--existing-report', str(snapshot), '--output', str(output)], capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('requires a model-led', result.stderr)
+            self.assertEqual(output.read_text(), 'Preserve this destination.')
+
     def test_model_led_regeneration_preserves_recorded_outcomes_and_manual_prose(self):
         from test_model_led_reporting import ModelLedReportingTest
         from shared.scripts.audit_review_report import parse_report

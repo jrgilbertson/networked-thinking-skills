@@ -11,7 +11,7 @@ from shared.scripts.collect_model_judgments import collect_model_judgments
 from shared.scripts.apply_model_judgments import compose_inventory
 from shared.scripts.reporting import render_markdown_report
 from shared.scripts.base_generation import render_base
-from shared.scripts.audit_review_report import parse_report, note_target
+from shared.scripts.audit_review_report import ReviewError, parse_report, note_target
 
 
 class ReportRunner:
@@ -102,6 +102,19 @@ class ModelLedReportingTest(unittest.TestCase):
             newer = parse_report(render_markdown_report(rows, manifest, existing_report=revised))
             self.assertEqual(len(newer.items[0].actions), 2)
             self.assertTrue(all(o.text == '**Pending**' for o in newer.items[0].outcomes))
+
+    def test_regeneration_stops_before_discarding_edited_coverage(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=2, limit=1)
+            rows[0]['fact_check_required'] = True
+            original = render_markdown_report(rows, manifest)
+            for prefix in ('1 / 2 model-reviewed.', 'Unfinished:', 'Fact-checks pending:', 'Anki:'):
+                line = next(line for line in original.splitlines() if line.startswith(prefix))
+                edited = original.replace(line, line + ' Learner annotation: preserve this context.')
+                with self.subTest(prefix=prefix), self.assertRaisesRegex(ReviewError, 'Coverage.*edited'):
+                    render_markdown_report(rows, manifest, existing_report=edited)
+            annotated = original.replace('## Coverage\n\n', '## Coverage\n\nA learner observation.\n')
+            self.assertIn('A learner observation.', render_markdown_report(rows, manifest, existing_report=annotated))
 
     def test_special_character_paths_and_math_recommendations_keep_their_content(self):
         with tempfile.TemporaryDirectory() as d:

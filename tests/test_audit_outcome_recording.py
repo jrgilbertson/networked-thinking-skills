@@ -35,9 +35,15 @@ class OutcomeRecordingTest(unittest.TestCase):
         self.assertEqual([o.action_id for o in item.outcomes], ['example', 'rename', 'example'])
 
     def test_approval_or_failed_checks_cannot_become_completion(self):
-        for changes in [dict(verification={}), dict(approval_ref=''),
-                        dict(verification={'source': {'status': 'failed', 'detail': 'Mismatch.'}}),
-                        dict(timestamp='2030-01-02T03:04:00')]:
+        cases = [dict(verification={}), dict(approval_ref=''),
+                 dict(remaining_checks=['Verify the card after scan.']),
+                 dict(timestamp='2030-01-02T03:04:00')]
+        for name in ('source', 'links', 'anki'):
+            for status in ('failed', 'not_checked'):
+                verification = event()['verification']
+                verification[name] = dict(status=status, detail='This check has not passed.')
+                cases.append(dict(verification=verification))
+        for changes in cases:
             with self.subTest(changes=changes), self.assertRaises(ReviewError):
                 prepare_outcome(REPORT, event(**changes))
 

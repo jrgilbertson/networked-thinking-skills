@@ -351,5 +351,18 @@ def _refresh_coverage(prefix: str, coverage_lines: list[str]) -> str:
         raise ReviewError("Coverage heading was edited; reconcile before regeneration")
     before, after = prefix.split(heading, 1)
     managed = re.compile(r"^(?:[0-9]+ / [0-9]+ model-reviewed\.|Unfinished:|Fact-checks pending:|Anki:)")
-    retained = [line for line in after.splitlines(keepends=True) if not managed.match(line)]
+    generated = re.compile(
+        r"(?:[0-9]+ / [0-9]+ model-reviewed\. [0-9]+ need action; [0-9]+ need no changes\."
+        r"|Unfinished: [0-9]+ (?:pending|failed|unavailable|stale)"
+        r"(?:; [0-9]+ (?:pending|failed|unavailable|stale))*\."
+        r"|Fact-checks pending: [0-9]+; model review does not verify those claims\."
+        r"|Anki: [0-9]+ / [0-9]+ checked; [0-9]+ not checked\.)")
+    retained = []
+    for line in after.splitlines(keepends=True):
+        if managed.match(line):
+            if not generated.fullmatch(line.rstrip("\r\n")):
+                from audit_review_report import ReviewError
+                raise ReviewError("Coverage summary was edited; reconcile before regeneration")
+        else:
+            retained.append(line)
     return before + heading + "\n".join(coverage_lines) + "\n" + "".join(retained)

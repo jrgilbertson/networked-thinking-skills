@@ -140,7 +140,11 @@ python3 scripts/publish_audit_report.py --vault "$VAULT_NAME" --draft "$DRAFT" -
 The recorder changes only an external draft and calls no source/card mutation
 tool or model. A repeated event ID with identical content is a no-op; reuse for
 different content is refused. To regenerate against available original audit
-artifacts, pass `--existing-report "$REPORT_SNAPSHOT"` to `generate_report.py`.
+artifacts, pass `--existing-report "$REPORT_SNAPSHOT"` to `generate_report.py`
+with a model-led schema 2.0.0 manifest. Legacy deterministic generation rejects
+this option rather than ignoring the selected report. Coverage summaries are
+refreshed only when their complete generated lines remain recognizable; an
+inline learner annotation requires reconciliation before regeneration.
 Without those artifacts, selected-item recording still works from the report.
 
 ## Safe publication and recovery
