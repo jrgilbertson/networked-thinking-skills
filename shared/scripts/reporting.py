@@ -283,14 +283,14 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
     coverage = manifest["model_coverage"]
     total = manifest["total_notes"]
     unfinished = total - coverage["reviewed"]
-    queue = [row for row in rows if row.get("priority") in PRIORITY_ORDER]
+    queue = [row for row in rows if row.get("priority") in PRIORITY_ORDER or row["review_status"] != "reviewed"]
     unchanged = sum(row["review_status"] == "reviewed" and row["clean"] and row["priority"] is None for row in rows)
-    counts = {p: sum(row["priority"] == p for row in queue) for p in PRIORITY_ORDER}
+    counts = {p: sum((row["priority"] or "P3") == p for row in queue) for p in PRIORITY_ORDER}
     if queue:
         first = next(p for p in PRIORITY_ORDER if counts[p])
         first_actions = []
         for row in queue:
-            if row["priority"] == first:
+            if (row["priority"] or "P3") == first:
                 first_actions.extend(c["message"] for c in row["integrity_checks"] if c["status"] == "failed" and c["priority"] == first)
                 first_actions.extend(_quality_action(f["code"]) for f in row["findings"])
         actions = list(dict.fromkeys(first_actions))
@@ -329,7 +329,7 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
     for row in queue:
         actions = [(identity(str(row.get("content_hash", "unknown")) + "\0" + action), action)
                    for action in _model_led_actions(row)]
-        add_item(report, str(row["note_path"]), str(row["priority"]), actions)
+        add_item(report, str(row["note_path"]), str(row["priority"] or "P3"), actions)
     for decision in manifest.get("decisions", []):
         row = next(r for r in rows if r["note_path"] == decision["note_path"])
         action_id = "legacy-" + identity(str(decision))

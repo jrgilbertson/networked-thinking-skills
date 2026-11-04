@@ -51,6 +51,11 @@ It preserves visible text and learner prose, and rejects duplicate/orphan IDs,
 ambiguous cells, unsupported format, or wrong run/scope. Never infer a missing
 association from row order or silently replace existing item numbers.
 
+Retain unfinished model reviews as pending actions with their note paths. When
+no exact failure supplies a higher priority, display P3 as workflow urgency;
+the audit row's quality score and priority remain unassigned. Keep the visible
+review action explicit that quality is unscored.
+
 For an older selected report without markers, read its visible numbered table,
 map each recommendation and recorded outcome explicitly, and add identification
 comments without changing visible substance or numbers. Compare the before/after
@@ -131,6 +136,8 @@ verification. Verification details remain visible in `Action taken`.
 After an approved verified rename, include `previous_path` and `rename_to` to
 update the report link without changing its item identity. This records a rename;
 it does not perform one. The links check must establish the new intended target.
+Reusing a pre-rename source path requires identity reconciliation; the new note
+must not inherit the renamed note's history.
 
 After an approved verified deletion or split that removes the source, use
 `retire_target: true` and `previous_path` on the completed outcome, without

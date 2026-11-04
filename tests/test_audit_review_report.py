@@ -1,7 +1,7 @@
 import unittest
 
 from shared.scripts.audit_review_report import (
-    ReviewError, add_item, parse_report, render_report, new_report, note_target,
+    ReviewError, add_item, parse_report, render_report, new_report, note_link, note_target,
 )
 
 
@@ -56,6 +56,19 @@ class ReviewReportTest(unittest.TestCase):
         self.assertEqual(len(item.actions), 3)
         self.assertEqual(item.outcomes[-1].action_id, 'new-source')
         self.assertEqual(item.outcomes[-1].text, '**Pending**')
+
+    def test_reusing_a_renamed_source_path_requires_identity_reconciliation(self):
+        report = new_report('synthetic', 'selected:two', '# Atomic note audit')
+        item = add_item(report, 'Atomic Notes/A.md', 'P2', [('original', 'Explain A.')])
+        number, original_id = item.number, item.identity
+        item.note = note_link('Atomic Notes/B.md')
+        recovered = parse_report(render_report(report))
+        add_item(recovered, 'Atomic Notes/B.md', 'P1', [('current', 'Clarify B.')])
+        before = render_report(recovered)
+        with self.assertRaisesRegex(ReviewError, 'historical identity'):
+            add_item(recovered, 'Atomic Notes/A.md', 'P2', [('new-note', 'Explain the new A.')])
+        self.assertEqual(render_report(recovered), before)
+        self.assertEqual((recovered.items[0].number, recovered.items[0].identity), (number, original_id))
 
     def test_bad_structure_never_recovers_a_partial_record(self):
         for broken in [

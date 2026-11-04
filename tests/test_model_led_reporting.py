@@ -88,6 +88,23 @@ class ModelLedReportingTest(unittest.TestCase):
             self.assertNotIn('Note 099.md', no_changes)
             self.assertIn('name: "Unreviewed"', base)
 
+    def test_interrupted_review_paths_and_ids_survive_without_working_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=6, limit=1)
+            before = deepcopy(rows)
+            text = render_markdown_report(rows, manifest)
+            self.assertEqual(rows, before)
+            self.assertTrue(all(row['score'] is None and row['priority'] is None
+                                for row in rows if row['review_status'] != 'reviewed'))
+        recovered = parse_report(text)
+        self.assertEqual({note_target(item.note) for item in recovered.items},
+                         {f'Atomic Notes/Note {i:03}.md' for i in range(6)})
+        unfinished = [item for item in recovered.items if any('Complete model review' in a.text for a in item.actions)]
+        self.assertEqual(len(unfinished), 5)
+        self.assertTrue(all(item.priority == 'P3' for item in unfinished))
+        self.assertTrue(all(item.outcomes[0].text == '**Pending**' for item in unfinished))
+        self.assertTrue(all('quality is unscored' in item.actions[0].text for item in unfinished))
+
     def test_regeneration_recovers_ids_and_keeps_source_revisions_pending(self):
         with tempfile.TemporaryDirectory() as d:
             _, rows, manifest, _ = self.fixture(Path(d), count=5)

@@ -203,8 +203,10 @@ def new_report(run_id: str, scope: str, introduction: str, *, suffix: str = "\n"
 
 def add_item(report: ReviewReport, path: str, priority: str, actions: list[tuple[str, str]]) -> ReviewItem:
     source_id = identity(path)
-    item = next((i for i in report.items if i.identity == source_id or note_target(i.note) == path), None)
+    item = next((i for i in report.items if note_target(i.note) == path), None)
     if item is None:
+        if any(i.identity == source_id for i in report.items):
+            raise ReviewError("Source path matches a historical identity at a different target; reconcile before regenerating")
         item = ReviewItem(max((i.number for i in report.items), default=0) + 1, source_id, priority, note_link(path))
         report.items.append(item)
     item.priority = priority
