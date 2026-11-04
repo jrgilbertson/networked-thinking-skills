@@ -19,7 +19,8 @@ const folders = new Set(input.folders || []);
 const writes = [];
 global.app = {
  vault: {
-  getAbstractFileByPath: path => files.has(path) || folders.has(path) ? {path} : null,
+  getAbstractFileByPath: path => path.split('/').some(p => p.startsWith('.')) ? null : files.has(path) || folders.has(path) ? {path} : null,
+  adapter: {exists: async path => files.has(path) || folders.has(path), read: async path => files.get(path)},
   read: async file => {
    if (input.reappearAfterWrite && writes.includes(file.path)) files.set(input.reappearAfterWrite,'Reappeared source.');
    return input.badReadback && writes.includes(file.path) ? files.get(file.path)+'changed' : files.get(file.path);
@@ -91,6 +92,11 @@ class ReportPublicationTest(unittest.TestCase):
         publish_report(adapter, vault='Synthetic vault', draft=edited, report_path=path, expected_text=REPORT)
         self.assertEqual(adapter.files[path], edited)
         self.assertEqual([p for p in adapter.files if p.endswith('Atomic note audit.md')], [path])
+        before = dict(adapter.files)
+        with self.assertRaises(ReviewError):
+            publish_report(adapter, vault='Synthetic vault', draft=edited, report_path=path,
+                           expected_text=edited, output_folder='Reviews/Old configuration')
+        self.assertEqual(adapter.files, before)
 
     def test_new_report_never_overwrites_a_collision(self):
         adapter = AppAdapter({self.path:'Other report or learner text.'})
@@ -167,3 +173,9 @@ class ReportPublicationTest(unittest.TestCase):
         with self.assertRaisesRegex(ReviewError, 'uncertain'):
             publish_report(racing, vault='Synthetic vault', draft=retired, timestamp='203001020304')
         self.assertEqual(racing.writes, [self.path])
+        hidden = REPORT.replace('Atomic%20Notes/Example%7Cmath.md', '.archive/Example.md')
+        hidden = prepare_outcome(hidden, event(retire_target=True, previous_path='.archive/Example.md'))
+        still_present = AppAdapter({'.archive/Example.md': 'Hidden source still exists.'})
+        with self.assertRaisesRegex(ReviewError, 'retired source still exists'):
+            publish_report(still_present, vault='Synthetic vault', draft=hidden, timestamp='203001020304')
+        self.assertEqual(still_present.writes, [])

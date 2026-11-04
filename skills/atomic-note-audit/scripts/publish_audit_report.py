@@ -40,15 +40,15 @@ def build_publish_code(payload_path: Path) -> str:
     encoded = base64.b64encode(json.dumps(str(payload_path), ensure_ascii=True).encode("utf-8")).decode("ascii")
     return '(async () => { const payloadPath = JSON.parse(atob("' + encoded + '"));' + '''
  const payload = JSON.parse(require('fs').readFileSync(payloadPath,'utf8'));
- const configFile = app.vault.getAbstractFileByPath('.networked-thinking/config.json');
- const config = configFile ? JSON.parse(await app.vault.read(configFile)) : {};
+ const configPath = '.networked-thinking/config.json';
+ const config = await app.vault.adapter.exists(configPath) ? JSON.parse(await app.vault.adapter.read(configPath)) : {};
  const configured = config.audit_output_folder || payload.defaultFolder;
  const folder = payload.folder || configured;
  if (config.audit_output_folder && folder !== configured) throw Error('configured report folder changed');
  if (typeof folder !== 'string' || !folder || folder.startsWith('/') || folder.includes(':') || folder.includes(String.fromCharCode(92)) || folder.split('/').some(p => !p || p === '.' || p === '..')) throw Error('invalid audit output folder');
  const path = payload.path || folder + '/' + payload.basename;
  if (!path.startsWith(folder + '/') || (payload.expected === null && path !== folder + '/' + payload.basename)) throw Error('unexpected report destination');
- const verifyTargets = () => {
+ const verifyTargets = async () => {
   for (const target of [...payload.targets,...payload.retiredTargets]) {
    if (target === path) throw Error('report cannot overwrite an audited source note');
   }
@@ -57,10 +57,10 @@ def build_publish_code(payload_path: Path) -> str:
    if (!dest || dest.path !== target) throw Error('unresolved or wrong report link: ' + target);
   }
   for (const target of payload.retiredTargets) {
-   if (app.vault.getAbstractFileByPath(target)) throw Error('retired source still exists: ' + target);
+   if (await app.vault.adapter.exists(target)) throw Error('retired source still exists: ' + target);
   }
  };
- verifyTargets();
+ await verifyTargets();
  const file = app.vault.getAbstractFileByPath(path);
  if (payload.expected === null) {
   if (file) throw Error('report destination already exists; inspect before retrying');
@@ -79,7 +79,7 @@ def build_publish_code(payload_path: Path) -> str:
  }
  const published = app.vault.getAbstractFileByPath(path);
  if (!published || await app.vault.read(published) !== payload.draft) throw Error('report readback mismatch; inspect before retrying');
- verifyTargets();
+ await verifyTargets();
  const value = {path,links_verified:payload.targets.length,retired_targets_verified:payload.retiredTargets.length};
  const bytes = new TextEncoder().encode(JSON.stringify(value));
  let binary = ''; for (const byte of bytes) binary += String.fromCharCode(byte);

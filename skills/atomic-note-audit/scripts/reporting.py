@@ -6,7 +6,7 @@ import re
 
 from finding_codes import FINDING_MESSAGES
 from audit_review_report import (
-    ReviewOutcome, add_item, identity, new_report, note_target, parse_report, render_report, table_safe,
+    ReviewOutcome, ReviewReport, add_item, identity, new_report, note_target, parse_report, render_report, table_safe,
 )
 
 
@@ -324,6 +324,7 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
         report = new_report(str(manifest["run_id"]), str(manifest["audit_mode"]), "\n".join(lines), suffix=suffix)
     else:
         report = parse_report(existing_report, run_id=str(manifest["run_id"]), scope=str(manifest["audit_mode"]))
+        report.prefix = _refresh_recommendation(report, recommendation)
         report.prefix = _refresh_coverage(report.prefix, coverage_lines)
     for row in queue:
         actions = [(identity(str(row.get("content_hash", "unknown")) + "\0" + action), action)
@@ -342,6 +343,37 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
     rank = {str(row["note_path"]): index for index, row in enumerate(rows)}
     report.items.sort(key=lambda item: (PRIORITY_ORDER.index(item.priority), rank.get(note_target(item.note), len(rows)), item.number))
     return render_report(report)
+
+
+def _refresh_recommendation(report: ReviewReport, recommendation: str) -> str:
+    from audit_review_report import ReviewError
+    heading, coverage = "## Recommendation\n\n", "\n\n## Coverage\n\n"
+    if report.prefix.count(heading) != 1 or report.prefix.count(coverage) != 1:
+        raise ReviewError("Recommendation heading was edited; reconcile before regeneration")
+    before, after = report.prefix.split(heading, 1)
+    current, rest = after.split(coverage, 1)
+    if current == recommendation:
+        return report.prefix
+    known_actions = set()
+    for item in report.items:
+        for action in item.actions:
+            matched = re.match(r"^\*\*(.*?)\*\* (Note quality|Fact-check pending|Exact integrity check|Anki integrity)\.", action.text)
+            if matched:
+                text = matched[1].replace(r"\|", "|")
+                known_actions.add(_plain(text) if matched[2] in {"Exact integrity check", "Anki integrity"} else text)
+    parts = current.rsplit(" Start with ", 1)
+    generated = current == "No actions were identified in the completed review and checks." or re.fullmatch(
+        r"Finish model review for [0-9]+ notes before drawing a conclusion\.", current) is not None
+    if len(parts) == 2:
+        actions, next_steps = parts
+        known = not actions or actions in known_actions or any(
+            actions.startswith(first + " ") and actions[len(first) + 1:] in known_actions for first in known_actions)
+        generated = known and re.fullmatch(
+            r"P[0-3] \([0-9]+ notes?\), then work through the remaining priorities\."
+            r"(?: Finish model review for [0-9]+ notes before treating this audit as complete\.)?", next_steps) is not None
+    if not generated:
+        raise ReviewError("Recommendation text was edited; reconcile before regeneration")
+    return before + heading + recommendation + coverage + rest
 
 
 def _refresh_coverage(prefix: str, coverage_lines: list[str]) -> str:

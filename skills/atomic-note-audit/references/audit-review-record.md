@@ -154,6 +154,8 @@ with a model-led schema 2.0.0 manifest. Legacy deterministic generation rejects
 this option rather than ignoring the selected report. Coverage summaries are
 refreshed only when their complete generated lines remain recognizable; an
 inline learner annotation requires reconciliation before regeneration.
+Recognizable generated opening advice is refreshed with the audit facts;
+edited recommendation text requires reconciliation rather than replacement.
 Without those artifacts, selected-item recording still works from the report.
 
 ## Safe publication and recovery

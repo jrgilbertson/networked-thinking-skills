@@ -116,6 +116,35 @@ class ModelLedReportingTest(unittest.TestCase):
             annotated = original.replace('## Coverage\n\n', '## Coverage\n\nA learner observation.\n')
             self.assertIn('A learner observation.', render_markdown_report(rows, manifest, existing_report=annotated))
 
+    def test_regeneration_refreshes_generated_advice_and_preserves_learner_edits(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            partial, complete = root / 'partial', root / 'complete'
+            partial.mkdir()
+            complete.mkdir()
+            _, rows, manifest, _ = self.fixture(partial, count=5, limit=1)
+            report = render_markdown_report(rows, manifest)
+            self.assertIn('Finish model review for 4 notes before treating this audit as complete.', report)
+            _, rows, manifest, _ = self.fixture(complete, count=5)
+            rows[0]['priority'] = 'P0'
+            refreshed = render_markdown_report(rows, manifest, existing_report=report)
+            opening = refreshed.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            expected = render_markdown_report(rows, manifest).split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
+            self.assertEqual(opening, expected)
+            self.assertIn('Start with P0', opening)
+            self.assertNotIn('Finish model review', opening)
+            edited = report.replace(' Start with ', ' Learner preference: keep this context. Start with ', 1)
+            with self.assertRaisesRegex(ReviewError, 'Recommendation.*edited'):
+                render_markdown_report(rows, manifest, existing_report=edited)
+            pending_rows, pending_manifest = deepcopy(rows), deepcopy(manifest)
+            for row in pending_rows:
+                row.update(findings=[], integrity_checks=[], review_status='pending', priority='P1')
+            pending_manifest['model_coverage'].update(reviewed=0, pending=5)
+            pending = render_markdown_report(pending_rows, pending_manifest)
+            self.assertIn('Finish model review for 5 notes', pending)
+            completed = render_markdown_report(rows, manifest, existing_report=pending)
+            self.assertIn(expected, completed)
+
     def test_special_character_paths_and_math_recommendations_keep_their_content(self):
         with tempfile.TemporaryDirectory() as d:
             _, rows, manifest, _ = self.fixture(Path(d), count=1)
