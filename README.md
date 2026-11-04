@@ -16,7 +16,7 @@ Networked Thinking is a book and practical system for turning saved articles, hi
 | Skill | What it does |
 |---|---|
 | `atomic-note` | Create or improve a single-concept note in DAE format. |
-| `atomic-note-audit` | Review selected notes with model judgment and exact integrity checks; deliver one concise Markdown report. |
+| `atomic-note-audit` | Review selected notes with model judgment and exact integrity checks; deliver one numbered Markdown report that retains decisions and verified outcomes. |
 | `managing-obsidian-tasks` | Manage Obsidian tasks from capture to completion. |
 
 More skills will land here as the book's workflows do; each installs independently.
@@ -46,6 +46,8 @@ Use atomic-note-audit to audit the quality of my atomic notes.
 Use atomic-note to turn this highlight into an atomic note.
 Create a todo to compare this article with my codebase.
 ```
+
+To continue later, ask the agent to process selected item numbers in the audit report. Its visible recommendations and action history are durable; temporary working files can be rebuilt. Reports use `<YYYYMMDDHHMM> Atomic note audit.md` directly in the configured audit output folder.
 
 Always run the audit before remediation and review the generated plan before allowing vault mutation. Remediation can edit, split, relink, or delete vault files. The deeper guides cover the [audit workflow](docs/audit-workflow.md), the [remediation runbook](docs/remediation.md), and the [scoring rubric](docs/rubric.md).
 

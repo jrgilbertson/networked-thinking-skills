@@ -112,7 +112,7 @@ class ModelLedReportingTest(unittest.TestCase):
             item = parse_report(text).items[0]
             self.assertEqual(note_target(item.note), rows[0]['note_path'])
             self.assertIn(r'$\theta$', text)
-            self.assertIn('a&#124;b', text)
+            self.assertIn(r'a\|b', text)
 
     def test_large_report_and_zero_action_report_preserve_coverage(self):
         with tempfile.TemporaryDirectory() as d:

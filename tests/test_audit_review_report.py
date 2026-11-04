@@ -93,7 +93,15 @@ class ReviewReportTest(unittest.TestCase):
         text = render_report(report)
         item = parse_report(text).items[0]
         self.assertEqual(note_target(item.note), 'Atomic Notes/λ [example]|x.md')
-        self.assertIn('Use $x&#124;y$<br>Explain λ & units.', item.actions[0].text)
+        self.assertIn(r'Use $x\|y$<br>Explain λ & units.', item.actions[0].text)
+
+    def test_gfm_pipe_escaping_preserves_backslashes_inside_code_and_math(self):
+        report = new_report('synthetic', 'selected:one', '# Atomic note audit\n')
+        add_item(report, 'Atomic Notes/Example.md', 'P2', [('pipes', r'Use `x\|y` and $x|y$.')])
+        text = render_report(report)
+        self.assertIn(r'`x\\|y`', text)
+        self.assertIn(r'$x\|y$', text)
+        self.assertEqual(render_report(parse_report(text)), text)
 
     def test_old_or_incomplete_report_needs_reconciliation(self):
         with self.assertRaisesRegex(ReviewError, 'reconcil'):

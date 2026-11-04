@@ -57,7 +57,7 @@ class ReviewReport:
 
 
 def table_safe(text: str) -> str:
-    return text.replace("|", "&#124;").replace("\n", "<br>")
+    return text.replace("|", r"\|").replace("\n", "<br>")
 
 
 def identity(text: str) -> str:
@@ -93,12 +93,11 @@ def _safe_path(path: str) -> None:
 
 def split_cells(line: str) -> list[str]:
     """Split table syntax, leaving escaped pipes and all cell content intact."""
-    cells, start, backslashes = [], 0, 0
+    cells, start = [], 0
     for index, char in enumerate(line):
-        if char == "|" and backslashes % 2 == 0:
+        if char == "|" and (index == 0 or line[index - 1] != "\\"):
             cells.append(line[start:index].strip())
             start = index + 1
-        backslashes = backslashes + 1 if char == "\\" else 0
     cells.append(line[start:].strip())
     if len(cells) != 7 or cells[0] or cells[-1]:
         raise ReviewError("Expected exactly five table cells; reconcile ambiguous pipes or rows")

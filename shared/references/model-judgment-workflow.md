@@ -10,7 +10,8 @@ Choose scope and resolve the provider-sharing boundary before exporting private 
 Run from the installed skill root.
 The examples below use canonical repository module commands; generated installed references use the equivalent `scripts/*.py` commands.
 Set `VAULT` to the authorized vault or an app-exported snapshot and `AUDIT_MODEL` to the configured model.
-Set `EVIDENCE` and `RAW` to new external run directories; `REPORT` is the requested `Audit.md` destination.
+Set `EVIDENCE` and `RAW` to external working directories and `REPORT` to an external Markdown draft.
+The learner-facing report is the durable review record; working directories may be discarded after publication.
 
 ```bash
 python3 -m shared.scripts.audit_inventory --vault "$VAULT" --run-id synthetic-example --evidence-dir "$EVIDENCE"
@@ -67,12 +68,17 @@ Never label unreviewed notes clean or use their score in a quality average.
 
 ## One plain Markdown report
 
-Lead with the recommended changes, then concise coverage, then actions grouped under P0-P3 headings.
-Use each affected note's link once in the queue, with its action and short reason.
-Keep quality, exact integrity failures, pending fact-checks and Anki status distinguishable.
-Unchanged notes are an aggregate count; detailed per-note evidence stays outside the normal reading path.
-Completed/held decisions come from the manifest's recorded decisions, never from suggested model fixes.
-The report uses text hierarchy and links, not graphics.
+Lead with recommendations and concise coverage, followed by one table sorted P0 through P3.
+Its columns are `#`, `Priority`, `Note`, `Recommendation`, and `Action taken`.
+Show each affected note once and retain every substantive action. Keep exact checks,
+quality suggestions, unverified fact-checks, and Anki status distinguishable.
+Unchanged notes are an aggregate count.
+
+Read the package's `references/audit-review-record.md` before publication or later
+selected-item processing. It owns the report's stable IDs, visible decision history,
+minimal hidden identification markers, external draft commands, and guarded app write.
+The report's Markdown is authoritative. A legacy manifest decision retains its original
+provenance; missing dates or verification do not establish a new completion.
 An optional Base remains a derived view and is not a second default report.
 
 ## Versions and historical compatibility

@@ -5,6 +5,16 @@ notes. For installed-skill use, load source context from
 `references/remediation-context.md` in the installed `atomic-note-audit` skill
 root, and run the commands below from that root.
 
+## Record selected audit outcomes
+
+When work comes from an audit, use that Markdown report as the durable record of
+held, declined, partial, and verified completed actions. Read it before resuming;
+its item IDs remain stable even when rows move. Follow the installed
+`references/audit-review-record.md` for outcome drafts and guarded publication.
+The recorder changes no source notes/cards and calls no provider. Source/card
+approval and verification below still apply. If an outcome write fails, inspect
+the actual report and source/card state before any retry of the underlying work.
+
 ## Safety Gates
 
 - Install the official Obsidian skills before mutation. Remediation requires
