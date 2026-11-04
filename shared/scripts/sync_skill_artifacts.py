@@ -79,6 +79,7 @@ ARTIFACT_SPECS: dict[str, SkillArtifactSpec] = {
             "remediate_notes.py",
             "remediation.py",
             "reporting.py",
+            "record_audit_outcome.py",
             "schema_validation.py",
             "scoring.py",
             "split_note.py",

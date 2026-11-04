@@ -27,6 +27,38 @@ def load_fixture_manifest() -> dict[str, object]:
 
 
 class ReportGenerationTest(unittest.TestCase):
+    def test_model_led_regeneration_preserves_recorded_outcomes_and_manual_prose(self):
+        from test_model_led_reporting import ModelLedReportingTest
+        from shared.scripts.audit_review_report import parse_report
+        from shared.scripts.record_audit_outcome import prepare_outcome
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _, rows, manifest, _ = ModelLedReportingTest().fixture(root, count=1)
+            report = render_markdown_report(rows, manifest)
+            item = parse_report(report).items[0]
+            report = prepare_outcome(report, dict(run_id=manifest['run_id'], item=item.number,
+                action_id=item.actions[0].id, event_id='learner-decline', status='Declined',
+                timestamp='2030-01-02T03:04:00+00:00', description='Keep this wording.', actor='Learner'))
+            snapshot, output = root/'snapshot.md', root/'draft.md'
+            snapshot.write_text(report + '\nA learner follow-up observation.\n')
+            source, metadata = root/'results.jsonl', root/'manifest.json'
+            source.write_text(''.join(json.dumps(row)+'\n' for row in rows))
+            metadata.write_text(json.dumps(manifest))
+            command = [sys.executable, '-m', 'shared.scripts.generate_report', '--jsonl', str(source),
+                '--manifest', str(metadata), '--existing-report', str(snapshot), '--output', str(output)]
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('Keep this wording.', output.read_text())
+            self.assertIn('A learner follow-up observation.', output.read_text())
+            self.assertEqual(parse_report(output.read_text()).items[0].number, item.number)
+            manifest['run_id'] = rows[0]['run_id'] = 'different-run'
+            source.write_text(json.dumps(rows[0])+'\n')
+            metadata.write_text(json.dumps(manifest))
+            before = output.read_bytes()
+            rejected = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertEqual(output.read_bytes(), before)
+
     def test_render_markdown_report_contains_kpi_summary_and_priority_sections(self):
         report = render_markdown_report(load_fixture_rows(), load_fixture_manifest())
 
