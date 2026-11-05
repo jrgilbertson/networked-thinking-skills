@@ -13,16 +13,19 @@ authoring on its own.
 
 - `references/doctrine.md`: read before drafting. Defines DAE, naming, sourcing,
   learner purpose, and optional Anki cards.
-- `references/remediation-context.md`: read before any vault mutation. Defines
-  Obsidian tooling, content transport, approval, rename, and Anki replacement
-  workflows.
+- `references/remediation-context.md`: read **Source Evidence for Authoring and
+  Review** before drafting or improving; read the mutation guidance before any
+  vault write. Owns source review, Obsidian tooling, content transport, approval,
+  rename, and Anki replacement workflows.
 
 ## Workflow
 
 1. **Read the source and doctrine.** Read the source material or existing note
-   and `references/doctrine.md`. Identify the concept the note must explain and
-   the learner's purpose: conceptual navigation, factual recall, trivia review,
-   or a mix.
+   and `references/doctrine.md`. Follow **Source Evidence for Authoring and
+   Review** in `references/remediation-context.md` to use relevant vault books,
+   articles, highlights, and learner synthesis alongside appropriate external
+   evidence. Identify the concept the note must explain and the learner's
+   purpose: conceptual navigation, factual recall, trivia review, or a mix.
 2. **Scan nearby topics.** Search exact duplicates, likely aliases, overlapping
    concepts, neighboring topic sections, backlinks, parent structure notes,
    siblings, and prerequisites. Decide whether to improve an existing note,

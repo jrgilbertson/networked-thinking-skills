@@ -2,6 +2,38 @@
 
 Audit and remediation are separate phases. Audit recommendations do not mutate notes.
 
+## Source Evidence for Authoring and Review
+
+Before drafting, improving, fact-checking, or proposing remediation, consider
+relevant knowledge already in the vault. Inspect the note's `Sources:`,
+`Reference:`, legacy `References:`, inline citations, and source metadata. Follow
+relevant links to books, articles, literature notes, highlights, and learner
+synthesis; search for related source notes when useful context is not linked.
+Read enough surrounding material to understand the claim in context. Keep this
+reading scoped to the concept and claim under review, rather than traversing
+every link or the whole vault.
+
+Use vault material alongside appropriate external evidence. Neither location
+establishes authority, and neither must always be consulted first. Seek primary
+or authoritative external sources when local material is missing, incomplete,
+stale, ambiguous, conflicting, or insufficient for the claim. Weigh relevance,
+credibility, context, and currentness rather than assuming the newest source or
+the saved source wins.
+
+Distinguish an author's claim, a saved excerpt, and the learner's interpretation.
+Preserve useful attribution and explain material conflicts and any proposed
+resolution. Identify inaccessible or unchecked references and leave unresolved
+claims uncertain; a citation alone is not verification. Apply existing vault-read
+and provider-sharing rules to linked material too. If required app access is
+unavailable, report the gap without substituting raw filesystem reads.
+
+For audits, keep source-check conclusions separately attributed from recorded
+model quality judgments and exact integrity evidence. Do not rewrite a model
+judgment, its score, cache provenance, or clean status as though the model had
+seen newly read sources. Source reading grants no permission to edit the note,
+its references, linked material, or cards; follow the existing approval workflow
+before mutations.
+
 ## Obsidian-Aware Mutation
 
 Use the official Obsidian skills and the actual Obsidian CLI binary for

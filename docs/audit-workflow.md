@@ -35,6 +35,12 @@ Report both numerator and denominator; a limited pass is not exhaustive.
 Exact-check and Anki coverage are separate.
 An unavailable or omitted Anki check means not checked.
 Pending fact-checks remain unverified even after model review.
+For factual source checks, follow **Source Evidence for Authoring and Review**
+in the [shared remediation context](../shared/references/remediation-context.md).
+It covers relevant vault references and accumulated source material alongside
+external evidence, attribution, conflicts, and unavailable sources. These checks
+remain separate from recorded model judgments and do not change their scores,
+cache provenance, or clean status.
 The audit does not apply fixes or authorize remediation.
 
 Honor vault-specific app tooling for all reads and writes.

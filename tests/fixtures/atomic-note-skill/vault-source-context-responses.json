@@ -1,0 +1,64 @@
+{
+  "responses": [
+    {
+      "skill": "atomic-note",
+      "case": "linked-book",
+      "response": "Proposed definition: \u201cSignal Reach counts the distinct receivers that decode a transmitted message within a stated observation window.\u201d\n\nSupporting source-note draft:\n# Signal Reach in Signal Handbook\nMara Vale defines Signal Reach by distinct receivers that decode a transmitted message within a stated observation window. The saved Reach highlight reinforces that repeated decodes do not increase the count. The learner\u2019s audience-size comparison is useful, but equating reach with messages sent is not supported: these count different things.\n\nSources:\n1. [[Books/Signal Handbook]] \u2014 supplied book excerpt attributed to Mara Vale.\n2. [[Highlights/Reach]] \u2014 supplied saved excerpt and separately identified learner commentary.\n\nThese excerpts support replacing the vague distance metaphor with a receiver count. This is a proposal only; the existing filename and naming alignment would need checking before an approved edit."
+    },
+    {
+      "skill": "atomic-note",
+      "case": "no-local-evidence",
+      "response": "The supplied fictional official 2026 manual supports a qualified claim: receipt expiration is optional and available only for version 4 gateways. The note\u2019s unconditional wording omits both limits. The excerpt does not establish support across other versions or beyond the manual\u2019s scope.\n\nProposed definition: \u201cAmberMesh receipt expiration is an optional feature available only for version 4 gateways, according to its 2026 manual.\u201d\n\nSources:\n1. Synthetic AmberMesh official 2026 manual \u2014 supplied excerpt.\n\nKeep the version and manual attribution visible because this is a time-sensitive product claim. No live current-status check was performed."
+    },
+    {
+      "skill": "atomic-note",
+      "case": "conflicting-sources",
+      "response": "The sources describe different protocol versions. Ivo Reed\u2019s 2020 guide supports indefinite validity for Ember v1. The supplied official v2 specification gives v2 receipts a 30-day validity period and explicitly retains indefinite validity for v1. The learner\u2019s long-running-job interpretation remains a design observation about indefinite validity, not evidence of v2 behavior.\n\nProposed definition: \u201cEmber receipt validity depends on the protocol version, with indefinite validity in v1 and a 30-day validity period in v2.\u201d\n\nRetain the 2020 guide with its v1 attribution and add the supplied v2 specification to Sources. No edits are approved or applied. Next, review the proposed wording and its resulting filename together before authorizing a change."
+    },
+    {
+      "skill": "atomic-note",
+      "case": "missing-and-unrelated",
+      "response": "The claim is unverified. [[Missing Memory Study]] is unavailable, and [[Tea Recipes]] provides no relevant evidence. The supplied material establishes neither a 50% memory reduction nor that the claim is false.\n\nI would hold this claim rather than turn it into a factual definition. The next useful evidence is the study\u2019s relevant excerpt or a reproducible measurement identifying the application, workload, memory metric, and comparison conditions."
+    },
+    {
+      "skill": "atomic-note",
+      "case": "existing-judgment",
+      "response": "The supplied Mara Vale excerpt contradicts the definition: Signal Reach counts distinct receivers, not total decodes.\n\nProposed definition: \u201cSignal Reach counts distinct receivers that decode a transmitted message rather than the total number of decodes.\u201d\n\nThe recorded audit remains score 92, complete, clean, with target-note-only input and cache key synthetic-accepted-key. This separate source check does not revise that historical judgment. Its factual conclusion is that the definition conflicts with the cited excerpt.\n\nNext, review the correction and any required filename change for approval. If an updated quality judgment is wanted, it must be a fresh review of the revised material."
+    },
+    {
+      "skill": "atomic-note",
+      "case": "app-access-unavailable",
+      "response": "I cannot verify the 25% accuracy claim from the supplied material because the referenced highlight has not been read and the required Obsidian app interface cannot attach. The raw filesystem path does not supply evidence and cannot substitute for the required interface.\n\nThe claim remains unverified; I would not propose a numerical correction without the highlight\u2019s context. Next, provide the relevant excerpt here or restore the required app access for a separately authorized review. No additional content was accessed or shared."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "linked-book",
+      "response": "Source-check conclusion: the supplied book excerpt defines Signal Reach as distinct receivers decoding a transmitted message within a stated observation window. The saved highlight reinforces counting receivers rather than repeated decodes. The learner\u2019s suggestion that reach always equals messages sent is an interpretation unsupported by those excerpts.\n\nProposed definition: \u201cSignal Reach counts the distinct receivers that decode a transmitted message within a stated observation window.\u201d\n\nSupporting source-note draft:\n# Signal Reach in Signal Handbook\nMara Vale defines reach by distinct decoding receivers within an observation window. The saved highlight excludes repeated decodes from the count. The learner\u2019s audience-size analogy is useful, while the proposed equivalence with messages sent remains unsupported.\n\nSources:\n1. [[Books/Signal Handbook]] \u2014 supplied book excerpt attributed to Mara Vale.\n2. [[Highlights/Reach]] \u2014 supplied excerpt and learner commentary.\n\nNext, review this content proposal and the existing naming pairs before any approved remediation. This source check creates no inventory, quality score, clean status, or published report."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "no-local-evidence",
+      "response": "Source-check conclusion: the supplied fictional official 2026 manual supports optional receipt expiration only for version 4 gateways. The existing claim needs those qualifications. This is verification against the supplied manual excerpt, not a live check of present product behavior.\n\nProposed definition: \u201cAmberMesh receipt expiration is an optional feature available only for version 4 gateways, according to its 2026 manual.\u201d\n\nNext, retain the manual attribution and version restriction in the proposed correction, then review naming alignment before any approved edit. No model quality judgment or inventory check was performed."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "conflicting-sources",
+      "response": "Source-check conclusion: the apparent conflict resolves by protocol version. The 2020 guide supports indefinite validity for v1; the supplied official v2 specification establishes 30-day validity for v2 and confirms that v1 retains indefinite validity. The learner\u2019s design-tradeoff observation is interpretation, not evidence that v2 receipts last indefinitely.\n\nProposed definition: \u201cEmber receipt validity depends on the protocol version, with indefinite validity in v1 and a 30-day validity period in v2.\u201d\n\nNext, propose retaining the v1 guide with explicit version attribution and adding the v2 specification. Review the content and resulting filename before seeking approval to apply them. No edits, new model judgment, or report publication occurred."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "missing-and-unrelated",
+      "response": "Source-check conclusion: unverified. The cited Memory Study is unavailable, and the Tea Recipes index is unrelated. Neither the claimed halving of memory usage nor its negation follows from the supplied evidence.\n\nNext, obtain the relevant study excerpt or measurements specifying the application, workload, memory metric, and baseline. Hold the numerical claim pending that evidence. This source gap does not establish a quality score or clean status; no inventory or model judgment was performed."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "existing-judgment",
+      "response": "Separate source-check conclusion: the supplied Mara Vale excerpt contradicts \u201ccounts total decodes\u201d; it specifies distinct receivers.\n\nProposed definition: \u201cSignal Reach counts distinct receivers that decode a transmitted message rather than the total number of decodes.\u201d\n\nPreserve the recorded judgment exactly: score 92, status complete, clean true, input target-note-only, cache key synthetic-accepted-key. Its recorded fact-check field remains unverified in the unchanged record. The contradiction found here is a separately attributed source-check result, not something that recorded model judgment assessed.\n\nNext, add that separate finding when an audit-record update is authorized, and seek approval for the proposed note correction and any required rename. A fresh quality review would be needed to obtain a judgment on revised material. Nothing was written or published."
+    },
+    {
+      "skill": "atomic-note-audit",
+      "case": "app-access-unavailable",
+      "response": "Source-check conclusion: unverified. The required Obsidian app interface cannot attach, so the referenced highlight\u2019s contents are unavailable. The raw filesystem path is not an alternative read route, and no additional private material was accessed or shared.\n\nNext, provide the relevant highlight excerpt here or restore the required app interface for a separately authorized review. Until then, hold the 25% claim without endorsing or correcting its number. No inventory collection, model judgment, mutation, or report publication occurred."
+    }
+  ]
+}

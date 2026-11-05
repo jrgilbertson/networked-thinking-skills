@@ -40,6 +40,12 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Package 0.4.1 makes relevant vault books, articles, highlights, and learner
+  synthesis explicit source context for both atomic-note skills. Shared guidance
+  balances local and external evidence, preserves attribution, and exposes
+  conflicts or gaps. This clarifies source review without changing doctrine,
+  rubric, model prompt, schema, or report-format contracts; their versions stay
+  unchanged.
 - Managing-obsidian-tasks now names each conditional asset reference and states
   the shared content-transport rules once for creation and setup. Its routing,
   task contract, approval gates, and bundled assets are unchanged.

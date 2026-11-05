@@ -18,7 +18,7 @@ verified work. This skill supports batch audit and remediation on its own;
 - [Model judgment prompt](references/model-judgment-prompt.md): use verbatim for model judgments.
 - [Model judgment workflow](references/model-judgment-workflow.md): read before capturing, collecting, or applying judgments; owns runner commands and provenance.
 - [Audit review record](references/audit-review-record.md): read before publishing or resuming a report; owns format, identity, outcome input, recovery, and guarded publication.
-- [Remediation context](references/remediation-context.md): read before planning a source-note or card mutation; owns approvals, Obsidian tooling, renames, Anki, and held decisions.
+- [Remediation context](references/remediation-context.md): read **Source Evidence for Authoring and Review** before factual source checks or improvement proposals, and the mutation guidance before planning a source-note or card change; owns source review, approvals, Obsidian tooling, renames, Anki, and held decisions.
 - [Install matrix](references/install-matrix.md): read for supported installation surfaces and self-contained package requirements.
 
 ## Read-only audit
@@ -26,7 +26,7 @@ verified work. This skill supports batch audit and remediation on its own;
 1. **Resolve scope and privacy first.** Name the vault and selected notes before reading or exporting them. Default to model review of every note in that scope; an intentional limit is partial coverage, not a whole-vault conclusion. Before model review of private content, confirm that the user accepts this provider/tool trust boundary. Reuse an existing confirmation for the same scope and destination. Use the active agent's existing authentication; do not collect API keys or add a model service.
 2. **Capture unscored inventory and exact checks.** Use `scripts/audit_inventory.py`. Preserve source paths, hashes, captured content and scope in external working files. Raw prompts and logs stay external unless separately requested. If in-vault evidence was explicitly requested, use one `Evidence/` directory under the configured audit output folder. Follow vault instructions for every read: when app access is required, use the official CLI and `ObsidianAdapter` for selected paths, source reads, parent targets and link resolution. Supply the same app reader to collection and composition. Never fall back to raw filesystem reads. A path-preserving app-exported snapshot refreshed before final composition is also valid.
 3. **Review meaning with the model.** Read the doctrine, rubric and model judgment workflow. Use the shared prompt and existing runner adapters. Validate each batch and resume only compatible source/prompt/model/runner results. Missing judgments have no heuristic substitute. Read-only Anki checks may use `notesInfo` and `cardsInfo`; never sync or change cards during an audit.
-4. **Compose truthful results.** Recheck source hashes and compose validated judgments with separately attributed integrity evidence. Pending, failed, unavailable and stale reviews have null quality values and are never clean. Keep fact-checks unverified until checked against sources. Anki unavailable or not requested means not checked. After an interruption, report accepted work and unfinished coverage.
+4. **Compose truthful results.** Recheck source hashes and compose validated judgments with separately attributed integrity evidence. Pending, failed, unavailable and stale reviews have null quality values and are never clean. Keep fact-checks unverified until checked against sources. For those checks, follow **Source Evidence for Authoring and Review** in the remediation context: consider relevant vault references, books, articles, highlights, and learner synthesis alongside appropriate external evidence. Keep conclusions separate from recorded model judgments. Anki unavailable or not requested means not checked. After an interruption, report accepted work and unfinished coverage.
 5. **Publish one report.** Follow the audit review record reference. Use plain Markdown with the recommendation first, concise coverage, and one table sorted P0 through P3: `#`, `Priority`, `Note`, `Recommendation`, `Action taken`. Show each affected note once with all substantive actions. Keep unchanged notes as a count. Initialize actions as pending; suggestions are not completed fixes. Publish `<YYYYMMDDHHMM> Atomic note audit.md` directly in `audit_output_folder`, with no per-run report folder. Capture user-local time once. Generate a Base only if requested.
 6. **Finish read-only.** Return the report and actual coverage. The Markdown report is the durable source of truth; temporary data may be discarded and recreated from it. Preserve historical reports and locations. Audit findings authorize no note/card changes and no migration or cleanup.
 
@@ -38,10 +38,11 @@ verified work. This skill supports batch audit and remediation on its own;
 
 ## Remediation
 
-1. **Plan before mutation.** Read `references/remediation-context.md`. Generate
-   or consume an explicit remediation plan, or prepare an explicit per-note
-   destructive dry run for a single user-directed operation. Audit findings
-   alone do not authorize writes.
+1. **Plan before mutation.** Read `references/remediation-context.md`, including
+   **Source Evidence for Authoring and Review** before proposing an improvement.
+   Generate or consume an explicit remediation plan, or prepare an explicit
+   per-note destructive dry run for a single user-directed operation. Audit
+   findings alone do not authorize writes.
 2. **Validate the dry run.** Run `scripts/remediate_notes.py --plan <plan.json>
    --manifest <manifest.json>`. Add `--destructive-allowed` to let `split`,
    `delete`, `rename`, or `move` pass validation without writing anything.
