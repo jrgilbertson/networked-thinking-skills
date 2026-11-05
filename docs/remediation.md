@@ -5,6 +5,15 @@ notes. For installed-skill use, load source context from
 `references/remediation-context.md` in the installed `atomic-note-audit` skill
 root, and run the commands below from that root.
 
+## Source context before proposals
+
+Before proposing a note improvement, use **Source Evidence for Authoring and
+Review** in the [shared remediation context](../shared/references/remediation-context.md).
+Both skills use this guidance to connect relevant vault books, articles,
+highlights, and learner synthesis with appropriate external evidence, preserve
+attribution, and expose conflicts or gaps. Source reading remains read-only
+until the normal mutation approvals are satisfied.
+
 ## Record selected audit outcomes
 
 When work comes from an audit, use that Markdown report as the durable record of
