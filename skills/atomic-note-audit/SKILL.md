@@ -27,7 +27,7 @@ verified work. This skill supports batch audit and remediation on its own;
 2. **Capture unscored inventory and exact checks.** Use `scripts/audit_inventory.py`. Preserve source paths, hashes, captured content and scope in external working files. Raw prompts and logs stay external unless separately requested. If in-vault evidence was explicitly requested, use one `Evidence/` directory under the configured audit output folder. Follow vault instructions for every read: when app access is required, use the official CLI and `ObsidianAdapter` for selected paths, source reads, parent targets and link resolution. Supply the same app reader to collection and composition. Never fall back to raw filesystem reads. A path-preserving app-exported snapshot refreshed before final composition is also valid.
 3. **Review meaning with the model.** Read the doctrine, rubric and model judgment workflow. Use the shared prompt and existing runner adapters. Validate each batch and resume only compatible source/prompt/model/runner results. Missing judgments have no heuristic substitute. Read-only Anki checks may use `notesInfo` and `cardsInfo`; never sync or change cards during an audit.
 4. **Compose truthful results.** Recheck source hashes and compose validated judgments with separately attributed integrity evidence. Pending, failed, unavailable and stale reviews have null quality values and are never clean. Keep fact-checks unverified until checked against sources. For those checks, follow **Source Evidence for Authoring and Review** in the remediation context: consider relevant vault references, books, articles, highlights, and learner synthesis alongside appropriate external evidence. Keep conclusions separate from recorded model judgments. Anki unavailable or not requested means not checked. After an interruption, report accepted work and unfinished coverage.
-5. **Publish one report.** Follow the audit review record reference. Use plain Markdown with the recommendation first, concise coverage, and one table sorted P0 through P3: `#`, `Priority`, `Note`, `Recommendation`, `Action taken`. Show each affected note once with all substantive actions. Keep unchanged notes as a count. Initialize actions as pending; suggestions are not completed fixes. Publish `<YYYYMMDDHHMM> Atomic note audit.md` directly in `audit_output_folder`, with no per-run report folder. Capture user-local time once. Generate a Base only if requested.
+5. **Publish one report.** Follow the audit review record reference. Use plain Markdown with the recommendation first, concise coverage, and one table: `#`, `Priority`, `Note`, `Recommendation`, `Action taken`. Organize review by concept as described below; the generator's initial priority order is a fallback until groups are chosen. Show each affected note once with all substantive actions. Keep unchanged notes as a count. Initialize actions as pending; suggestions are not completed fixes. Publish `<YYYYMMDDHHMM> Atomic note audit.md` directly in `audit_output_folder`, with no per-run report folder. Capture user-local time once. Generate a Base only if requested.
 6. **Finish read-only.** Return the report and actual coverage. The Markdown report is the durable source of truth; temporary data may be discarded and recreated from it. Preserve historical reports and locations. Audit findings authorize no note/card changes and no migration or cleanup.
 
 ## Resume selected items
@@ -35,6 +35,25 @@ verified work. This skill supports batch audit and remediation on its own;
 1. Read the selected report through the required Obsidian app interface and export a fresh external snapshot. Recover its item/action IDs, recommendations and visible outcomes under the audit review record reference. Temporary audit files are optional.
 2. Resolve the requested decisions or operations. Record held/declined decisions without calling a provider or Anki. Source/card changes follow **Remediation** below and its existing approvals.
 3. Verify actual results before recording new completion. Keep previous work dated and separate from new findings; partial work names what remains. Prepare and publish the report update with its expected current text, then verify readback and links. Only that verified write makes the new outcome durable.
+
+## Review by concept
+
+Use conceptual relationships as the primary grouping and P0-through-P3 repair
+priority within each group. Follow links, parent structure notes, aliases, shared references, and
+the notes' meaning; a shared parent or word alone does not establish similarity.
+Keep related concepts together when their definitions, boundaries, or examples
+benefit from joint review. Let that relationship determine group size without a
+numeric target; an unrelated note may stand alone. Urgent integrity failures may
+interrupt this order. Honor explicitly selected item numbers.
+
+Record each group's purpose and stable item numbers as brief visible prose in
+the report, then reorder its existing rows without renumbering. Present the
+group's shared issue and concise per-item recommendations. Reuse established
+learner preferences and approvals; ask only about unresolved choices. Before
+drafting, distinguish keep/refocus, retain without Anki, consolidate into an
+existing note, and retire. A card's low recall value does not imply its note
+should disappear. Check sources and overlapping notes before recommending
+consolidation or deletion; keep ambiguous decisions held.
 
 ## Remediation
 
@@ -53,7 +72,8 @@ verified work. This skill supports batch audit and remediation on its own;
 3. **Resolve learner decisions.** Require approval before destructive
    operations. Stop for an Anki-specific decision when a note has Anki markers
    or Obsidian-to-Anki identifiers. For `anki_yagni`, ask whether the card is
-   worth memorizing for this learner. Medical students, professors, and other
+   worth memorizing for this learner, reusing an applicable decision already
+   given for this scope. Medical students, professors, and other
    specialized learners may need memorization the auditor does not. Hold the
    note for that decision rather than automatically keeping or removing Anki.
    During long-running goals, loops, or autonomous

@@ -2,13 +2,15 @@
 
 ## Recommendation
 
-Repair the stale card link. Split bundled ideas into separate atomic notes. Start with P1 (2 notes), then work through the remaining priorities.
+Repair the stale card link. Split bundled ideas into separate atomic notes. Review related concepts together, with priority ordered within each group. Address urgent integrity failures first.
 
 ## Coverage
 
-100 / 100 model-reviewed. 5 need action; 95 need no changes.
+At audit capture: 100 / 100 model-reviewed. 5 notes flagged; 95 need no changes.
 Anki: 1 / 100 checked; 99 not checked.
 <!-- atomic-note-audit:1.0.0 run=synthetic-report scope=selected%3A1c0547008e7df849ad0900b53eefb614b46469f8b7c1c8362c1c1e73600242b0 -->
+
+Current action outcomes: 6 outstanding; 6 Pending, 0 Held, 0 Partial, 0 Declined, 0 Completed, 0 Unclassified.
 
 | # | Priority | Note | Recommendation | Action taken |
 |---|---|---|---|---|

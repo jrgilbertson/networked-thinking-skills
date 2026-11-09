@@ -36,7 +36,14 @@ authoring on its own.
    rules to each atomic child instead of narrowing or splitting the hub because
    it spans a topic. A Mythology hub may support figure and motif comparisons
    alongside names, stories, and facts selected for trivia review.
-3. **Draft the DAE and provenance.** Write Definition, Analogy, and Example
+3. **Choose the note and recall purpose.** Before drafting, decide whether to
+   keep/refocus the note, retain it without Anki, consolidate it into an existing
+   note, or retire it. Distinguish durable reference value from memorization
+   value, applying the learner-specific Anki-YAGNI check and established preferences. Personal interests and
+   factual recall are valid purposes. Resolve an unclear recall choice before
+   drafting a card; reuse an applicable prior decision. Source/card removal
+   still follows the remediation context's approval and verification rules.
+4. **Draft the DAE and provenance.** Write Definition, Analogy, and Example
    paragraphs under the doctrine's DAE rules. For non-Anki notes, use plain
    prose after the H1 without `## Definition`, `## Analogy`, or `## Example`
    headings. Add useful aliases, connections, numbered `Sources:`, and actual
@@ -44,7 +51,7 @@ authoring on its own.
    Doctrine owns formula placement, variable labels, sentence-case exceptions,
    and Anki visibility. When a formula completes the definition, put it in the
    Definition after a prose-first sentence. Write equations as LaTeX.
-4. **Check both naming pairs.** Follow the doctrine's **Naming Alignment**
+5. **Check both naming pairs.** Follow the doctrine's **Naming Alignment**
    section to select the applicable Definition source for plain-prose, legacy
    headed, `Basic`, or `Cloze` notes. Match the timestamp-prefixed filename to
    that reader-visible source without its final period, and YAML `title` to the
@@ -52,14 +59,12 @@ authoring on its own.
    platform; redraft an invalid Definition source with the learner. Preserve a
    declared pre-existing filename scheme only under the doctrine's compatibility
    exception.
-5. **Decide whether to add Anki.** Apply the learner-specific Anki-YAGNI check.
-   Factual recall and trivia are valid goals when the learner wants practice;
-   add cards only where memorization serves that goal. Read the doctrine's
+6. **Draft Anki only when selected.** Read the doctrine's
    **Anki** section before drafting a `Basic` or `Cloze` block. For synced notes,
    preserve useful cloze ordinals. Reducing or renumbering deletions, or changing
    between `Basic` and `Cloze`, requires the remediation context's
    delete-sync-recreate flow.
-6. **Preview and write through Obsidian.** Read
+7. **Preview and write through Obsidian.** Read
    `references/remediation-context.md` before any vault mutation. Load the
    official Obsidian Markdown and file-management skills when available, verify
    the actual Obsidian CLI binary, and preview the note and both naming pairs.
@@ -74,7 +79,8 @@ authoring on its own.
    through raw filesystem writes. Prefer `python3 scripts/obsidian_cli.py` for
    app-context CLI commands. If a sandbox prevents attachment to the running
    app, request approved unsandboxed CLI execution.
-7. **Read back and verify.** Verify DAE, both naming pairs, the final path, and
+8. **Read back and verify.** Apply the remediation context's final conceptual
+   consistency check. Verify DAE, both naming pairs, the final path, and
    links affected by a rename. If `content=` decoding corrupts a LaTeX command
    such as `\times` into a tab or newline followed by its remaining letters,
    restore it through the remediation context's safe transport. Read back the

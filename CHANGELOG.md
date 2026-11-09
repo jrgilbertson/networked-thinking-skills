@@ -40,6 +40,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Package 0.4.2 reviews audit findings in conceptual groups of natural size,
+  with priority secondary, and resolves note purpose and recall value before
+  drafting. Reports preserve chosen row order on regeneration and append new
+  findings for regrouping without changing item/action identities.
+- Current per-action outcomes refresh separately from captured audit coverage.
+  Unknown historical outcomes stay unresolved; older report markers and
+  generated summaries remain readable. The five-column identity format stays
+  1.0.0; schema, rubric, and model prompt contracts are unchanged.
+- Doctrine 1.0.9 clarifies durable reference value versus memorization and the
+  maintained synthetic template's two naming pairs. Both skill workflows check
+  final conceptual consistency and useful graph connections. This does not
+  migrate live vault templates or add Anki history/scheduling recovery tooling.
+
 - Package 0.4.1 makes relevant vault books, articles, highlights, and learner
   synthesis explicit source context for both atomic-note skills. Shared guidance
   balances local and external evidence, preserves attribution, and exposes

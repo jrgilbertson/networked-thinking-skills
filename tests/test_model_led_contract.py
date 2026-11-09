@@ -11,7 +11,7 @@ def inventory_row():
         "run_id": "synthetic", "note_path": "Atomic Notes/Example.md",
         "note_link": "[[Atomic Notes/Example|Example]]", "content": "# Example\n\nA test idea.",
         "content_hash": hashlib.sha256(b"# Example\n\nA test idea.").hexdigest(), "modified_time": "2000-01-01T00:00:00Z",
-        "doctrine_version": "1.0.8", "rubric_version": "1.0.4",
+        "doctrine_version": "1.0.9", "rubric_version": "1.0.4",
         "prompt_version": "2.0.0", "audit_mode": "selected:synthetic",
         "config_snapshot": {}, "integrity_checks": [],
     }

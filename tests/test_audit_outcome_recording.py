@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 
-from shared.scripts.audit_review_report import ReviewError, note_target, parse_report
+from shared.scripts.audit_review_report import ReviewError, note_target, parse_report, render_report, add_item
 from shared.scripts.record_audit_outcome import prepare_outcome
 from test_audit_review_report import REPORT
 
@@ -33,6 +33,34 @@ class OutcomeRecordingTest(unittest.TestCase):
         self.assertEqual(prepare_outcome(revised, event()), revised)
         item = parse_report(revised).items[0]
         self.assertEqual([o.action_id for o in item.outcomes], ['example', 'rename', 'example'])
+
+    def test_current_summary_counts_latest_actions_without_reauditing(self):
+        summary = ('Current action outcomes: 1 outstanding; 1 Pending, 0 Held, 0 Partial, '
+                   '1 Declined, 0 Completed, 0 Unclassified.')
+        text = REPORT.replace('Review the example.', summary + '\n\nReview the example.')
+        completed = prepare_outcome(text, event())
+        self.assertIn('0 outstanding; 0 Pending, 0 Held, 0 Partial, 1 Declined, 1 Completed', completed)
+        self.assertIn('**Pending**', completed)  # History is still visible.
+        for status in ('Held', 'Partial', 'Pending'):
+            kwargs = dict(status=status, event_id='followup-' + status)
+            if status == 'Partial':
+                kwargs['remaining_checks'] = ['Check the revised card.']
+            revised = prepare_outcome(completed, event(**kwargs))
+            self.assertIn('1 outstanding;', revised)
+            self.assertIn('1 ' + status, revised)
+            self.assertIn('0 Completed', revised)
+        unknown = completed.replace('**Completed —', '**Reported completed —')
+        revised = prepare_outcome(unknown, event(action_id='rename', event_id='hold-rename', status='Held'))
+        self.assertIn('2 outstanding;', revised)
+        self.assertIn('1 Unclassified', revised)
+        report = parse_report(completed)
+        add_item(report, 'Atomic Notes/Example|math.md', 'P1', [('new-source', 'Check the revised claim.')])
+        revised = render_report(report)
+        self.assertIn('1 outstanding; 1 Pending', revised)
+        self.assertIn('1 Completed', revised)
+        edited = text.replace(summary, summary + ' Preserve my annotation.')
+        with self.assertRaisesRegex(ReviewError, 'summary.*edited'):
+            prepare_outcome(edited, event())
 
     def test_approval_or_failed_checks_cannot_become_completion(self):
         cases = [dict(verification={}), dict(approval_ref=''),

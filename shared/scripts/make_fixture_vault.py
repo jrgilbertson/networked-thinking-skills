@@ -363,14 +363,15 @@ Use this synthetic hub to compare notes that pass or fail atomic-note review.
 - [[202601010113 A tab inside a fenced code block or a table cell is quoted data rather than a command that decayed into it]]
 """,
     "Templates/Atomic Note Template.md": """---
+title: "{{concept_title}}"
 aliases: []
 tags:
   - template
 ---
 
-# {{title}}
+# {{concept_title}}
 
-State the single idea clearly.
+{{definition_sentence}}
 
 Compare the idea to a familiar situation.
 
@@ -382,7 +383,7 @@ Reference:
 
 Sources:
 
-- Source title.
+1. Source title.
 """,
 }
 

@@ -38,6 +38,15 @@ Anki remains optional and learner-specific; an explicit desire to practice a
 fact supports adding a card, while the Anki-YAGNI check still prevents turning
 every available fact into one by default.
 
+Durable knowledge and memorization are separate choices. Keep useful official
+calculations, alternate formulas, and lookup details in `Reference:` when they
+support the concept but are not the recall target. Keep an equation in the
+Definition when it is needed to define the concept, as specified below; that
+does not by itself justify a dedicated formula card. Favor understanding and
+connections when those serve the learner, without excluding personal interests
+or explicitly desired factual practice. Removing Anki can leave a complete,
+connected DAE note for people and agents to consult.
+
 ## DAE Rules
 
 Each DAE section is a sentence, so its first visible letter is capitalized. If
@@ -100,6 +109,12 @@ and a first word with no letter to capitalize, such as a numeral or a URL
   empirical claim.
 
 ## Naming Alignment
+
+The repository's `scripts/make_fixture_vault.py` maintains the synthetic
+Atomic Note Template and its checked-in tiny-vault copy. Its `concept_title`
+placeholder supplies YAML title/H1; `definition_sentence` supplies the opening
+DAE sentence and the timestamped filename without its final period. These are
+illustrative placeholders, not an installed live-vault template engine.
 
 Atomic notes use two separate matching pairs:
 
