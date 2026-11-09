@@ -68,7 +68,9 @@ Never label unreviewed notes clean or use their score in a quality average.
 
 ## One plain Markdown report
 
-Lead with recommendations and concise coverage, followed by one table sorted P0 through P3.
+Lead with recommendations and concise coverage, followed by one table. Use conceptual
+groups with priority secondary, following the audit skill and audit review record;
+the generator supplies initial priority order until groups are selected.
 Its columns are `#`, `Priority`, `Note`, `Recommendation`, and `Action taken`.
 Show each affected note once and retain every substantive action. Keep exact checks,
 quality suggestions, unverified fact-checks, and Anki status distinguishable.

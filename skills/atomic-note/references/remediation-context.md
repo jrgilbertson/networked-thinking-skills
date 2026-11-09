@@ -108,6 +108,10 @@ agent, decides whether a repair is written to the vault.
 ## Improve In Place
 
 Improve one DAE note while preserving the file path unless a rename is explicitly approved.
+Check the governing local template before drafting. Its short concept title
+must not be confused with the Definition-derived filename. If its instructions
+conflict with the applicable naming convention, report the conflict and reuse
+the learner's established choice; do not silently migrate the template or vault.
 Before previewing an improvement, choose the applicable Definition source.
 Use the first visible DAE sentence after the H1 for plain-prose DAE, even when
 the note also has an optional Anki card. Use the first sentence under
@@ -177,6 +181,15 @@ note filename stem, including its timestamp, as an unaliased wikilink:
 `[[full note filename|display alias]]` unless the learner explicitly requests
 an alias. This convention does not prohibit display aliases in ordinary prose
 or other contexts where shorter link text improves readability.
+
+Before writing and again on readback, check the final concept as a whole:
+Definition, Anki question or cloze when present, aliases, Analogy, and Example
+must describe the same idea. An alias must be an equivalent name, not merely a
+neighboring concept. Verify useful parent and related links after a refocus;
+remove or replace misleading relationships instead of preserving every old
+edge. Repair an existing parent entry in place rather than adding a duplicate.
+Use the existing source, link, and Anki checks for the chosen operation, and
+report what was actually verified without implying a fresh whole-vault audit.
 
 ## Split Multi-Note Files
 

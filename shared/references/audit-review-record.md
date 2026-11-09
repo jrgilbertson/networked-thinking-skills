@@ -12,7 +12,8 @@ publisher's standalone fallback is the machine's local time. On refresh, select
 the existing report path and retain its timestamp and location.
 
 Use exactly one table with `#`, `Priority`, `Note`, `Recommendation`, and
-`Action taken` columns, sorted P0 through P3. Item numbers belong to one audit;
+`Action taken` columns. Group related concepts first and sort P0 through P3
+within each group. Item numbers belong to one audit;
 reordering does not renumber them. Keep old rows and action history so retired
 numbers remain reserved. Approved renames change the current note target while
 preserving identity. New findings do not inherit earlier completion.
@@ -21,8 +22,28 @@ The Markdown file is the durable source of truth. Working JSON, drafts, raw
 logs, and snapshots stay external by default and may be discarded. No persistent
 configurable external review-state directory is required. The report must carry
 the visible recommendations, dated outcomes, attribution, and verification
-summaries needed to resume. A link to temporary evidence is optional; it cannot
+summaries needed to resume. Keep each outcome concise: disposition, actual
+change, verification, and anything still held; preserve earlier dated history. A link to temporary evidence is optional; it cannot
 replace that summary. Deleted raw audit evidence stays unavailable.
+
+Before the action table, use brief visible prose to name concept groups and
+list their existing item numbers, for example `Probability — items 4, 1, 7`
+and `Retry behavior — items 6, 2`. Each item belongs to one review group;
+cross-group links may explain relationships without duplicating rows. Reorder
+whole rows in an external draft, preserving every item/action/outcome marker.
+Regeneration preserves this order and appends new items for explicit grouping;
+refresh the group index and within-group priority order before publication.
+No extra grouping schema or persistent queue is needed.
+
+Coverage describes the captured audit, not the remaining cleanup. New reports
+also show `Current action outcomes:` derived from the last recorded entry for
+each action in append order. Pending, Held, Partial, and Unclassified outcomes
+remain outstanding; Declined and Completed are separate resolved dispositions.
+Unknown historical wording is Unclassified, never inferred completion. These
+counts describe actions, not notes, and do not claim a new independent quality
+audit. Recording refreshes the summary when present; regeneration adds it to
+older reports. Put learner annotations on separate lines: an edited generated
+summary requires reconciliation rather than silent replacement.
 
 ## Identification format
 

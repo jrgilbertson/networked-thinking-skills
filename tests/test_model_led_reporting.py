@@ -11,7 +11,8 @@ from shared.scripts.collect_model_judgments import collect_model_judgments
 from shared.scripts.apply_model_judgments import compose_inventory
 from shared.scripts.reporting import render_markdown_report
 from shared.scripts.base_generation import render_base
-from shared.scripts.audit_review_report import ReviewError, parse_report, note_target
+from shared.scripts.record_audit_outcome import prepare_outcome
+from shared.scripts.audit_review_report import ReviewError, parse_report, note_target, render_report
 
 
 class ReportRunner:
@@ -58,7 +59,7 @@ class ModelLedReportingTest(unittest.TestCase):
             self.assertIn('Repair the stale card link.', recommendation)
             self.assertIn('Split bundled ideas', recommendation)
             self.assertIn('100 / 100 model-reviewed', report)
-            self.assertIn('5 need action', report)
+            self.assertIn('5 notes flagged', report)
             self.assertIn('95 need no changes', report)
             parsed = parse_report(report)
             self.assertEqual([i.priority for i in parsed.items], ['P1', 'P1', 'P2', 'P2', 'P3'])
@@ -73,6 +74,36 @@ class ModelLedReportingTest(unittest.TestCase):
             self.assertNotIn('## No Changes', report)
             golden = Path(__file__).parent / 'golden' / 'fixture-model-led-report.md'
             self.assertEqual(report.replace(evidence.resolve().as_uri(), 'evidence/'), golden.read_text())
+
+    def test_concept_order_and_outcomes_survive_regeneration_with_new_items(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=6)
+            for row, name in zip(rows, ('Variance', 'Retry', 'Standard deviation', 'Idempotency', 'Standard error', 'New concept')):
+                row['note_path'] = 'Atomic Notes/' + name + '.md'
+            report = parse_report(render_markdown_report(rows, manifest))
+            # Joint review of a three-note probability group and two retry notes.
+            by_name = {Path(note_target(i.note)).stem: i for i in report.items}
+            report.items = [by_name[name] for name in ('Variance', 'Standard deviation', 'Standard error', 'Retry', 'Idempotency')]
+            groups = 'Concept groups: Probability — items ' + ', '.join(str(i.number) for i in report.items[:3])
+            groups += '; Retry behavior — items ' + ', '.join(str(i.number) for i in report.items[3:]) + '.'
+            report.prefix = report.prefix.replace('| # | Priority |', groups + '\n\n| # | Priority |')
+            original_ids = [(i.number, i.identity, [a.id for a in i.actions]) for i in report.items]
+            item = report.items[0]
+            text = prepare_outcome(render_report(report), dict(
+                run_id=report.run_id, item=item.number, action_id=item.actions[0].id,
+                event_id='decline-one', status='Declined', timestamp='2030-01-02T03:04:00+00:00',
+                description='Keep the concept; formula recall is unnecessary.', actor='Learner'))
+            rows[-1]['priority'] = 'P1'
+            rows[-1]['findings'] = [dict(code='not_atomic', message='Clarify the new concept.')]
+            refreshed = render_markdown_report(rows, manifest, existing_report=text)
+            recovered = parse_report(refreshed)
+            self.assertEqual([(i.number, i.identity, [a.id for a in i.actions])
+                              for i in recovered.items[:-1]], original_ids)
+            self.assertEqual(recovered.items[-1].number, 6)
+            self.assertIn(groups, refreshed)
+            self.assertIn('Keep the concept; formula recall is unnecessary.', refreshed)
+            self.assertIn('1 Declined', refreshed)
+            self.assertIn('At audit capture:', refreshed)
 
     def test_partial_coverage_and_pending_base_are_honest(self):
         with tempfile.TemporaryDirectory() as d:
@@ -105,6 +136,21 @@ class ModelLedReportingTest(unittest.TestCase):
         self.assertTrue(all(item.outcomes[0].text == '**Pending**' for item in unfinished))
         self.assertTrue(all('quality is unscored' in item.actions[0].text for item in unfinished))
 
+    def test_legacy_generated_advice_and_coverage_refresh_without_losing_prose(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, rows, manifest, _ = self.fixture(Path(d), count=2)
+            text = render_markdown_report(rows, manifest)
+            text = text.replace(' Review related concepts together, with priority ordered within each group. Address urgent integrity failures first.',
+                                ' Start with P1 (2 notes), then work through the remaining priorities.')
+            text = text.replace('At audit capture: ', '').replace('2 notes flagged;', '2 need action;')
+            text = '\n'.join(line for line in text.split('\n') if not line.startswith('Current action outcomes:'))
+            text += 'Learner-selected concept group: items 1, 2.\n'
+            refreshed = render_markdown_report(rows, manifest, existing_report=text)
+            self.assertIn('At audit capture:', refreshed)
+            self.assertIn('Current action outcomes:', refreshed)
+            self.assertIn('Learner-selected concept group: items 1, 2.', refreshed)
+            self.assertNotIn('Start with P1', refreshed)
+
     def test_generated_advice_uses_the_same_deduplicated_actions_as_the_table(self):
         with tempfile.TemporaryDirectory() as d:
             _, rows, manifest, _ = self.fixture(Path(d), count=1)
@@ -114,7 +160,7 @@ class ModelLedReportingTest(unittest.TestCase):
             report = render_markdown_report(rows, manifest)
             rows[0]['priority'] = 'P0'
             revised = render_markdown_report(rows, manifest, existing_report=report)
-            self.assertIn('Start with P0', revised)
+            self.assertIn('Review related concepts together', revised)
             opening = report.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
             self.assertNotIn("Add YAML frontmatter with the note's metadata.", opening)
             self.assertIn('Add the required frontmatter.', opening)
@@ -128,18 +174,21 @@ class ModelLedReportingTest(unittest.TestCase):
             rows[0]['priority'] = 'P0'
             revised = render_markdown_report(rows, manifest, existing_report=first)
             self.assertEqual({note_target(i.note): i.number for i in parse_report(revised).items}, mapping)
-            self.assertEqual(parse_report(revised).items[0].priority, 'P0')
+            self.assertEqual([i.number for i in parse_report(revised).items], list(mapping.values()))
+            changed_number = mapping[rows[0]['note_path']]
+            self.assertEqual(next(i for i in parse_report(revised).items if i.number == changed_number).priority, 'P0')
             rows[0]['content_hash'] = 'revised-source'
             newer = parse_report(render_markdown_report(rows, manifest, existing_report=revised))
-            self.assertEqual(len(newer.items[0].actions), 2)
-            self.assertTrue(all(o.text == '**Pending**' for o in newer.items[0].outcomes))
+            changed = next(i for i in newer.items if i.number == changed_number)
+            self.assertEqual(len(changed.actions), 2)
+            self.assertTrue(all(o.text == '**Pending**' for o in changed.outcomes))
 
     def test_regeneration_stops_before_discarding_edited_coverage(self):
         with tempfile.TemporaryDirectory() as d:
             _, rows, manifest, _ = self.fixture(Path(d), count=2, limit=1)
             rows[0]['fact_check_required'] = True
             original = render_markdown_report(rows, manifest)
-            for prefix in ('1 / 2 model-reviewed.', 'Unfinished:', 'Fact-checks pending:', 'Anki:'):
+            for prefix in ('At audit capture:', 'Unfinished:', 'Fact-checks pending:', 'Anki:'):
                 line = next(line for line in original.splitlines() if line.startswith(prefix))
                 edited = original.replace(line, line + ' Learner annotation: preserve this context.')
                 with self.subTest(prefix=prefix), self.assertRaisesRegex(ReviewError, 'Coverage.*edited'):
@@ -162,9 +211,9 @@ class ModelLedReportingTest(unittest.TestCase):
             opening = refreshed.split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
             expected = render_markdown_report(rows, manifest).split('## Recommendation\n\n')[1].split('\n\n## Coverage')[0]
             self.assertEqual(opening, expected)
-            self.assertIn('Start with P0', opening)
+            self.assertIn('Review related concepts together', opening)
             self.assertNotIn('Finish model review', opening)
-            edited = report.replace(' Start with ', ' Learner preference: keep this context. Start with ', 1)
+            edited = report.replace(' Review related concepts together', ' Learner preference: keep this context. Review related concepts together', 1)
             with self.assertRaisesRegex(ReviewError, 'Recommendation.*edited'):
                 render_markdown_report(rows, manifest, existing_report=edited)
             pending_rows, pending_manifest = deepcopy(rows), deepcopy(manifest)

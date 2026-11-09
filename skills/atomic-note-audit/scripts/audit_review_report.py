@@ -19,6 +19,12 @@ HEADER = re.compile(r"<!-- atomic-note-audit:1\.0\.0 run=([^\s]+) scope=([^\s]+)
 ITEM = re.compile(rf"([1-9][0-9]*) <!-- item:({TOKEN}) -->")
 ACTION = re.compile(rf"<!-- action:({TOKEN}) -->")
 OUTCOME = re.compile(rf"<!-- outcome:({TOKEN}) action:({TOKEN}) -->")
+OUTCOME_STATUSES = ("Pending", "Held", "Partial", "Declined", "Completed", "Unclassified")
+SUMMARY_LABEL = "Current action outcomes:"
+SUMMARY_PATTERN = re.compile(
+    r"Current action outcomes: [0-9]+ outstanding; "
+    + ", ".join(r"[0-9]+ " + status for status in OUTCOME_STATUSES) + r"\."
+)
 
 
 class ReviewError(ValueError):
@@ -182,13 +188,36 @@ def _validate_items(report: ReviewReport) -> None:
             events.add(outcome.id)
 
 
-def render_report(report: ReviewReport) -> str:
+def _current_summary(report: ReviewReport, *, include: bool) -> str:
+    lines = report.prefix.splitlines(keepends=True)
+    existing = [index for index, line in enumerate(lines) if line.startswith(SUMMARY_LABEL)]
+    if len(existing) > 1 or any(not SUMMARY_PATTERN.fullmatch(lines[i].rstrip("\r\n")) for i in existing):
+        raise ReviewError("Current action summary was edited; reconcile before updating")
+    if not existing and not include:
+        return report.prefix
+    counts = dict.fromkeys(OUTCOME_STATUSES, 0)
+    for item in report.items:
+        latest = {outcome.action_id: outcome.text for outcome in item.outcomes}
+        for action in item.actions:
+            status = re.match(r"\*\*(Pending|Held|Partial|Declined|Completed)(?:\*\*| — )", latest[action.id])
+            counts[status[1] if status else "Unclassified"] += 1
+    outstanding = sum(counts[s] for s in ("Pending", "Held", "Partial", "Unclassified"))
+    summary = f"{SUMMARY_LABEL} {outstanding} outstanding; " + ", ".join(
+        f"{counts[s]} {s}" for s in OUTCOME_STATUSES) + ".\n"
+    if existing:
+        lines[existing[0]] = summary
+    else:
+        lines.insert(next(i for i, line in enumerate(lines) if line.strip() == TABLE_HEADER), summary + "\n")
+    return "".join(lines)
+
+
+def render_report(report: ReviewReport, *, include_summary: bool = False) -> str:
     rows = []
     for item in report.items:
         recommendations = "<br>".join(f"<!-- action:{a.id} -->{a.text}" for a in item.actions)
         outcomes = "<br>".join(f"<!-- outcome:{o.id} action:{o.action_id} -->{o.text}" for o in item.outcomes)
         rows.append(f"| {item.number} <!-- item:{item.identity} --> | {item.priority} | {item.note} | {recommendations} | {outcomes} |\n")
-    text = report.prefix + "".join(rows) + report.suffix
+    text = _current_summary(report, include=include_summary) + "".join(rows) + report.suffix
     parse_report(text)
     return text
 

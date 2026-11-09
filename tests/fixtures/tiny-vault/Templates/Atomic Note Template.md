@@ -1,12 +1,13 @@
 ---
+title: "{{concept_title}}"
 aliases: []
 tags:
   - template
 ---
 
-# {{title}}
+# {{concept_title}}
 
-State the single idea clearly.
+{{definition_sentence}}
 
 Compare the idea to a familiar situation.
 
@@ -18,4 +19,4 @@ Reference:
 
 Sources:
 
-- Source title.
+1. Source title.

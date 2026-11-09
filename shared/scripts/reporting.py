@@ -303,7 +303,7 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
                 first_actions.extend(text for _, text in sorted(advice, key=lambda entry: entry[0]))
         actions = list(dict.fromkeys(first_actions))
         recommendation = " ".join(actions[:2])
-        recommendation += f" Start with {first} ({_note_count(counts[first])}), then work through the remaining priorities."
+        recommendation += " Review related concepts together, with priority ordered within each group. Address urgent integrity failures first."
         if unfinished:
             recommendation += f" Finish model review for {unfinished} notes before treating this audit as complete."
     elif unfinished:
@@ -311,7 +311,7 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
     else:
         recommendation = "No actions were identified in the completed review and checks."
     lines = ["# Atomic note audit", "", "## Recommendation", "", recommendation,
-             "", "## Coverage", "", f"{coverage['reviewed']} / {total} model-reviewed. {len(queue)} need action; {unchanged} need no changes."]
+             "", "## Coverage", "", f"At audit capture: {coverage['reviewed']} / {total} model-reviewed. {len(queue)} notes flagged; {unchanged} need no changes."]
     states = [f"{coverage[s]} {s}" for s in ("pending", "failed", "unavailable", "stale") if coverage[s]]
     if states:
         lines.append("Unfinished: " + "; ".join(states) + ".")
@@ -348,9 +348,8 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
             label = "Held" if decision["status"] == "held" else "Reported completed"
             text = f"**{label} — date and verification unknown** Source: audit manifest. {_report_text(decision['message'])}"
             item.outcomes.append(ReviewOutcome(event_id, action_id, table_safe(text)))
-    rank = {str(row["note_path"]): index for index, row in enumerate(rows)}
-    report.items.sort(key=lambda item: (PRIORITY_ORDER.index(item.priority), rank.get(note_target(item.note), len(rows)), item.number))
-    return render_report(report)
+    # add_item appends new rows; existing conceptual order and IDs stay intact.
+    return render_report(report, include_summary=True)
 
 
 def _refresh_recommendation(report: ReviewReport, recommendation: str) -> str:
@@ -378,6 +377,13 @@ def _refresh_recommendation(report: ReviewReport, recommendation: str) -> str:
         generated = known and re.fullmatch(
             r"P[0-3] \([0-9]+ notes?\), then work through the remaining priorities\."
             r"(?: Finish model review for [0-9]+ notes before treating this audit as complete\.)?", next_steps) is not None
+    parts = current.rsplit(" Review related concepts together, with priority ordered within each group. Address urgent integrity failures first.", 1)
+    if len(parts) == 2:
+        actions, tail = parts
+        known = not actions or actions in known_actions or any(
+            actions.startswith(first + " ") and actions[len(first) + 1:] in known_actions for first in known_actions)
+        generated = known and re.fullmatch(
+            r"(?: Finish model review for [0-9]+ notes before treating this audit as complete\.)?", tail) is not None
     if not generated:
         raise ReviewError("Recommendation text was edited; reconcile before regeneration")
     return before + heading + recommendation + coverage + rest
@@ -389,9 +395,10 @@ def _refresh_coverage(prefix: str, coverage_lines: list[str]) -> str:
         from shared.scripts.audit_review_report import ReviewError
         raise ReviewError("Coverage heading was edited; reconcile before regeneration")
     before, after = prefix.split(heading, 1)
-    managed = re.compile(r"^(?:[0-9]+ / [0-9]+ model-reviewed\.|Unfinished:|Fact-checks pending:|Anki:)")
+    managed = re.compile(r"^(?:At audit capture:|[0-9]+ / [0-9]+ model-reviewed\.|Unfinished:|Fact-checks pending:|Anki:)")
     generated = re.compile(
         r"(?:[0-9]+ / [0-9]+ model-reviewed\. [0-9]+ need action; [0-9]+ need no changes\."
+        r"|At audit capture: [0-9]+ / [0-9]+ model-reviewed\. [0-9]+ notes flagged; [0-9]+ need no changes\."
         r"|Unfinished: [0-9]+ (?:pending|failed|unavailable|stale)"
         r"(?:; [0-9]+ (?:pending|failed|unavailable|stale))*\."
         r"|Fact-checks pending: [0-9]+; model review does not verify those claims\."

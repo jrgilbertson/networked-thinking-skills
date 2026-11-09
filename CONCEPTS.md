@@ -66,3 +66,6 @@ The single Markdown audit report that owns stable run-local item IDs, visible re
 
 ### Action Outcome
 A recorded disposition for one recommendation: Pending, Held, Declined, Partial, or Completed. Prior work remains dated history; newly flagged work needs its own verification. Completion describes verified work rather than approval or a model suggestion.
+
+### Concept Review Group
+A set of related audit items reviewed together because their meanings, boundaries, or examples inform one another. Relationship determines group size; repair priority orders items within the group, while stable item numbers retain identity.
