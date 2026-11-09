@@ -188,7 +188,7 @@ def _validate_items(report: ReviewReport) -> None:
             events.add(outcome.id)
 
 
-def _current_summary(report: ReviewReport, *, include: bool) -> str:
+def _refresh_current_summary(report: ReviewReport, *, include: bool) -> str:
     lines = report.prefix.splitlines(keepends=True)
     existing = [index for index, line in enumerate(lines) if line.startswith(SUMMARY_LABEL)]
     if len(existing) > 1 or any(not SUMMARY_PATTERN.fullmatch(lines[i].rstrip("\r\n")) for i in existing):
@@ -217,7 +217,7 @@ def render_report(report: ReviewReport, *, include_summary: bool = False) -> str
         recommendations = "<br>".join(f"<!-- action:{a.id} -->{a.text}" for a in item.actions)
         outcomes = "<br>".join(f"<!-- outcome:{o.id} action:{o.action_id} -->{o.text}" for o in item.outcomes)
         rows.append(f"| {item.number} <!-- item:{item.identity} --> | {item.priority} | {item.note} | {recommendations} | {outcomes} |\n")
-    text = _current_summary(report, include=include_summary) + "".join(rows) + report.suffix
+    text = _refresh_current_summary(report, include=include_summary) + "".join(rows) + report.suffix
     parse_report(text)
     return text
 

@@ -6,7 +6,7 @@ import re
 
 from finding_codes import FINDING_MESSAGES
 from audit_review_report import (
-    ReviewOutcome, ReviewReport, add_item, identity, new_report, note_target, parse_report, render_report, table_safe,
+    ReviewOutcome, ReviewReport, add_item, identity, new_report, parse_report, render_report, table_safe,
 )
 
 
@@ -348,7 +348,6 @@ def _render_model_led_report(rows: list[dict[str, object]], manifest: dict[str, 
             label = "Held" if decision["status"] == "held" else "Reported completed"
             text = f"**{label} — date and verification unknown** Source: audit manifest. {_report_text(decision['message'])}"
             item.outcomes.append(ReviewOutcome(event_id, action_id, table_safe(text)))
-    # add_item appends new rows; existing conceptual order and IDs stay intact.
     return render_report(report, include_summary=True)
 
 
