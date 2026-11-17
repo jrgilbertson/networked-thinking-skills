@@ -53,7 +53,7 @@ Always run the audit before remediation and review the generated plan before all
 
 ## Contributing
 
-Issues and PRs are welcome. Read the [contributor guide](docs/contributor-guide.md) first; questions go to the [issue tracker](https://github.com/jrgilbertson/networked-thinking-skills/issues).
+Issues and PRs are welcome. Read the [contributor guide](docs/contributor-guide.md) first; questions go to the [issue tracker](https://github.com/jrgilbertson/networked-thinking-skills/issues). Notable changes are listed in the [changelog](CHANGELOG.md).
 
 ## License
 
