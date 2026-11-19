@@ -29,7 +29,6 @@ class SkillArtifactSyncTest(unittest.TestCase):
         self.assertIn("audit_notes.py", audit.scripts)
         self.assertIn("obsidian_cli.py", audit.scripts)
         self.assertNotIn("make_fixture_vault.py", audit.scripts)
-        self.assertNotIn("verify_install_commands.py", audit.scripts)
 
     def test_render_markdown_rewrites_shared_paths(self):
         source = textwrap.dedent(

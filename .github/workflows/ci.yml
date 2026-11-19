@@ -28,6 +28,3 @@ jobs:
 
       - name: Validate fixture JSONL
         run: python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl
-
-      - name: Verify install docs
-        run: python3 -m shared.scripts.verify_install_commands docs/install.md

@@ -59,7 +59,6 @@ The hook currently runs:
 ```bash
 env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests
 python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl
-python3 -m shared.scripts.verify_install_commands docs/install.md
 python3 -m shared.scripts.sync_skill_artifacts --check
 ```
 

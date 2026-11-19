@@ -23,7 +23,6 @@ class RepoSmokeTest(unittest.TestCase):
 
         self.assertIn("python3 -m unittest discover -s tests", text)
         self.assertIn("python3 -m shared.scripts.validate_jsonl tests/golden/fixture-audit.jsonl", text)
-        self.assertIn("python3 -m shared.scripts.verify_install_commands docs/install.md", text)
         self.assertIn("python3 -m shared.scripts.sync_skill_artifacts --check", text)
 
     def test_uv_lock_is_ignored_as_local_runner_output(self):
