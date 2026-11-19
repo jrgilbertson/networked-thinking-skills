@@ -19,7 +19,7 @@ verified work. This skill supports batch audit and remediation on its own;
 - [Model judgment workflow](references/model-judgment-workflow.md): read before capturing, collecting, or applying judgments; owns runner commands and provenance.
 - [Audit review record](references/audit-review-record.md): read before publishing or resuming a report; owns format, identity, outcome input, recovery, and guarded publication.
 - [Remediation context](references/remediation-context.md): read **Source Evidence for Authoring and Review** before factual source checks or improvement proposals, and the mutation guidance before planning a source-note or card change; owns source review, approvals, Obsidian tooling, renames, Anki, and held decisions.
-- [Install matrix](references/install-matrix.md): read for supported installation surfaces and self-contained package requirements.
+- [Install matrix](references/install-matrix.md): read for self-contained package requirements and audit helper dependencies.
 
 ## Read-only audit
 

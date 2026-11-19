@@ -23,19 +23,25 @@ More skills will land here as the book's workflows do; each installs independent
 
 ## Quickstart
 
-Install every skill globally, symlinked into all of your agent harnesses from one location:
+Install the official Obsidian skills first if you plan to run remediation:
 
 ```bash
-npx skills add jrgilbertson/networked-thinking-skills -g --agent '*'
+npx skills add kepano/obsidian-skills -g
 ```
 
-Or install a single skill:
+Install the Networked Thinking skills:
 
 ```bash
-npx skills add jrgilbertson/networked-thinking-skills -g --skill atomic-note
+npx skills add jrgilbertson/networked-thinking-skills -g
 ```
 
-Remediation workflows also require the official Obsidian skills (`obsidian-cli`, `obsidian-markdown`, `obsidian-bases`); install those first. [docs/install.md](docs/install.md) covers per-agent installs, copied (non-symlink) installs, and sandboxed-agent caveats.
+Add `--skill <name>` to install a single skill.
+
+Update installed skills:
+
+```bash
+npx skills update
+```
 
 ## Usage
 
