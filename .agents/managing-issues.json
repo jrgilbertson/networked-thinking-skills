@@ -34,5 +34,8 @@
       "verification_effort": "Verification effort",
       "undo_cost": "Undo cost"
     }
+  },
+  "assignee": {
+    "default": "jrgilbertson"
   }
 }
